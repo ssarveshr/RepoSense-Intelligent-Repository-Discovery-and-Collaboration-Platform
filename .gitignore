@@ -1,0 +1,64 @@
+# --- Python ---
+backend/venv/
+backend/repo_db/
+backend/__pycache__/
+backend/.ipynb_checkpoints/
+*.py[cod]
+*$py.class
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# --- Node / Frontend ---
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/pcb/
+frontend/.wasm
+frontend/.lst
+frontend/.obj
+frontend/.bin
+frontend/.map
+frontend/.swp
+frontend/.swo
+frontend/.DS_Store
+.eslintcache
+
+# --- RepoSense Custom ---
+# We ignore the local version control data so it doesn't conflict with Git
+.repo/
+index.json
+commits.json
+
+# --- AI Models ---
+# Ignore downloaded models if stored locally
+.cache/
+models/
+
+# --- Environment & Secrets ---
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# --- OS Specific ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# --- IDEs ---
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.project
+.pydevproject
+.settings/

@@ -146,6 +146,33 @@ def pull(remote_path):
     print("⬇️ Pulled from remote")
 
 
+# repo publish → Index in Semantic Search
+def publish_to_discovery(category, description):
+    ensure_repo()
+    try:
+        from search_engine import engine
+        
+        # Get project details
+        repo_name = os.path.basename(os.path.abspath(os.getcwd()))
+        repo_path = os.path.abspath(os.getcwd())
+        
+        print(f"📡 Publishing '{repo_name}' to RepoSense AI...")
+        
+        engine.add_repository(
+            name=repo_name,
+            description=description,
+            url=repo_path,
+            stars=0, 
+            category=category
+        )
+        print(f"✨ Success! '{repo_name}' is now discoverable via semantic search.")
+        
+    except ImportError:
+        print("❌ Error: search_engine.py not found. Make sure you are in the backend folder.")
+    except Exception as e:
+        print(f"❌ Failed to publish: {e}")
+
+
 # ---------- CLI ----------
 def main():
     if len(sys.argv) < 2:
@@ -171,6 +198,12 @@ def main():
 
     elif cmd == "get":
         pull(sys.argv[2])
+
+    elif cmd == "publish":
+        if len(sys.argv) < 4:
+            print("Usage: repo publish <category> <description>")
+            return
+        publish_to_discovery(sys.argv[2], sys.argv[3])
 
     else:
         print("❌ Unknown command")
