@@ -2,17 +2,7 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import CollaborationHub from './CollaborationHub'; // imported the child component
 
-const ArrowLeftIcon = () => (
-  <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-  </svg>
-);
-
-const FolderIcon = () => (
-  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-  </svg>
-);
+import { ArrowLeftIcon, FolderIcon } from '../components/icons';
 
 export default function RepositoryDetails() {
   const { id } = useParams();

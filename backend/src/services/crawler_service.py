@@ -1,6 +1,6 @@
 import requests
 import time
-from search_engine import engine
+from src.services.search_service import engine
 
 # Define the categories we want to populate our "Discovery" feed with
 CATEGORIES = {

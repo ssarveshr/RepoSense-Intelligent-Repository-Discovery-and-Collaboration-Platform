@@ -1,9 +1,9 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from search_engine import engine
-from summarizer import RepoSummarizer
-from github_analyzer import GitHubAnalyzer
+from src.services.search_service import engine
+from src.services.summarizer_service import RepoSummarizer
+from src.integrations.github import GitHubAnalyzer
 
 app = FastAPI(
     title="RepoSense AI API",

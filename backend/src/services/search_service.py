@@ -9,8 +9,8 @@ class RepoSenseEngine:
         self.model_name = 'all-MiniLM-L6-v2'
         self.model = SentenceTransformer(self.model_name)
         
-        # 2. Setup ChromaDB (Persistent storage in the current directory)
-        self.db_path = os.path.join(os.path.dirname(__file__), "repo_db")
+        # 2. Setup ChromaDB (Persistent storage in the storage directory)
+        self.db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "storage", "repo_db"))
         self.client = chromadb.PersistentClient(path=self.db_path)
         
         # 3. Create or get the collection

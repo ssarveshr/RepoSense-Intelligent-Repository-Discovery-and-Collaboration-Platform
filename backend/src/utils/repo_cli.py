@@ -150,7 +150,7 @@ def pull(remote_path):
 def publish_to_discovery(category, description):
     ensure_repo()
     try:
-        from search_engine import engine
+        from src.services.search_service import engine
         
         # Get project details
         repo_name = os.path.basename(os.path.abspath(os.getcwd()))

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { summarizeRepo } from '../services/api';
 
 const GitHubSummarizer = () => {
   const [githubUrl, setGithubUrl] = useState('');
@@ -29,15 +30,7 @@ const GitHubSummarizer = () => {
     setSummary(null);
 
     try {
-      const response = await fetch('http://localhost:8000/summarize-github', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ github_url: githubUrl }),
-      });
-
-      const data = await response.json();
+      const data = await summarizeRepo(githubUrl);
 
       if (data.status === 'error') {
         setError(data.message || 'Failed to analyze repository');
