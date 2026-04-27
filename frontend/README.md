@@ -1,16 +1,55 @@
-# React + Vite
+# RepoSense Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The RepoSense frontend is a modern, responsive React application built with Vite and Tailwind CSS. It provides an intuitive interface for discovering repositories and generating AI summaries.
 
-Currently, two official plugins are available:
+## Architecture
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+The frontend is structured to keep UI components separate from business logic and API communication:
 
-## React Compiler
+- **Pages (`src/pages/`)**: Main route components.
+  - `Home.jsx`: The "Discover" feed with semantic search and category filtering.
+  - `GitHubSummarizer.jsx`: Interface for deep repository analysis via URL.
+  - `RepositoryDetails.jsx`: Detailed view for specific repository findings.
+  - `Profile.jsx`: User-specific data and settings.
+- **Components (`src/components/`)**:
+  - `icons/`: Centralized SVG icon components for a consistent visual language.
+- **Services (`src/services/`)**:
+  - `api.js`: Centralized API service for communicating with the backend. Handles all `fetch` logic and endpoint centralization.
+- **Styles (`src/styles/`)**: Global CSS and Tailwind configurations.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## User Flow: Repository Summarization
 
-## Expanding the ESLint configuration
+1. **Input**: User enters a GitHub URL in the `GitHubSummarizer` page.
+2. **Validation**: The frontend validates the URL format before sending it to the backend.
+3. **API Call**: Use `summarizeRepo()` from `api.js` to send a POST request to the backend.
+4. **Loading State**: A responsive AI loading state is shown while the LLM processes the repo.
+5. **Display**: The returned JSON summary is parsed and displayed in structured sections (Architecture, Tech Stack, Key Components, etc.).
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Setup & Running
+
+### Installation
+1. Navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+### Development
+Start the development server:
+```bash
+npm run dev
+```
+The application will be accessible at `http://localhost:5173`.
+
+### Build
+To create a production build:
+```bash
+npm run build
+```
+
+## State Management
+- Local state is managed using React hooks (`useState`, `useEffect`).
+- Navigation and routing are handled by `react-router-dom`.
