@@ -1,6 +1,9 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from search_engine import engine
+from summarizer import RepoSummarizer
+from github_analyzer import GitHubAnalyzer
 
 app = FastAPI(
     title="RepoSense AI API",
@@ -95,6 +98,46 @@ async def get_trending_repos():
 async def get_by_category(category_name: str):
     """Fetches live results based on a category/topic."""
     return await search_repositories(category_name)
+
+# Request model for GitHub summarization
+class GitHubSummarizeRequest(BaseModel):
+    github_url: str
+
+@app.post("/summarize-github")
+async def summarize_github_repo(request: GitHubSummarizeRequest):
+    """
+    Analyze a GitHub repository URL and generate an AI-powered summary WITHOUT cloning.
+    """
+    try:
+        # Initialize analyzers
+        github_analyzer = GitHubAnalyzer()
+        summarizer = RepoSummarizer()
+        
+        # Step 1: Extract data from GitHub APIs
+        analysis_data = github_analyzer.analyze_github_repo(request.github_url)
+        
+        # Step 2: Generate AI summary using Ollama
+        summary = summarizer.generate_summary(analysis_data)
+        
+        # Merge GitHub metadata with AI summary
+        summary['name'] = analysis_data.get('name', '')
+        summary['description'] = analysis_data.get('description', '')
+        summary['stars'] = analysis_data.get('stars', 0)
+        summary['language'] = analysis_data.get('language', '')
+        
+        return {
+            "status": "success",
+            "summary": summary,
+            "raw_analysis": {
+                "file_tree": analysis_data.get('file_tree', []),
+                "tech_stack": analysis_data.get('tech_stack', []),
+                "dependencies": analysis_data.get('dependencies', [])
+            }
+        }
+    except ValueError as e:
+        return {"status": "error", "message": str(e)}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 if __name__ == "__main__":
     import uvicorn

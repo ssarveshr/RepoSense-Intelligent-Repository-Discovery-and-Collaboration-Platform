@@ -3,6 +3,7 @@ import { Routes, Route, Link } from 'react-router-dom';
 import Home from './pages/Home';
 import RepositoryDetails from './pages/RepositoryDetails';
 import Profile from './pages/Profile';
+import GitHubSummarizer from './pages/GitHubSummarizer';
 
 // --- Icons (Inline SVGs for simplicity & performance) ---
 const SunIcon = () => (
@@ -44,6 +45,7 @@ function App() {
             </Link>
             <div className="hidden md:flex items-center space-x-8 text-sm font-medium">
               <Link to="/" className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Discover</Link>
+              <Link to="/github-summarizer" className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors">GitHub Summarizer</Link>
               <Link to="/profile" className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors">My Profile</Link>
             </div>
             <div className="flex items-center">
@@ -69,6 +71,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/repo/:id" element={<RepositoryDetails />} />
+          <Route path="/github-summarizer" element={<GitHubSummarizer />} />
           <Route path="/profile" element={<Profile />} />
         </Routes>
       </main>
