@@ -58,27 +58,27 @@ const GitHubSummarizer = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4">
+    <div className="py-4 px-4 bg-transparent">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
           <button
             onClick={() => navigate('/')}
-            className="mb-6 px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+            className="mb-6 px-4 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
           >
             ← Back to Home
           </button>
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-3">
             GitHub Repository Summarizer
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-gray-600 dark:text-gray-400">
             Analyze any GitHub repository instantly without cloning
           </p>
         </div>
 
         {/* Input Section */}
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 mb-8 border border-gray-100 dark:border-gray-800">
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
             GitHub Repository URL
           </label>
           <div className="flex gap-3">
@@ -88,7 +88,7 @@ const GitHubSummarizer = () => {
               onChange={(e) => setGithubUrl(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="https://github.com/owner/repository"
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
             />
             <button
               onClick={handleSummarize}
@@ -107,7 +107,7 @@ const GitHubSummarizer = () => {
                 <button
                   key={idx}
                   onClick={() => setGithubUrl(example)}
-                  className="text-xs px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded-full text-gray-600 transition"
+                  className="text-xs px-3 py-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400 transition"
                 >
                   {example.split('/').slice(-2).join('/')}
                 </button>
@@ -118,16 +118,16 @@ const GitHubSummarizer = () => {
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg mb-8">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-6 py-4 rounded-lg mb-8">
             <strong>Error:</strong> {error}
           </div>
         )}
 
         {/* Loading State */}
         {loading && (
-          <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-12 text-center border border-gray-100 dark:border-gray-800">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-            <p className="text-gray-600">Fetching repository data from GitHub...</p>
+            <p className="text-gray-600 dark:text-gray-400">Fetching repository data from GitHub...</p>
             <p className="text-sm text-gray-500 mt-2">
               This may take a moment while we analyze the codebase
             </p>
@@ -138,43 +138,43 @@ const GitHubSummarizer = () => {
         {summary && !loading && (
           <div className="space-y-6">
             {/* Repository Overview */}
-            <div className="bg-white rounded-2xl shadow-lg p-8">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-800">
               <div className="flex items-start justify-between mb-4">
-                <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
                   <span className="w-2 h-2 bg-blue-600 rounded-full mr-3"></span>
                   Repository Overview
                 </h2>
                 {summary.stars && (
-                  <div className="flex items-center gap-2 px-4 py-2 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800/50">
                     <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
-                    <span className="font-semibold text-gray-700">{summary.stars.toLocaleString()}</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">{summary.stars.toLocaleString()}</span>
                   </div>
                 )}
               </div>
               
               <div className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">{summary.name}</h3>
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">{summary.name}</h3>
                 {summary.description && (
-                  <p className="text-gray-600 mb-3">{summary.description}</p>
+                  <p className="text-gray-600 dark:text-gray-400 mb-3">{summary.description}</p>
                 )}
                 {summary.language && (
-                  <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                  <span className="inline-block px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full text-sm font-medium">
                     {summary.language}
                   </span>
                 )}
               </div>
               
-              <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">Purpose</h4>
-                <p className="text-gray-700 leading-relaxed">{summary.purpose}</p>
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Purpose</h4>
+                <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{summary.purpose}</p>
               </div>
             </div>
 
             {/* Tech Stack */}
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-800">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
                 <span className="w-2 h-2 bg-green-600 rounded-full mr-3"></span>
                 Tech Stack
               </h2>
@@ -195,32 +195,32 @@ const GitHubSummarizer = () => {
             </div>
 
             {/* Architecture */}
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-800">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
                 <span className="w-2 h-2 bg-purple-600 rounded-full mr-3"></span>
                 Architecture Overview
               </h2>
-              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
                 {summary.architecture}
               </p>
             </div>
 
             {/* How to Run */}
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-800">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
                 <span className="w-2 h-2 bg-orange-600 rounded-full mr-3"></span>
                 How to Run
               </h2>
-              <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
-                <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
                   {summary.how_to_run}
                 </p>
               </div>
             </div>
 
             {/* Key Components */}
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-800">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
                 <span className="w-2 h-2 bg-red-600 rounded-full mr-3"></span>
                 Key Components
               </h2>
@@ -229,10 +229,10 @@ const GitHubSummarizer = () => {
                   summary.key_components.map((component, idx) => (
                     <li
                       key={idx}
-                      className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
+                      className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
                     >
                       <span className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0"></span>
-                      <span className="text-gray-700">{component}</span>
+                      <span className="text-gray-700 dark:text-gray-300">{component}</span>
                     </li>
                   ))
                 ) : (
@@ -242,8 +242,8 @@ const GitHubSummarizer = () => {
             </div>
 
             {/* Dependencies */}
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-800">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
                 <span className="w-2 h-2 bg-teal-600 rounded-full mr-3"></span>
                 Dependencies
               </h2>
@@ -252,7 +252,7 @@ const GitHubSummarizer = () => {
                   summary.dependencies.map((dep, idx) => (
                     <div
                       key={idx}
-                      className="px-4 py-2 bg-gray-50 rounded-lg text-sm text-gray-700 border border-gray-200"
+                      className="px-4 py-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700"
                     >
                       {dep}
                     </div>

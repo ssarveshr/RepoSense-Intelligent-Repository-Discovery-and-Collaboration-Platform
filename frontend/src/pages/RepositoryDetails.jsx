@@ -24,7 +24,7 @@ export default function RepositoryDetails() {
 
   return (
     <div className="space-y-8 animate-fade-in-up">
-      <Link to="/" className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+      <Link to="/" className="inline-flex items-center text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
         <ArrowLeftIcon /> Back to discover
       </Link>
 
@@ -104,7 +104,7 @@ export default function RepositoryDetails() {
                         <h4 className="font-semibold text-sm">{issue.title}</h4>
                         <span className="text-xs font-bold text-green-700 bg-green-100 dark:bg-green-900/40 dark:text-green-400 px-2 py-0.5 rounded-full">{issue.match} Match</span>
                       </div>
-                      <span className="text-xs text-gray-500">{issue.diff} Difficulty</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{issue.diff} Difficulty</span>
                     </div>
                   ))}
                 </div>

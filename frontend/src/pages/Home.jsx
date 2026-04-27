@@ -138,7 +138,7 @@ export default function Home() {
               </a>
             ))
           ) : !isLoading && (
-            <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+            <div className="flex flex-col items-center justify-center py-20 text-gray-500 dark:text-gray-400">
               <p className="text-lg">No repositories found in our index.</p>
               <p className="text-sm">Try searching for something else or run the crawler to add data.</p>
             </div>

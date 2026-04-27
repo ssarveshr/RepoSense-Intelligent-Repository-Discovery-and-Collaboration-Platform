@@ -55,7 +55,7 @@ export default function CollaborationHub({ repoName }) {
               <div className="flex justify-between items-start">
                 <div className="space-y-2">
                   <h3 className="text-lg font-bold hover:text-blue-600 dark:hover:text-blue-400 transition-colors">{disc.title}</h3>
-                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                  <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
                     <span className="flex items-center space-x-1 shrink-0 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full text-xs font-semibold">
                       <UserIcon /> <span className="ml-1">{disc.author}</span>
                     </span>
@@ -69,7 +69,7 @@ export default function CollaborationHub({ repoName }) {
                     ))}
                   </div>
                 </div>
-                <div className="flex items-center space-x-1 text-gray-500 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 rounded-xl border border-gray-100 dark:border-gray-700">
+                <div className="flex items-center space-x-1 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 rounded-xl border border-gray-100 dark:border-gray-700">
                   <ChatBubbleIcon />
                   <span className="font-semibold text-sm">{disc.replies}</span>
                 </div>
@@ -82,13 +82,13 @@ export default function CollaborationHub({ repoName }) {
           <div className="p-6 bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 rounded-2xl border border-indigo-100 dark:border-gray-700">
             <h3 className="font-bold text-lg mb-3">Repo Stats</h3>
             <ul className="space-y-3 text-sm font-medium">
-              <li className="flex justify-between text-gray-600 dark:text-gray-300">
+              <li className="flex justify-between text-gray-600 dark:text-gray-400">
                 <span>Active Contributors</span> <span className="text-gray-900 dark:text-white font-bold">14</span>
               </li>
-              <li className="flex justify-between text-gray-600 dark:text-gray-300">
+              <li className="flex justify-between text-gray-600 dark:text-gray-400">
                 <span>Open Discussions</span> <span className="text-gray-900 dark:text-white font-bold">42</span>
               </li>
-              <li className="flex justify-between text-gray-600 dark:text-gray-300">
+              <li className="flex justify-between text-gray-600 dark:text-gray-400">
                 <span>Resolved Questions</span> <span className="text-gray-900 dark:text-white font-bold">1,024</span>
               </li>
             </ul>
