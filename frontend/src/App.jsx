@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import RepositoryDetails from './pages/RepositoryDetails';
 import Profile from './pages/Profile';
 import GitHubSummarizer from './pages/GitHubSummarizer';
+import WebRTCRoom from './pages/WebRTCRoom';
 
 import { SunIcon, MoonIcon } from './components/icons';
 
@@ -62,6 +63,7 @@ function App() {
           <Route path="/repo/:id" element={<RepositoryDetails />} />
           <Route path="/github-summarizer" element={<GitHubSummarizer />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/webrtc-room" element={<WebRTCRoom />} />
         </Routes>
       </main>
     </div>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const ChatBubbleIcon = () => (
   <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -28,9 +29,17 @@ export default function CollaborationHub({ repoName }) {
           <h2 className="text-2xl font-extrabold pb-2">Discussions in {repoName}</h2>
           <p className="text-gray-600 dark:text-gray-400">Ask the maintainers and community for help.</p>
         </div>
-        <button className="mt-4 md:mt-0 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all hover:-translate-y-0.5 shadow-md">
-          New Discussion
-        </button>
+        <div className="flex flex-wrap gap-3 mt-4 md:mt-0">
+          <Link to="/webrtc-room" className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-all hover:-translate-y-0.5 shadow-md flex items-center">
+            <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            Join Live Room
+          </Link>
+          <button className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all hover:-translate-y-0.5 shadow-md">
+            New Discussion
+          </button>
+        </div>
       </div>
 
       <div className="flex space-x-2 border-b border-gray-200 dark:border-gray-800 pb-1">

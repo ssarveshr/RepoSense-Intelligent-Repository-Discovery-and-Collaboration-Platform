@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vibe - Multi User Video Call</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+
+  <!-- Join Screen -->
+  <div id="joinScreen" class="screen active">
+    <div class="glass-card">
+      <div class="logo">
+        <i class="fa-solid fa-video"></i> Vibe
+      </div>
+      <h2>Join a Meeting</h2>
+      <p>Enter a room code to start collaborating</p>
+      <div class="input-group">
+        <i class="fa-solid fa-hashtag"></i>
+        <input id="roomInput" type="text" placeholder="Room Code">
+      </div>
+      <button onclick="joinRoom()" class="btn-primary">
+        Join Meeting <i class="fa-solid fa-arrow-right"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Call Screen -->
+  <div id="callScreen" class="screen">
+    <div class="main-content">
+      <!-- Video Grid -->
+      <div id="videoGrid" class="video-grid">
+        <!-- Videos will be added here -->
+      </div>
+
+      <!-- Controls -->
+      <div class="controls-bar">
+        <div class="controls">
+          <button id="micBtn" class="control-btn" onclick="toggleMic()">
+            <i class="fa-solid fa-microphone"></i>
+          </button>
+          <button id="camBtn" class="control-btn" onclick="toggleCam()">
+            <i class="fa-solid fa-video"></i>
+          </button>
+          <button id="chatBtn" class="control-btn" onclick="toggleChat()">
+            <i class="fa-solid fa-message"></i>
+          </button>
+          <button class="control-btn danger" onclick="leaveCall()">
+            <i class="fa-solid fa-phone-slash"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Sidebar -->
+    <div id="chatSidebar" class="chat-sidebar">
+      <div class="chat-header">
+        <h3>In-call messages</h3>
+        <button class="close-chat" onclick="toggleChat()">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+      <div id="chatMessages" class="chat-messages">
+        <!-- Messages here -->
+      </div>
+      <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Send a message...">
+        <button id="sendBtn" onclick="sendMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+  <script src="/static/script.js?v=5"></script>
+</body>
+
+</html>

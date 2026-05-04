@@ -110,7 +110,7 @@ export default function Home() {
         <div className="space-y-4 min-h-[400px]">
           {repositories.length > 0 ? (
             repositories.map((repo) => (
-              <a href={repo.url} target="_blank" rel="noopener noreferrer" key={repo.id} className="block group">
+              <Link to={`/repo/${repo.id}`} key={repo.id} className="block group">
                 <div className="p-6 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 group-hover:shadow-lg transition-all duration-300 flex flex-col md:flex-row gap-6">
                   <div className="flex-1 space-y-3">
                     <div className="flex items-center justify-between">
@@ -135,7 +135,7 @@ export default function Home() {
                     </p>
                   </div>
                 </div>
-              </a>
+              </Link>
             ))
           ) : !isLoading && (
             <div className="flex flex-col items-center justify-center py-20 text-gray-500 dark:text-gray-400">
