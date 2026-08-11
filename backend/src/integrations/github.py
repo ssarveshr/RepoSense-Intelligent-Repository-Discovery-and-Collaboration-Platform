@@ -89,7 +89,8 @@ class GitHubAnalyzer:
                     'stars': data.get('stargazers_count', 0),
                     'language': data.get('language', 'Unknown'),
                     'license': data.get('license', {}).get('spdx_id', 'Not specified') if data.get('license') else 'Not specified',
-                    'default_branch': data.get('default_branch', 'main')
+                    'default_branch': data.get('default_branch', 'main'),
+                    'topics': data.get('topics', [])
                 }
             elif response.status_code == 404:
                 raise ValueError(f"Repository not found: {owner}/{repo}")
