@@ -29,16 +29,13 @@ export default function CollaborationHub({ repoName, isPersonal }) {
           <h2 className="text-2xl font-extrabold pb-2">Discussions in {repoName}</h2>
           <p className="text-gray-600 dark:text-gray-400">Ask the maintainers and community for help.</p>
         </div>
-        <div className="flex flex-wrap gap-3 mt-4 md:mt-0">
-          {isPersonal && (
-            <Link to="/webrtc-room" className="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-all hover:-translate-y-0.5 shadow-md flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-              Join Live Room
-            </Link>
-          )}
-          <button className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all hover:-translate-y-0.5 shadow-md">
+          <Link to="/zoom-meeting" state={{ repoName }} className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all hover:-translate-y-0.5 shadow-md flex items-center space-x-2">
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            <span>Start Instant Zoom & Invite Collaborators</span>
+          </Link>
+          <button className="px-6 py-2.5 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-900 dark:text-white font-semibold rounded-xl transition-all shadow-sm">
             New Discussion
           </button>
         </div>

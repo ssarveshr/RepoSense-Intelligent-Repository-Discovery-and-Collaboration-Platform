@@ -4,7 +4,7 @@ import Home from './pages/Home';
 import RepositoryDetails from './pages/RepositoryDetails';
 import Profile from './pages/Profile';
 import GitHubSummarizer from './pages/GitHubSummarizer';
-import WebRTCRoom from './pages/WebRTCRoom';
+import ZoomRoom from './pages/ZoomRoom';
 
 import { SunIcon, MoonIcon } from './components/icons';
 
@@ -36,6 +36,12 @@ function App() {
             <div className="hidden md:flex items-center space-x-8 text-sm font-medium">
               <Link to="/" className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Discover</Link>
               <Link to="/github-summarizer" className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors">GitHub Summarizer</Link>
+              <Link to="/zoom-meeting" className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold hover:bg-blue-500/20 transition-all">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                <span>Zoom Meeting</span>
+              </Link>
               <Link to="/profile" className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors">My Profile</Link>
             </div>
             <div className="flex items-center">
@@ -63,7 +69,8 @@ function App() {
           <Route path="/repo/:id" element={<RepositoryDetails />} />
           <Route path="/github-summarizer" element={<GitHubSummarizer />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/webrtc-room" element={<WebRTCRoom />} />
+          <Route path="/zoom-meeting" element={<ZoomRoom />} />
+          <Route path="/webrtc-room" element={<ZoomRoom />} />
         </Routes>
       </main>
     </div>
