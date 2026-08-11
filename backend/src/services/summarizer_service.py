@@ -40,7 +40,7 @@ class RepoSummarizer:
                 raise Exception(f"Ollama API error: {response.status_code} - {response.text}")
                 
         except requests.exceptions.ConnectionError:
-            print("⚠️ Could not connect to Ollama. Using fallback mock summary.")
+            print("[WARN] Could not connect to Ollama. Using fallback mock summary.")
             return self._generate_mock_summary(analysis_data)
         except Exception as e:
             raise Exception(f"Error generating summary: {str(e)}")
@@ -57,7 +57,10 @@ class RepoSummarizer:
             "architecture": f"The project follows a standard architecture for {tech_stack[0] if tech_stack else 'its language'} applications, organizing code into distinct modules and utilizing common design patterns.",
             "key_components": analysis_data.get('key_components', ["Main Application Logic", "Configuration Management", "Core Utilities"]) or ["Main Application Logic"],
             "dependencies": analysis_data.get('dependencies', [])[:10] or ["None detected"],
-            "license": analysis_data.get('license', 'Not specified')
+            "license": analysis_data.get('license', 'Not specified'),
+            "difficulty": "Intermediate",
+            "best_for": "Learning standard architecture and best practices.",
+            "contributing_guide": "Check the issues tab for 'good first issue' labels and follow the pull request template."
         }
     
     def _build_prompt(self, analysis_data):
@@ -96,7 +99,10 @@ Generate a JSON response with EXACTLY this structure (no additional text, only v
   "architecture": "Overview of the project architecture and design patterns used",
   "key_components": ["list", "of", "main", "components", "and", "their", "purposes"],
   "dependencies": ["list", "of", "major", "dependencies"],
-  "license": "License type if found, otherwise 'Not specified'"
+  "license": "License type if found, otherwise 'Not specified'",
+  "difficulty": "Estimated difficulty to contribute (e.g. Beginner, Intermediate, Advanced)",
+  "best_for": "Who this project is best for (e.g., Learning React, Production usage, Research)",
+  "contributing_guide": "Brief summary on how to start contributing"
 }}
 
 IMPORTANT RULES:
@@ -130,5 +136,8 @@ IMPORTANT RULES:
             "architecture": "Unable to determine architecture.",
             "key_components": [],
             "dependencies": [],
-            "license": "Unknown"
+            "license": "Unknown",
+            "difficulty": "Unknown",
+            "best_for": "Unknown",
+            "contributing_guide": "Unknown"
         }

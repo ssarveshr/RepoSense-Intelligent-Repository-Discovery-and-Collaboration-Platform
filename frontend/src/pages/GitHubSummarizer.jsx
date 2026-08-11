@@ -166,9 +166,25 @@ const GitHubSummarizer = () => {
                 )}
               </div>
               
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Purpose</h4>
-                <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{summary.purpose}</p>
+              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6 border border-gray-200 dark:border-gray-700 space-y-4">
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Purpose</h4>
+                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{summary.purpose}</p>
+                </div>
+                {summary.best_for && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Best For</h4>
+                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{summary.best_for}</p>
+                  </div>
+                )}
+                {summary.difficulty && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Difficulty</h4>
+                    <span className="inline-block px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-bold uppercase tracking-wider">
+                      {summary.difficulty}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -217,6 +233,21 @@ const GitHubSummarizer = () => {
                 </p>
               </div>
             </div>
+
+            {/* Contributing Guide */}
+            {summary.contributing_guide && (
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-800">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                  <span className="w-2 h-2 bg-pink-600 rounded-full mr-3"></span>
+                  Contributing Guide
+                </h2>
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                    {summary.contributing_guide}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Key Components */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-800">

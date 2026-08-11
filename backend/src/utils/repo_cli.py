@@ -18,7 +18,7 @@ def hash_content(content):
 
 def ensure_repo():
     if not os.path.exists(REPO_DIR):
-        print("❌ Not a repo. Run 'repo copy' first.")
+        print("[ERROR] Not a repo. Run 'repo copy' first.")
         sys.exit()
 
 
@@ -29,7 +29,7 @@ def clone_repo(path=None):
     if path is None:
         # INIT
         if os.path.exists(REPO_DIR):
-            print("⚠️ Repo already exists")
+            print("[WARN] Repo already exists")
             return
 
         os.makedirs(OBJECTS_DIR)
@@ -40,20 +40,20 @@ def clone_repo(path=None):
         with open(COMMITS_FILE, "w") as f:
             json.dump([], f)
 
-        print("✅ Repo initialized")
+        print("[OK] Repo initialized")
 
     else:
         # CLONE
         if not os.path.exists(path):
-            print("❌ Source repo not found")
+            print("[ERROR] Source repo not found")
             return
 
         if os.path.exists(REPO_DIR):
-            print("⚠️ Repo already exists here")
+            print("[WARN] Repo already exists here")
             return
 
         shutil.copytree(os.path.join(path, ".repo"), REPO_DIR)
-        print("✅ Repo cloned")
+        print("[OK] Repo cloned")
 
 
 # repo add
@@ -61,7 +61,7 @@ def add_file(filename):
     ensure_repo()
 
     if not os.path.exists(filename):
-        print("❌ File not found")
+        print("[ERROR] File not found")
         return
 
     with open(filename, "r") as f:
@@ -80,7 +80,7 @@ def add_file(filename):
     with open(INDEX_FILE, "w") as f:
         json.dump(index, f, indent=4)
 
-    print(f"✅ Added {filename}")
+    print(f"[OK] Added {filename}")
 
 
 # repo msg → commit
@@ -105,7 +105,7 @@ def commit(message):
     with open(COMMITS_FILE, "w") as f:
         json.dump(commits, f, indent=4)
 
-    print("✅ Commit created")
+    print("[OK] Commit created")
 
 
 # repo send → push (copy repo to remote folder)
@@ -113,7 +113,7 @@ def push(remote_path):
     ensure_repo()
 
     if not os.path.exists(remote_path):
-        print("❌ Remote path not found")
+        print("[ERROR] Remote path not found")
         return
 
     dest = os.path.join(remote_path, ".repo")
@@ -123,19 +123,19 @@ def push(remote_path):
 
     shutil.copytree(REPO_DIR, dest)
 
-    print("🚀 Pushed to remote")
+    print("[OK] Pushed to remote")
 
 
 # repo get → pull (copy from remote)
 def pull(remote_path):
     if not os.path.exists(remote_path):
-        print("❌ Remote path not found")
+        print("[ERROR] Remote path not found")
         return
 
     src = os.path.join(remote_path, ".repo")
 
     if not os.path.exists(src):
-        print("❌ No repo in remote")
+        print("[ERROR] No repo in remote")
         return
 
     if os.path.exists(REPO_DIR):
@@ -143,7 +143,7 @@ def pull(remote_path):
 
     shutil.copytree(src, REPO_DIR)
 
-    print("⬇️ Pulled from remote")
+    print("[OK] Pulled from remote")
 
 
 # repo publish → Index in Semantic Search
@@ -156,7 +156,7 @@ def publish_to_discovery(category, description):
         repo_name = os.path.basename(os.path.abspath(os.getcwd()))
         repo_path = os.path.abspath(os.getcwd())
         
-        print(f"📡 Publishing '{repo_name}' to RepoSense AI...")
+        print(f"[INFO] Publishing '{repo_name}' to RepoSense AI...")
         
         engine.add_repository(
             name=repo_name,
@@ -165,12 +165,12 @@ def publish_to_discovery(category, description):
             stars=0, 
             category=category
         )
-        print(f"✨ Success! '{repo_name}' is now discoverable via semantic search.")
+        print(f"[OK] Success! '{repo_name}' is now discoverable via semantic search.")
         
     except ImportError:
-        print("❌ Error: search_engine.py not found. Make sure you are in the backend folder.")
+        print("[ERROR] Error: search_engine.py not found. Make sure you are in the backend folder.")
     except Exception as e:
-        print(f"❌ Failed to publish: {e}")
+        print(f"[ERROR] Failed to publish: {e}")
 
 
 # ---------- CLI ----------
@@ -206,7 +206,7 @@ def main():
         publish_to_discovery(sys.argv[2], sys.argv[3])
 
     else:
-        print("❌ Unknown command")
+        print("[ERROR] Unknown command")
 
 
 if __name__ == "__main__":

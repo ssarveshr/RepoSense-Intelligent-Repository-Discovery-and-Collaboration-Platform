@@ -79,7 +79,7 @@ if __name__ == "__main__":
                 if "your url is:" in line:
                     url = line.split("is:")[1].strip()
                     print("=" * 50)
-                    print(f"🌍 PUBLIC LINK: {url}")
+                    print(f"PUBLIC LINK: {url}")
                     print("Send this link to your friends to join the call!")
                     print("=" * 50)
                     break
@@ -90,7 +90,7 @@ if __name__ == "__main__":
         from pyngrok import ngrok
         public_url = ngrok.connect(5000)
         print("=" * 50)
-        print(f"🌍 PUBLIC LINK: {public_url.public_url}")
+        print(f"PUBLIC LINK: {public_url.public_url}")
         print("Send this link to your friends to join the call!")
         print("=" * 50)
     except Exception as e:

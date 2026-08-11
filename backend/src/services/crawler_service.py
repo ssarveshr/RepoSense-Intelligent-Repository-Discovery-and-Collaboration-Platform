@@ -18,11 +18,11 @@ def fetch_github_repos():
     Fetches top repositories from GitHub for each category and 
     indexes them into our vector database.
     """
-    print("🚀 Starting GitHub Discovery Crawler...")
+    print("[START] Starting GitHub Discovery Crawler...")
     print("---------------------------------------")
     
     for category, query in CATEGORIES.items():
-        print(f"📂 Processing Category: {category}...")
+        print(f"[INFO] Processing Category: {category}...")
         
         # We search for repositories with more than 500 stars to ensure quality
         # Using the public search API (Limited to 10 requests per minute unauthenticated)
@@ -47,23 +47,23 @@ def fetch_github_repos():
                     )
                     count += 1
                 
-                print(f"✅ Successfully indexed {count} repositories for {category}.")
+                print(f"[OK] Successfully indexed {count} repositories for {category}.")
             
             elif response.status_code == 403:
-                print("⚠️ Rate limit reached! Waiting 60 seconds...")
+                print("[WARN] Rate limit reached! Waiting 60 seconds...")
                 time.sleep(60)
                 continue
             else:
-                print(f"❌ Failed to fetch {category}. Status: {response.status_code}")
+                print(f"[ERROR] Failed to fetch {category}. Status: {response.status_code}")
                 
             # Small delay between categories to stay within rate limits
             time.sleep(5)
             
         except Exception as e:
-            print(f"⚠️ An error occurred while crawling {category}: {e}")
+            print(f"[ERROR] An error occurred while crawling {category}: {e}")
 
     print("---------------------------------------")
-    print("✨ Database Seeding Complete! RepoSense is now intelligent.")
+    print("[OK] Database Seeding Complete! RepoSense is now intelligent.")
 
 if __name__ == "__main__":
     fetch_github_repos()

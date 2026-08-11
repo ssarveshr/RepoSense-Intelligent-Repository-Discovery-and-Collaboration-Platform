@@ -19,7 +19,8 @@ export default function RepositoryDetails() {
     issues: [
       { title: "Fix alignment on login button", diff: "Easy", match: "95%" },
       { title: "Implement dark mode toggle", diff: "Medium", match: "88%" },
-    ]
+    ],
+    isPersonal: false
   };
 
   return (
@@ -114,7 +115,7 @@ export default function RepositoryDetails() {
         ) : (
           <div className="animate-fade-in-up">
             {/* Render the local Collaboration Hub */}
-            <CollaborationHub repoName={repo.name} />
+            <CollaborationHub repoName={repo.name} isPersonal={repo.isPersonal} />
           </div>
         )}
 
