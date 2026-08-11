@@ -53,17 +53,19 @@ class GitHubAnalyzer:
         # Step 1: Get repository metadata
         repo_metadata = self._get_repo_metadata(owner, repo)
         result.update(repo_metadata)
+        default_branch = repo_metadata.get('default_branch', 'main')
         
         # Step 2: Get README
-        readme_content = self._get_readme(owner, repo)
+        readme_content = self._get_readme(owner, repo, branch=default_branch)
         result['readme_content'] = readme_content
         
         # Step 3: Get file tree (top-level)
-        file_tree = self._get_file_tree(owner, repo)
+        file_tree = self._get_file_tree(owner, repo, branch=default_branch)
         result['file_tree'] = file_tree
         
         # Step 4: Fetch important config files
-        config_files = self._fetch_config_files(owner, repo, file_tree)
+        config_files = self._fetch_config_files(owner, repo, file_tree, branch=default_branch)
+        result['config_files'] = config_files
         
         # Step 5: Extract tech stack from configs
         result['tech_stack'] = self._extract_tech_stack_from_configs(config_files)
@@ -86,7 +88,8 @@ class GitHubAnalyzer:
                     'description': data.get('description', 'No description provided'),
                     'stars': data.get('stargazers_count', 0),
                     'language': data.get('language', 'Unknown'),
-                    'license': data.get('license', {}).get('spdx_id', 'Not specified') if data.get('license') else 'Not specified'
+                    'license': data.get('license', {}).get('spdx_id', 'Not specified') if data.get('license') else 'Not specified',
+                    'default_branch': data.get('default_branch', 'main')
                 }
             elif response.status_code == 404:
                 raise ValueError(f"Repository not found: {owner}/{repo}")
@@ -102,13 +105,13 @@ class GitHubAnalyzer:
     def _get_readme(self, owner, repo, branch='main'):
         """Get README content from raw GitHub"""
         # Try common branch names and README variations
-        branches = ['main', 'master', 'develop']
+        branches = [branch] + [b for b in ['main', 'master', 'develop'] if b != branch]
         readme_files = ['README.md', 'README.rst', 'README.txt', 'readme.md']
         
-        for branch in branches:
+        for b in branches:
             for readme_file in readme_files:
                 try:
-                    url = f"{self.raw_github_base}/{owner}/{repo}/{branch}/{readme_file}"
+                    url = f"{self.raw_github_base}/{owner}/{repo}/{b}/{readme_file}"
                     response = requests.get(url, timeout=10)
                     
                     if response.status_code == 200:
@@ -121,11 +124,11 @@ class GitHubAnalyzer:
     
     def _get_file_tree(self, owner, repo, branch='main'):
         """Get top-level file tree from GitHub API"""
-        branches = ['main', 'master', 'develop']
+        branches = [branch] + [b for b in ['main', 'master', 'develop'] if b != branch]
         
-        for branch in branches:
+        for b in branches:
             try:
-                url = f"{self.github_api_base}/repos/{owner}/{repo}/git/trees/{branch}"
+                url = f"{self.github_api_base}/repos/{owner}/{repo}/git/trees/{b}"
                 response = requests.get(url, headers=self.headers, timeout=10)
                 
                 if response.status_code == 200:

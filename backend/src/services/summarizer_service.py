@@ -46,21 +46,52 @@ class RepoSummarizer:
             raise Exception(f"Error generating summary: {str(e)}")
             
     def _generate_mock_summary(self, analysis_data):
-        """Generate a realistic mock summary based on analysis data when Ollama is unavailable"""
+        """Generate a realistic, detailed summary based on analysis data when Ollama is unavailable"""
         tech_stack = analysis_data.get('tech_stack', [])
         repo_name = analysis_data.get('name', 'This repository')
+        description = analysis_data.get('description', '')
+        readme = analysis_data.get('readme_content', '')
+        file_tree = analysis_data.get('file_tree', [])
         
+        # Build purpose from description and README
+        if description and description != 'No description provided':
+            purpose = f"{repo_name}: {description}"
+        else:
+            purpose = f"{repo_name} is an open-source repository built with {', '.join(tech_stack[:3]) if tech_stack else 'modern tech stack'}."
+        
+        # Extract how_to_run from README if present
+        how_to_run = "1. Clone the repository.\n2. Install dependencies based on project config.\n3. Run start command specified in README."
+        if readme and readme != "No README found":
+            import re
+            run_match = re.search(r'(?i)(?:#+|\*\*|\b)(getting started|installation|quick start|how to run|usage|setup)\b(.*?)(?=\n#+|\n\*\*|\Z)', readme, re.DOTALL)
+            if run_match:
+                extracted = run_match.group(2).strip()
+                if len(extracted) > 30:
+                    how_to_run = extracted[:400]
+        
+        # Extract key components from file tree directories or fallback
+        dir_components = [item['name'] for item in file_tree if item['type'] == 'tree'][:8]
+        key_components = dir_components if dir_components else (analysis_data.get('key_components', []) or ["Core Application", "Configuration"])
+        
+        # Determine tech stack fallback if empty
+        if not tech_stack:
+            language = analysis_data.get('language')
+            if language and language != 'Unknown':
+                tech_stack = [language]
+            else:
+                tech_stack = ["JavaScript/Python"]
+
         return {
-            "purpose": f"{repo_name} is a software project built using {', '.join(tech_stack[:3]) if tech_stack else 'modern technologies'}. It provides robust capabilities as described in its documentation.",
-            "tech_stack": tech_stack if tech_stack else ["Unknown"],
-            "how_to_run": "1. Clone the repository.\n2. Install dependencies based on the configuration files.\n3. Run the start command specified in the documentation.",
-            "architecture": f"The project follows a standard architecture for {tech_stack[0] if tech_stack else 'its language'} applications, organizing code into distinct modules and utilizing common design patterns.",
-            "key_components": analysis_data.get('key_components', ["Main Application Logic", "Configuration Management", "Core Utilities"]) or ["Main Application Logic"],
-            "dependencies": analysis_data.get('dependencies', [])[:10] or ["None detected"],
+            "purpose": purpose,
+            "tech_stack": tech_stack,
+            "how_to_run": how_to_run,
+            "architecture": f"Structured repository with {len(file_tree)} top-level modules/files using standard modular design.",
+            "key_components": key_components,
+            "dependencies": analysis_data.get('dependencies', [])[:10] or ["Standard library / core packages"],
             "license": analysis_data.get('license', 'Not specified'),
-            "difficulty": "Intermediate",
-            "best_for": "Learning standard architecture and best practices.",
-            "contributing_guide": "Check the issues tab for 'good first issue' labels and follow the pull request template."
+            "difficulty": "Beginner" if len(file_tree) < 12 else "Intermediate",
+            "best_for": f"Developers looking to learn or build with {tech_stack[0] if tech_stack else 'open source'}.",
+            "contributing_guide": "Check existing GitHub issues, fork the repository, and submit a Pull Request following project guidelines."
         }
     
     def _build_prompt(self, analysis_data):
