@@ -14,7 +14,7 @@ const UserIcon = () => (
 );
 
 const mockDiscussions = [
-  { id: 1, title: "How do I securely inject Firebase API keys?", author: "alex_dev", replies: 12, time: "2 hours ago", tags: ["Security", "Setup"] },
+  { id: 1, title: "How do I securely inject Firebase API keys?", author: "shashidhar", replies: 12, time: "2 hours ago", tags: ["Security", "Setup"] },
   { id: 2, title: "Best Practices to separate task context state", author: "sarah_frontend", replies: 8, time: "5 hours ago", tags: ["State Management", "React"] },
   { id: 3, title: "Is anyone else getting alignment errors on iOS Safari?", author: "mobile_tester", replies: 24, time: "1 day ago", tags: ["Bug", "UI"] }
 ];
@@ -88,6 +88,40 @@ export default function CollaborationHub({ repoName, isPersonal }) {
         </div>
 
         <div className="space-y-6">
+          {/* Active Zoom Invites Panel */}
+          {(() => {
+            try {
+              const invites = JSON.parse(localStorage.getItem('zoom_invitations') || '[]');
+              if (invites.length === 0) return null;
+              return (
+                <div className="p-6 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 rounded-2xl shadow-sm">
+                  <h3 className="font-bold text-base text-emerald-800 dark:text-emerald-300 mb-3 flex items-center justify-between">
+                    <span>🎥 Live Zoom Invites</span>
+                    <span className="text-xs bg-emerald-500 text-white px-2 py-0.5 rounded-full font-bold">Active</span>
+                  </h3>
+                  <div className="space-y-2">
+                    {invites.map((inv) => (
+                      <div key={inv.id} className="p-3 bg-white dark:bg-gray-900 border border-emerald-500/20 rounded-xl text-xs flex items-center justify-between">
+                        <div>
+                          <p className="font-bold text-gray-900 dark:text-white">ID: {inv.meetingId}</p>
+                          <p className="text-gray-500 font-mono text-[10px]">Passcode: {inv.passcode}</p>
+                        </div>
+                        <Link
+                          to={`/zoom-meeting/${inv.meetingId.replace(/\s+/g, '')}`}
+                          className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-[11px]"
+                        >
+                          Join Call
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            } catch (e) {
+              return null;
+            }
+          })()}
+
           <div className="p-6 bg-gradient-to-br from-indigo-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 rounded-2xl border border-indigo-100 dark:border-gray-700">
             <h3 className="font-bold text-lg mb-3">Repo Stats</h3>
             <ul className="space-y-3 text-sm font-medium">

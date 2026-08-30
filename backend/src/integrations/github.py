@@ -28,7 +28,7 @@ class GitHubAnalyzer:
         raise ValueError("Invalid GitHub repository URL")
     
     def analyze_github_repo(self, github_url):
-        """Analyze a GitHub repository without cloning"""
+        """Analyze a GitHub repository without cloning by inspecting actual codebase files"""
         try:
             owner, repo = self.extract_repo_info(github_url)
         except ValueError as e:
@@ -36,6 +36,7 @@ class GitHubAnalyzer:
         
         result = {
             'name': repo,
+            'owner': owner,
             'description': '',
             'purpose': '',
             'tech_stack': [],
@@ -47,7 +48,9 @@ class GitHubAnalyzer:
             'stars': 0,
             'language': '',
             'readme_content': '',
-            'file_tree': []
+            'file_tree': [],
+            'config_files': {},
+            'key_source_files': {}
         }
         
         # Step 1: Get repository metadata
@@ -59,7 +62,7 @@ class GitHubAnalyzer:
         readme_content = self._get_readme(owner, repo, branch=default_branch)
         result['readme_content'] = readme_content
         
-        # Step 3: Get file tree (top-level)
+        # Step 3: Get recursive file tree
         file_tree = self._get_file_tree(owner, repo, branch=default_branch)
         result['file_tree'] = file_tree
         
@@ -67,10 +70,14 @@ class GitHubAnalyzer:
         config_files = self._fetch_config_files(owner, repo, file_tree, branch=default_branch)
         result['config_files'] = config_files
         
-        # Step 5: Extract tech stack from configs
-        result['tech_stack'] = self._extract_tech_stack_from_configs(config_files)
+        # Step 5: Fetch key source code files for deep file analysis
+        key_source_files = self._fetch_key_source_files(owner, repo, file_tree, branch=default_branch)
+        result['key_source_files'] = key_source_files
         
-        # Step 6: Extract dependencies
+        # Step 6: Extract tech stack from configs and source files
+        result['tech_stack'] = self._extract_tech_stack_from_configs(config_files, key_source_files)
+        
+        # Step 7: Extract dependencies
         result['dependencies'] = self._extract_dependencies_from_configs(config_files)
         
         return result
@@ -105,7 +112,6 @@ class GitHubAnalyzer:
     
     def _get_readme(self, owner, repo, branch='main'):
         """Get README content from raw GitHub"""
-        # Try common branch names and README variations
         branches = [branch] + [b for b in ['main', 'master', 'develop'] if b != branch]
         readme_files = ['README.md', 'README.rst', 'README.txt', 'readme.md']
         
@@ -116,7 +122,6 @@ class GitHubAnalyzer:
                     response = requests.get(url, timeout=10)
                     
                     if response.status_code == 200:
-                        # Limit to 5000 characters to avoid huge files
                         return response.text[:5000]
                 except:
                     continue
@@ -124,21 +129,27 @@ class GitHubAnalyzer:
         return "No README found"
     
     def _get_file_tree(self, owner, repo, branch='main'):
-        """Get top-level file tree from GitHub API"""
+        """Get recursive file tree from GitHub API"""
         branches = [branch] + [b for b in ['main', 'master', 'develop'] if b != branch]
         
         for b in branches:
             try:
-                url = f"{self.github_api_base}/repos/{owner}/{repo}/git/trees/{b}"
+                # Try recursive first
+                url = f"{self.github_api_base}/repos/{owner}/{repo}/git/trees/{b}?recursive=1"
                 response = requests.get(url, headers=self.headers, timeout=10)
                 
                 if response.status_code == 200:
                     data = response.json()
                     tree = data.get('tree', [])
-                    # Return only top-level items, limit to 50
-                    return [{'name': item['path'], 'type': item['type']} for item in tree[:50]]
-                elif response.status_code == 404:
-                    continue
+                    # Return path, type, and size (limit to 500 items to cover deep repos)
+                    return [{'name': item['path'], 'type': item['type'], 'size': item.get('size', 0)} for item in tree[:500]]
+                
+                # Fallback to non-recursive if recursive fails
+                url_fallback = f"{self.github_api_base}/repos/{owner}/{repo}/git/trees/{b}"
+                resp_fb = requests.get(url_fallback, headers=self.headers, timeout=10)
+                if resp_fb.status_code == 200:
+                    tree = resp_fb.json().get('tree', [])
+                    return [{'name': item['path'], 'type': item['type'], 'size': item.get('size', 0)} for item in tree[:100]]
             except:
                 continue
         
@@ -148,7 +159,6 @@ class GitHubAnalyzer:
         """Fetch important configuration files"""
         config_files = {}
         
-        # Important files to fetch (prioritized)
         important_files = [
             'package.json',
             'requirements.txt',
@@ -163,13 +173,12 @@ class GitHubAnalyzer:
             'composer.json',
             'Dockerfile',
             'docker-compose.yml',
+            '.env.example',
+            'schema.prisma',
             '.gitignore'
         ]
         
-        # Get list of files in the tree
         tree_files = [item['name'] for item in file_tree if item['type'] == 'blob']
-        
-        # Only fetch files that exist in the tree
         files_to_fetch = [f for f in important_files if f in tree_files]
         
         for filename in files_to_fetch:
@@ -178,17 +187,63 @@ class GitHubAnalyzer:
                 response = requests.get(url, timeout=10)
                 
                 if response.status_code == 200:
-                    # Limit file size to 5KB
                     config_files[filename] = response.text[:5000]
             except:
                 continue
         
         return config_files
+
+    def _fetch_key_source_files(self, owner, repo, file_tree, branch='main'):
+        """Fetch raw content for all application source code files across the repository"""
+        key_source_files = {}
+        
+        # Recognized source file extensions
+        valid_extensions = (
+            '.py', '.js', '.ts', '.jsx', '.tsx', '.go', '.rs', '.java', '.c', '.cpp',
+            '.h', '.hpp', '.cs', '.php', '.rb', '.sql', '.prisma', '.html', '.css',
+            '.json', '.yaml', '.yml', '.toml', '.sh', '.ps1', '.bat', '.env.example'
+        )
+        
+        # Ignored path patterns (build outputs, vendor libs, lockfiles, images, binaries)
+        ignored_patterns = [
+            'node_modules/', 'dist/', 'build/', 'vendor/', '.git/', '__pycache__/',
+            '.next/', 'coverage/', 'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml',
+            '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.pdf', '.zip', '.tar'
+        ]
+        
+        tree_blobs = [item for item in file_tree if item.get('type') == 'blob']
+        candidate_paths = []
+        
+        for item in tree_blobs:
+            path = item['name']
+            path_lower = path.lower()
+            
+            if any(x in path_lower for x in ignored_patterns):
+                continue
+                
+            if path_lower.endswith(valid_extensions) or '/' not in path:
+                candidate_paths.append(path)
+        
+        # Fetch up to 50 source code files from the repository
+        selected_paths = candidate_paths[:50]
+        
+        for filepath in selected_paths:
+            try:
+                url = f"{self.raw_github_base}/{owner}/{repo}/{branch}/{filepath}"
+                response = requests.get(url, timeout=10)
+                if response.status_code == 200:
+                    # Fetch up to 8KB per file to perform deep code inspection
+                    key_source_files[filepath] = response.text[:8000]
+            except:
+                continue
+                
+        return key_source_files
     
-    def _extract_tech_stack_from_configs(self, config_files):
-        """Extract tech stack from configuration files"""
+    def _extract_tech_stack_from_configs(self, config_files, key_source_files=None):
+        """Extract tech stack from configuration and source files"""
         import json
         tech_stack = []
+        key_source_files = key_source_files or {}
         
         for filename, content in config_files.items():
             if filename == 'package.json':
@@ -215,39 +270,31 @@ class GitHubAnalyzer:
                         tech_stack.append('Django')
                 except:
                     pass
-            elif filename == 'requirements.txt' or filename == 'Pipfile':
+            elif filename in ['requirements.txt', 'Pipfile', 'pyproject.toml']:
                 tech_stack.append('Python')
-                if 'django' in content.lower():
-                    tech_stack.append('Django')
-                if 'flask' in content.lower():
-                    tech_stack.append('Flask')
-                if 'fastapi' in content.lower():
-                    tech_stack.append('FastAPI')
-                if 'sqlalchemy' in content.lower():
-                    tech_stack.append('SQLAlchemy')
-            elif filename == 'pyproject.toml':
-                tech_stack.append('Python')
-                if 'django' in content.lower():
-                    tech_stack.append('Django')
-                if 'flask' in content.lower():
-                    tech_stack.append('Flask')
+                if 'django' in content.lower(): tech_stack.append('Django')
+                if 'flask' in content.lower(): tech_stack.append('Flask')
+                if 'fastapi' in content.lower(): tech_stack.append('FastAPI')
+                if 'sqlalchemy' in content.lower(): tech_stack.append('SQLAlchemy')
             elif filename == 'pom.xml':
-                tech_stack.append('Java')
-                tech_stack.append('Maven')
+                tech_stack.append('Java'); tech_stack.append('Maven')
             elif filename == 'build.gradle':
-                tech_stack.append('Java')
-                tech_stack.append('Gradle')
-            elif filename == 'Cargo.toml':
-                tech_stack.append('Rust')
-            elif filename == 'go.mod':
-                tech_stack.append('Go')
-            elif filename == 'Gemfile':
-                tech_stack.append('Ruby')
-            elif filename == 'composer.json':
-                tech_stack.append('PHP')
-            elif filename == 'Dockerfile':
-                tech_stack.append('Docker')
+                tech_stack.append('Java'); tech_stack.append('Gradle')
+            elif filename == 'Cargo.toml': tech_stack.append('Rust')
+            elif filename == 'go.mod': tech_stack.append('Go')
+            elif filename == 'Gemfile': tech_stack.append('Ruby')
+            elif filename == 'composer.json': tech_stack.append('PHP')
+            elif filename in ['Dockerfile', 'docker-compose.yml']: tech_stack.append('Docker')
         
+        # Scan source files for additional framework hints
+        source_text = " ".join(key_source_files.values()).lower()
+        if 'fastapi' in source_text and 'FastAPI' not in tech_stack: tech_stack.append('FastAPI')
+        if 'flask' in source_text and 'Flask' not in tech_stack: tech_stack.append('Flask')
+        if 'express' in source_text and 'Express.js' not in tech_stack: tech_stack.append('Express.js')
+        if ('react' in source_text or 'useState' in source_text) and 'React' not in tech_stack: tech_stack.append('React')
+        if 'prisma' in source_text and 'Prisma' not in tech_stack: tech_stack.append('Prisma ORM')
+        if 'tailwindcss' in source_text and 'Tailwind CSS' not in tech_stack: tech_stack.append('Tailwind CSS')
+
         return list(set(tech_stack))
     
     def _extract_dependencies_from_configs(self, config_files):
@@ -260,7 +307,6 @@ class GitHubAnalyzer:
                 try:
                     data = json.loads(content)
                     deps = data.get('dependencies', {})
-                    # Convert dict to list and limit to 15 items
                     dep_list = [f"{name}: {version}" for name, version in deps.items()]
                     dependencies.extend(dep_list[:15])
                 except:
@@ -273,3 +319,4 @@ class GitHubAnalyzer:
                         dependencies.append(line)
         
         return dependencies
+

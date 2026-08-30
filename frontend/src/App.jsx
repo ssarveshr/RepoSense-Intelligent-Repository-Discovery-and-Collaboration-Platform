@@ -5,6 +5,7 @@ import RepositoryDetails from './pages/RepositoryDetails';
 import Profile from './pages/Profile';
 import GitHubSummarizer from './pages/GitHubSummarizer';
 import ZoomRoom from './pages/ZoomRoom';
+import AIAgentStudio from './pages/AIAgentStudio';
 
 import { SunIcon, MoonIcon } from './components/icons';
 
@@ -33,9 +34,12 @@ function App() {
               <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-500/30">R</div>
               <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">RepoSense</span>
             </Link>
-            <div className="hidden md:flex items-center space-x-8 text-sm font-medium">
+            <div className="hidden md:flex items-center space-x-6 text-sm font-medium">
               <Link to="/" className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors">Discover</Link>
               <Link to="/github-summarizer" className="hover:text-blue-500 dark:hover:text-blue-400 transition-colors">GitHub Summarizer</Link>
+              <Link to="/ai-agent" className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold hover:bg-emerald-500/20 transition-all border border-emerald-500/20">
+                <span>⚡ AI Code Agent</span>
+              </Link>
               <Link to="/zoom-meeting" className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold hover:bg-blue-500/20 transition-all">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -69,8 +73,9 @@ function App() {
           <Route path="/repo/:id" element={<RepositoryDetails />} />
           <Route path="/github-summarizer" element={<GitHubSummarizer />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/ai-agent" element={<AIAgentStudio />} />
           <Route path="/zoom-meeting" element={<ZoomRoom />} />
-          <Route path="/webrtc-room" element={<ZoomRoom />} />
+          <Route path="/zoom-meeting/:meetingId" element={<ZoomRoom />} />
         </Routes>
       </main>
     </div>

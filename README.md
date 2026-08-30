@@ -68,6 +68,13 @@ graph LR
 ## Detailed Documentation
 - [Backend Architecture & Logic](./backend/README.md)
 - [Frontend Components & Flow](./frontend/README.md)
+- [Remote Laptop Push Guide](./REMOTE_PUSH_GUIDE.md)
+
+### Public Server Access
+To allow other laptops on local Wi-Fi or over the Internet to push folders directly to this server:
+1. Run `start_public_server.bat` (or `start_public_server.ps1`).
+2. Follow instructions in the [Remote Push Guide](./REMOTE_PUSH_GUIDE.md).
 
 ---
 *Built for the future of repository discovery.*
+

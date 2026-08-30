@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from src.services.search_service import engine
 from src.services.summarizer_service import RepoSummarizer
+from src.services.agent_service import agent_service
 from src.integrations.github import GitHubAnalyzer
 
 app = FastAPI(
@@ -139,7 +140,146 @@ async def summarize_github_repo(request: GitHubSummarizeRequest):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
+# --- AI Agent Endpoints ---
+
+class CodeRunRequest(BaseModel):
+    code: str
+    language: str = "python"
+
+class CodeModifyRequest(BaseModel):
+    code: str
+    prompt: str = ""
+    action: str = "refactor"
+    language: str = "python"
+
+class CodeExplainRequest(BaseModel):
+    code: str
+    language: str = "python"
+
+class RepoScanRequest(BaseModel):
+    github_url: str
+
+@app.post("/api/agent/run")
+async def run_agent_code(request: CodeRunRequest):
+    """
+    Executes Python or JavaScript code snippets safely and returns terminal output, duration, and exit status.
+    """
+    return agent_service.run_code(request.code, request.language)
+
+@app.post("/api/agent/modify")
+async def modify_agent_code(request: CodeModifyRequest):
+    """
+    AI Agent endpoint for code modifications, refactorings, bug fixes, optimization, and diff patch generation.
+    """
+    return agent_service.modify_code(request.code, request.prompt, request.action, request.language)
+
+@app.post("/api/agent/explain")
+async def explain_agent_code(request: CodeExplainRequest):
+    """
+    AI Agent endpoint for explaining code architecture, complexity analysis, and recommendations.
+    """
+    return agent_service.explain_code(request.code, request.language)
+
+@app.post("/api/agent/scan-repo")
+async def scan_repository_bugs(request: RepoScanRequest):
+    """
+    AI Agent endpoint to audit any chosen repository for bugs, security vulnerabilities, and generate fix patches.
+    """
+    return agent_service.scan_repo_bugs(request.github_url)
+
+# --- Zoom Meeting & Collaborator Email Invite Endpoints ---
+from typing import List, Optional
+from src.services.zoom_service import zoom_service
+
+class ZoomCreateRequest(BaseModel):
+    host_name: str = "Shashidhar"
+    host_email: str = "5656shashidhar@gmail.com"
+    topic: Optional[str] = None
+    repo_name: str = "RepoSense Open Source Project"
+    collaborators: Optional[List[dict]] = None
+    custom_zoom_url: Optional[str] = None
+
+class ZoomInviteRequest(BaseModel):
+    meeting_id: str
+    host_name: str = "Shashidhar"
+    host_email: str = "5656shashidhar@gmail.com"
+    repo_name: str = "RepoSense Open Source Project"
+    collaborators: List[dict]
+    custom_message: Optional[str] = None
+
+@app.post("/api/zoom/create")
+async def create_zoom_meeting(request: ZoomCreateRequest):
+    """
+    Creates a hostable Zoom meeting session bound to the user's host email,
+    generating valid credentials and embedded viewport URLs.
+    """
+    meeting_data = zoom_service.create_meeting(
+        host_name=request.host_name,
+        host_email=request.host_email,
+        topic=request.topic,
+        repo_name=request.repo_name,
+        collaborators=request.collaborators,
+        custom_zoom_url=request.custom_zoom_url
+    )
+
+    return {
+        "status": "success",
+        "message": f"Zoom meeting created successfully for host {request.host_email}",
+        "meeting": meeting_data
+    }
+
+@app.post("/api/zoom/invite")
+async def invite_collaborators_email(request: ZoomInviteRequest):
+    """
+    Dispatches Zoom meeting invitations to all project collaborator email addresses.
+    """
+    return zoom_service.send_invitations(
+        meeting_id=request.meeting_id,
+        host_email=request.host_email,
+        host_name=request.host_name,
+        repo_name=request.repo_name,
+        collaborators=request.collaborators,
+        custom_message=request.custom_message
+    )
+
+@app.get("/api/zoom/active")
+async def list_active_zoom_meetings():
+    """Returns all currently active hosted Zoom meetings."""
+    return {
+        "count": len(zoom_service.list_active_meetings()),
+        "meetings": zoom_service.list_active_meetings()
+    }
+
+class ZoomSmtpConfigRequest(BaseModel):
+    smtp_user: str
+    smtp_password: str
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+
+@app.post("/api/zoom/config-smtp")
+async def configure_zoom_smtp(request: ZoomSmtpConfigRequest):
+    """
+    Configures or updates backend SMTP settings for automatic collaborator email invitations.
+    """
+    return zoom_service.update_smtp_config(
+        smtp_user=request.smtp_user,
+        smtp_password=request.smtp_password,
+        smtp_host=request.smtp_host,
+        smtp_port=request.smtp_port
+    )
+
+@app.get("/api/zoom/meeting/{meeting_id}")
+async def get_zoom_meeting_details(meeting_id: str):
+    """Fetches details for a specific Zoom meeting ID."""
+    meeting = zoom_service.get_meeting(meeting_id)
+    if not meeting:
+        return {"status": "error", "message": "Meeting not found"}
+    return {"status": "success", "meeting": meeting}
+
+
 if __name__ == "__main__":
     import uvicorn
     print("RepoSense API is starting on http://localhost:8000")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run("src.main:app", host="0.0.0.0", port=8000, reload=True)
+
+

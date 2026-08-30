@@ -35,6 +35,43 @@ class RepoSummarizer:
                     return self._extract_json(response_text)
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
             print("[INFO] Ollama LLM unavailable. Performing deep repository content analysis.")
+import requests
+import json
+import re
+
+class RepoSummarizer:
+    def __init__(self, ollama_url="http://localhost:11434"):
+        self.ollama_url = ollama_url
+        self.model = "llama3:8b"
+    
+    def generate_summary(self, analysis_data):
+        """
+        Generates a structured summary of the repository.
+        Tries local Ollama LLM if available; otherwise uses deep repo content analysis.
+        """
+        # Call Ollama API if connected
+        try:
+            prompt = self._build_prompt(analysis_data)
+            response = requests.post(
+                f"{self.ollama_url}/api/generate",
+                json={
+                    "model": self.model,
+                    "prompt": prompt,
+                    "stream": False,
+                    "format": "json"
+                },
+                timeout=5
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                response_text = result.get('response', '')
+                try:
+                    return json.loads(response_text)
+                except json.JSONDecodeError:
+                    return self._extract_json(response_text)
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
+            print("[INFO] Ollama LLM unavailable. Performing deep repository content analysis.")
         except Exception as e:
             print(f"[WARN] Error invoking Ollama: {str(e)}. Falling back to content analysis.")
 
@@ -43,14 +80,15 @@ class RepoSummarizer:
 
     def _generate_intelligent_summary(self, analysis_data):
         """
-        Analyzes the repository contents (README markdown, description, config files, topics, file tree)
-        to extract what the project is doing and generate a detailed summary.
+        Analyzes actual repository source code files, config files, README, and directory structure
+        to generate a deep architectural and code file analysis.
         """
         repo_name = analysis_data.get('name', 'This project')
         description = analysis_data.get('description', '')
         readme = analysis_data.get('readme_content', '')
         file_tree = analysis_data.get('file_tree', [])
         config_files = analysis_data.get('config_files', {})
+        key_source_files = analysis_data.get('key_source_files', {})
         tech_stack = list(set(analysis_data.get('tech_stack', [])))
         topics = analysis_data.get('topics', [])
         language = analysis_data.get('language', '')
@@ -59,12 +97,20 @@ class RepoSummarizer:
         if language and language != 'Unknown' and language not in tech_stack:
             tech_stack.insert(0, language)
 
-        # --- 1. Purpose Analysis ---
+        # --- 1. Deep Project File Analysis ---
+        project_file_analysis = self._extract_project_file_analysis(key_source_files, config_files)
+
+        # --- 2. API Endpoints Detection ---
+        api_endpoints = self._extract_api_endpoints(key_source_files)
+
+        # --- 3. Environment Variables Extraction ---
+        env_vars = self._extract_env_vars(key_source_files, config_files)
+
+        # --- 4. Purpose Analysis ---
         purpose_parts = []
         if description and description != 'No description provided':
             purpose_parts.append(description.strip())
         
-        # Clean README to find the lead paragraph
         clean_readme = self._clean_readme_markdown(readme)
         lead_para = self._extract_lead_paragraph(clean_readme, repo_name)
         if lead_para and lead_para not in purpose_parts:
@@ -80,22 +126,18 @@ class RepoSummarizer:
         else:
             purpose = f"{repo_name} is a software project built with {', '.join(tech_stack[:3]) if tech_stack else 'modern technologies'}."
 
-        # --- 2. How To Run Analysis ---
-        how_to_run = self._extract_run_instructions(readme, config_files, tech_stack)
+        # --- 5. How To Run Analysis ---
+        how_to_run = self._extract_run_instructions(readme, config_files, tech_stack, key_source_files)
 
-        # --- 3. Architecture Analysis ---
-        architecture = self._analyze_architecture(file_tree, config_files, tech_stack)
+        # --- 6. Architecture Analysis ---
+        architecture = self._analyze_architecture(file_tree, config_files, tech_stack, key_source_files)
 
-        # --- 4. Key Components Analysis ---
-        key_components = self._analyze_key_components(file_tree, repo_name)
+        # --- 7. Key Components Analysis ---
+        key_components = self._analyze_key_components(file_tree, repo_name, project_file_analysis)
 
-        # --- 5. Difficulty Level ---
+        # --- 8. Difficulty & Audience ---
         difficulty = self._assess_difficulty(file_tree, tech_stack, dependencies)
-
-        # --- 6. Best For Target Audience ---
         best_for = self._determine_best_for(repo_name, tech_stack, topics, purpose)
-
-        # --- 7. Contributing Guide ---
         contributing_guide = self._extract_contributing_guide(readme, file_tree)
 
         return {
@@ -104,6 +146,9 @@ class RepoSummarizer:
             "how_to_run": how_to_run,
             "architecture": architecture,
             "key_components": key_components,
+            "project_file_analysis": project_file_analysis,
+            "api_endpoints": api_endpoints,
+            "env_vars": env_vars,
             "dependencies": dependencies[:12] if dependencies else ["Core package modules"],
             "license": analysis_data.get('license', 'Not specified'),
             "difficulty": difficulty,
@@ -111,16 +156,146 @@ class RepoSummarizer:
             "contributing_guide": contributing_guide
         }
 
+    def _extract_project_file_analysis(self, key_source_files, config_files):
+        """Analyzes all source and configuration files to build a comprehensive file-by-file summary"""
+        file_analysis = []
+        combined_files = {**config_files, **key_source_files}
+
+        for path, content in combined_files.items():
+            lines = content.splitlines()
+            line_count = len(lines)
+            path_lower = path.lower()
+            role = "Code Module / Script"
+            insights = []
+
+            if 'package.json' in path_lower:
+                role = "Node.js Package Manifest & Dependencies"
+                try:
+                    data = json.loads(content)
+                    scripts = list(data.get('scripts', {}).keys())
+                    if scripts:
+                        insights.append(f"Npm scripts: `{', '.join(scripts[:6])}`")
+                except:
+                    pass
+            elif 'requirements.txt' in path_lower:
+                role = "Python Package Dependencies"
+                insights.append(f"{line_count} dependencies listed")
+            elif 'docker-compose' in path_lower:
+                role = "Docker Multi-Container Composition"
+                services = re.findall(r'^\s\s([a-zA-Z0-9_-]+):', content, re.MULTILINE)
+                if services:
+                    insights.append(f"Services: `{', '.join(services[:5])}`")
+            elif 'dockerfile' in path_lower:
+                role = "Container Image Build Spec"
+                base_img = re.search(r'(?i)^FROM\s+([^\s]+)', content, re.MULTILINE)
+                if base_img:
+                    insights.append(f"Base image: `{base_img.group(1)}`")
+            elif re.search(r'(?:main|app|server)\.py$', path_lower):
+                role = "Backend Service Entry Point & API Server"
+                endpoints = re.findall(r'@(?:app|router)\.(get|post|put|delete|patch)\(["\']([^"\']+)["\']', content, re.IGNORECASE)
+                if endpoints:
+                    insights.append(f"{len(endpoints)} API endpoints defined")
+            elif re.search(r'(?:App|index)\.(?:jsx|tsx|js|ts)$', path_lower):
+                role = "Frontend Root Component / Application Shell"
+                components = re.findall(r'<([A-Z][a-zA-Z0-9]+)', content)
+                if components:
+                    unique_comps = list(set(components))[:5]
+                    insights.append(f"Components rendered: `{', '.join(unique_comps)}`")
+            elif 'routes' in path_lower or 'controller' in path_lower or 'api' in path_lower:
+                role = "API Routing & Request Controller Module"
+                routes = re.findall(r'(?:app|router)\.(get|post|put|delete)\(["\']([^"\']+)["\']', content, re.IGNORECASE)
+                if routes:
+                    insights.append(f"{len(routes)} route handlers")
+            elif 'component' in path_lower or path_lower.endswith(('.jsx', '.tsx', '.vue')):
+                role = "User Interface Component View"
+                state_hooks = re.findall(r'use(?:State|Effect|Context|Reducer)\b', content)
+                if state_hooks:
+                    insights.append(f"React state hooks: `{', '.join(list(set(state_hooks)))[:30]}`")
+            elif 'service' in path_lower or 'util' in path_lower or 'helper' in path_lower:
+                role = "Business Logic & Utility Helper Module"
+                funcs = re.findall(r'(?:def|function|const)\s+([a-zA-Z0-9_]+)', content)
+                if funcs:
+                    insights.append(f"Functions: `{', '.join(list(set(funcs))[:5])}`")
+            elif 'model' in path_lower or 'schema' in path_lower or 'entity' in path_lower or 'db' in path_lower:
+                role = "Data Model & Database Schema Definition"
+                classes = re.findall(r'(?:class|model|struct)\s+([a-zA-Z0-9_]+)', content)
+                if classes:
+                    insights.append(f"Entities: `{', '.join(list(set(classes))[:5])}`")
+            elif 'test' in path_lower or 'spec' in path_lower:
+                role = "Automated Test Suite & Specification"
+                tests = re.findall(r'(?:def test_|it\(|test\()\s*["\']?([^"\']+)["\']?', content)
+                if tests:
+                    insights.append(f"{len(tests)} test cases defined")
+            else:
+                funcs = re.findall(r'(?:def|function|const|class)\s+([a-zA-Z0-9_]+)', content)
+                if funcs:
+                    insights.append(f"Exports: `{', '.join(list(set(funcs))[:5])}`")
+
+            insight_text = " | ".join(insights) if insights else f"{line_count} lines of code"
+
+            file_analysis.append({
+                "file": path,
+                "lines": line_count,
+                "role": role,
+                "insights": insight_text
+            })
+
+        return file_analysis
+
+    def _extract_api_endpoints(self, key_source_files):
+        """Scans code files for REST API route definitions"""
+        endpoints = []
+        
+        for path, content in key_source_files.items():
+            # Python FastAPI / Flask routes
+            py_matches = re.findall(r'@(?:app|router)\.(get|post|put|delete|patch)\(["\']([^"\']+)["\']', content, re.IGNORECASE)
+            for method, route in py_matches:
+                endpoints.append({
+                    "method": method.upper(),
+                    "path": route,
+                    "source_file": path
+                })
+
+            # Node Express / Router routes
+            js_matches = re.findall(r'(?:app|router)\.(get|post|put|delete|patch)\(["\']([^"\']+)["\']', content, re.IGNORECASE)
+            for method, route in js_matches:
+                endpoints.append({
+                    "method": method.upper(),
+                    "path": route,
+                    "source_file": path
+                })
+
+        return endpoints[:30]
+
+    def _extract_env_vars(self, key_source_files, config_files):
+        """Scans code and config files for required environment variables"""
+        env_vars = set()
+        combined = {**config_files, **key_source_files}
+
+        if '.env.example' in combined:
+            lines = combined['.env.example'].splitlines()
+            for line in lines:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    var_name = line.split('=')[0].strip()
+                    if var_name: env_vars.add(var_name)
+
+        for content in key_source_files.values():
+            py_env = re.findall(r'os\.(?:getenv|environ\.get)\(["\']([A-Z0-9_]+)["\']', content)
+            js_env = re.findall(r'process\.env\.([A-Z0-9_]+)', content)
+            for v in py_env + js_env:
+                if len(v) > 2:
+                    env_vars.add(v)
+
+        return list(env_vars)[:10]
+
     def _clean_readme_markdown(self, readme):
         """Strips badges, HTML tags, images, and empty markdown headers."""
         if not readme or readme == "No README found":
             return ""
-        # Remove badges & images ![...](...) or <img ...>
         text = re.sub(r'!\[.*?\]\(.*?\)', '', readme)
         text = re.sub(r'<img.*?>', '', text, flags=re.IGNORECASE)
-        # Remove badges HTML <a href=...><img ...></a>
         text = re.sub(r'<a.*?><img.*?></a>', '', text, flags=re.IGNORECASE)
-        # Remove HTML tags
         text = re.sub(r'<.*?>', '', text)
         return text
 
@@ -147,14 +322,12 @@ class RepoSummarizer:
             paragraphs.append(" ".join(curr))
 
         for p in paragraphs:
-            # Skip short badge lines or markdown link lists
             if len(p) > 30 and not p.startswith('[') and not p.startswith('http'):
                 return p[:300]
         return ""
 
-    def _extract_run_instructions(self, readme, config_files, tech_stack):
-        """Extracts run instructions from README or package scripts"""
-        # Check package.json scripts first
+    def _extract_run_instructions(self, readme, config_files, tech_stack, key_source_files=None):
+        """Extracts run instructions from README or package scripts and source entry points"""
         if 'package.json' in config_files:
             try:
                 pkg_data = json.loads(config_files['package.json'])
@@ -171,17 +344,14 @@ class RepoSummarizer:
             except:
                 pass
 
-        # Check README sections
         if readme and readme != "No README found":
             run_match = re.search(r'(?i)(?:#+|\*\*|\b)(getting started|installation|quick start|how to run|usage|setup|running)\b(.*?)(?=\n#+|\n\*\*|\Z)', readme, re.DOTALL)
             if run_match:
                 extracted = run_match.group(2).strip()
                 if len(extracted) > 30:
-                    # Clean up code blocks or return trimmed text
                     lines = [line.strip() for line in extracted.split('\n') if line.strip() and not line.strip().startswith('```')]
                     return "\n".join(lines[:8])
 
-        # Fallback based on tech stack
         if any(t in ['Python', 'FastAPI', 'Flask', 'Django'] for t in tech_stack):
             return "1. Clone repository.\n2. Run `pip install -r requirements.txt`.\n3. Run entrypoint script (`python main.py` or `uvicorn`)."
         elif any(t in ['Node.js', 'React', 'Vue.js', 'Next.js'] for t in tech_stack):
@@ -193,63 +363,64 @@ class RepoSummarizer:
         
         return "1. Clone repository.\n2. Install dependencies based on configuration files.\n3. Follow setup commands in README."
 
-    def _analyze_architecture(self, file_tree, config_files, tech_stack):
-        """Infers system architecture from directory layout and configs"""
+    def _analyze_architecture(self, file_tree, config_files, tech_stack, key_source_files=None):
+        """Infers system architecture from directory layout, configs, and source code files"""
         tree_paths = [item['name'].lower() for item in file_tree]
+        key_source_files = key_source_files or {}
         
         is_monorepo = 'packages' in tree_paths or 'lerna.json' in config_files
-        has_frontend = any(p in tree_paths for p in ['frontend', 'client', 'web', 'ui', 'src'])
-        has_backend = any(p in tree_paths for p in ['backend', 'server', 'api', 'services'])
+        has_frontend = any('frontend' in p or 'client' in p or 'ui' in p for p in tree_paths)
+        has_backend = any('backend' in p or 'server' in p or 'api' in p for p in tree_paths)
         has_docker = 'dockerfile' in [p.lower() for p in config_files.keys()] or 'docker-compose.yml' in [p.lower() for p in config_files.keys()]
 
         arch_desc = []
         if is_monorepo:
             arch_desc.append("Monorepo architecture organizing workspace modules into distinct package sub-directories.")
         elif has_frontend and has_backend:
-            arch_desc.append("Full-stack client-server architecture with decoupled frontend and backend services.")
-        elif 'src' in tree_paths:
-            arch_desc.append("Modular single-repository layout with core application logic housed in `src/`.")
+            arch_desc.append("Full-stack decoupled architecture featuring dedicated frontend and backend services.")
+        elif any(p.startswith('src/') for p in tree_paths):
+            arch_desc.append("Modular single-repository layout with primary core logic contained in `src/`.")
         else:
-            arch_desc.append("Standard repository organization with top-level entrypoints and modules.")
+            arch_desc.append("Standard single-tier modular repository organization.")
+
+        if key_source_files:
+            arch_desc.append(f"Inspected {len(key_source_files)} key application source code files to verify structure.")
 
         if has_docker:
-            arch_desc.append("Includes Docker containerization configuration for deployment and local execution.")
+            arch_desc.append("Includes Docker containerization configuration for isolated execution.")
 
         return " ".join(arch_desc)
 
-    def _analyze_key_components(self, file_tree, repo_name):
-        """Maps file tree directories to meaningful component roles"""
-        directories = [item['name'] for item in file_tree if item['type'] == 'tree'][:10]
+    def _analyze_key_components(self, file_tree, repo_name, project_file_analysis=None):
+        """Maps file tree directories and inspected files to component roles"""
+        directories = list(set([item['name'].split('/')[0] for item in file_tree if '/' in item['name']] + [item['name'] for item in file_tree if item['type'] == 'tree']))[:10]
         
         role_map = {
-            'src': 'Core source code and application logic',
-            'packages': 'Sub-packages and modular libraries',
-            'components': 'Reusable UI components',
-            'pages': 'Application routing and page views',
-            'api': 'REST / GraphQL API endpoints and backend routes',
-            'backend': 'Backend server application & database integration',
-            'frontend': 'Frontend user interface application',
+            'src': 'Core application logic and module implementation',
+            'packages': 'Sub-packages and modular workspace libraries',
+            'components': 'Reusable UI component library',
+            'pages': 'Application views and page routing',
+            'api': 'REST / GraphQL API routing',
+            'backend': 'Backend server application & API services',
+            'frontend': 'Frontend user interface client',
             'services': 'Business logic services & integrations',
             'utils': 'Helper utilities and shared functions',
-            'docs': 'Documentation and project guides',
-            'tests': 'Automated test suite and integration specs',
+            'docs': 'Project documentation & specifications',
+            'tests': 'Automated unit and integration test suite',
             'test': 'Test suite and test fixtures',
-            'scripts': 'Build, automation, and setup scripts',
+            'scripts': 'Build and deployment scripts',
             'public': 'Static assets and public web files',
-            'config': 'Configuration files and environment settings'
+            'config': 'Application configuration settings'
         }
 
         components = []
         for d in directories:
             d_lower = d.lower()
-            role = role_map.get(d_lower, f"Module folder containing `{d}` functionality")
+            role = role_map.get(d_lower, f"Sub-directory for `{d}` functionality")
             components.append(f"`{d}/`: {role}")
 
         if not components:
-            components = [
-                "`src/`: Primary source code and logic",
-                "`config/`: Application settings and configuration"
-            ]
+            components = ["`src/`: Primary source code and logic"]
 
         return components[:8]
 
@@ -294,28 +465,32 @@ class RepoSummarizer:
         return "Check open issues for 'good first issue' or 'help wanted' tags, fork the repo, and submit a pull request with unit tests."
 
     def _build_prompt(self, analysis_data):
-        """Build a detailed prompt for the LLM"""
-        prompt = f"""You are an expert software architect. Analyze the following repository information and generate a comprehensive structured summary.
+        """Build a detailed prompt for the LLM including inspected code files"""
+        key_source_summary = ""
+        for path, code in analysis_data.get('key_source_files', {}).items():
+            key_source_summary += f"\n--- FILE: {path} ---\n{code[:1500]}\n"
+
+        prompt = f"""You are an expert software architect. Analyze the following repository information and inspected source code files to generate a comprehensive structured summary.
 
 REPOSITORY ANALYSIS DATA:
 
 READ ME CONTENT:
-{analysis_data.get('readme_content', 'No README found')[:3000]}
+{analysis_data.get('readme_content', 'No README found')[:2000]}
 
 LICENSE:
-{analysis_data.get('license', 'No license found')[:1000]}
+{analysis_data.get('license', 'No license found')[:500]}
 
 FOLDER STRUCTURE:
-{json.dumps([item['name'] for item in analysis_data.get('file_tree', [])], indent=2)[:2000]}
+{json.dumps([item['name'] for item in analysis_data.get('file_tree', [])[:60]], indent=2)[:1500]}
+
+INSPECTED SOURCE CODE FILES:
+{key_source_summary[:3000]}
 
 TECH STACK DETECTED:
 {', '.join(analysis_data.get('tech_stack', []))}
 
-TOPICS:
-{', '.join(analysis_data.get('topics', []))}
-
 DEPENDENCIES:
-{chr(10).join(analysis_data.get('dependencies', []))[:1000]}
+{chr(10).join(analysis_data.get('dependencies', []))[:800]}
 
 Generate a JSON response with EXACTLY this structure (no additional text, only valid JSON):
 
@@ -325,9 +500,16 @@ Generate a JSON response with EXACTLY this structure (no additional text, only v
   "how_to_run": "Step-by-step instructions on how to set up and run this project",
   "architecture": "Overview of the project architecture and design patterns used",
   "key_components": ["list", "of", "main", "components", "and", "their", "purposes"],
+  "project_file_analysis": [
+    {{"file": "filename", "lines": 100, "role": "File role", "insights": "Key findings from code"}}
+  ],
+  "api_endpoints": [
+    {{"method": "GET", "path": "/endpoint", "source_file": "file.py"}}
+  ],
+  "env_vars": ["VAR_1", "VAR_2"],
   "dependencies": ["list", "of", "major", "dependencies"],
-  "license": "License type if found, otherwise 'Not specified'",
-  "difficulty": "Estimated difficulty to contribute (e.g. Beginner, Intermediate, Advanced)",
+  "license": "License type",
+  "difficulty": "Beginner/Intermediate/Advanced",
   "best_for": "Who this project is best for",
   "contributing_guide": "Brief summary on how to start contributing"
 }}
@@ -350,6 +532,9 @@ Generate a JSON response with EXACTLY this structure (no additional text, only v
             "how_to_run": "Refer to README.",
             "architecture": "Standard layout.",
             "key_components": [],
+            "project_file_analysis": [],
+            "api_endpoints": [],
+            "env_vars": [],
             "dependencies": [],
             "license": "Unknown",
             "difficulty": "Intermediate",

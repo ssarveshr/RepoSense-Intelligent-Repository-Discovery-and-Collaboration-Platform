@@ -14,8 +14,9 @@ const UserIcon = () => (
 );
 
 const user = {
-  name: "Alex Developer",
-  handle: "@alex_dev",
+  name: "Shashidhar",
+  handle: "@5656shashidhar",
+  email: "5656shashidhar@gmail.com",
   bio: "Full-stack engineer passionate about open source and community building. Focusing on React, Node.js, and Vector Databases.",
   skills: ["React", "JavaScript", "Node.js", "Express", "Tailwind CSS"],
   stats: { repos: 14, prs: 56, issues: 112 },
