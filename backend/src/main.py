@@ -1,25 +1,48 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from src.api.deps.rate_limit import limiter
+from src.api.routes.collaboration import router as collaboration_router
+from src.api.routes.meetings import router as meetings_router
+from src.api.routes.profile import router as profile_router
+from src.config.settings import settings
+from src.db import init_db
 from src.services.search_service import engine
 from src.services.summarizer_service import RepoSummarizer
 from src.services.agent_service import agent_service
 from src.integrations.github import GitHubAnalyzer
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    yield
+
+
 app = FastAPI(
     title="RepoSense AI API",
-    description="Intelligent Repository Discovery & Semantic Search API"
+    description="Intelligent Repository Discovery & Semantic Search API",
+    lifespan=lifespan,
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Enable CORS (Cross-Origin Resource Sharing)
-# This allows your React frontend (running on port 5173/3000) to talk to this API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
-    allow_credentials=True,
+    allow_origins=settings.cors_origins,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(meetings_router)
+app.include_router(collaboration_router)
+app.include_router(profile_router)
 
 @app.get("/")
 async def health_check():

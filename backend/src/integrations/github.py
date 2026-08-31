@@ -3,7 +3,7 @@ import re
 from urllib.parse import urlparse
 
 class GitHubAnalyzer:
-    def __init__(self):
+    def __init__(self, github_token: str | None = None):
         self.github_api_base = "https://api.github.com"
         self.raw_github_base = "https://raw.githubusercontent.com"
         # GitHub API headers (optional token for higher rate limits)
@@ -11,6 +11,8 @@ class GitHubAnalyzer:
             'Accept': 'application/vnd.github.v3+json',
             'User-Agent': 'RepoSense-Analyzer'
         }
+        if github_token:
+            self.headers['Authorization'] = f'Bearer {github_token}'
     
     def extract_repo_info(self, github_url):
         """Extract owner and repo from GitHub URL"""
@@ -319,4 +321,102 @@ class GitHubAnalyzer:
                         dependencies.append(line)
         
         return dependencies
+
+    def _permission_label(self, permissions: dict | None) -> str:
+        if not permissions:
+            return "Collaborator"
+        if permissions.get("admin"):
+            return "Admin"
+        if permissions.get("maintain"):
+            return "Maintainer"
+        if permissions.get("push"):
+            return "Write"
+        if permissions.get("triage"):
+            return "Triage"
+        if permissions.get("pull"):
+            return "Read"
+        return "Collaborator"
+
+    def _fetch_user_public_email(self, login: str) -> str | None:
+        """Best-effort public email lookup; GitHub rarely exposes private emails."""
+        try:
+            url = f"{self.github_api_base}/users/{login}"
+            response = requests.get(url, headers=self.headers, timeout=10)
+            if response.status_code != 200:
+                return None
+            data = response.json()
+            email = data.get("email")
+            if email and isinstance(email, str) and "@" in email:
+                return email.strip()
+        except requests.exceptions.RequestException:
+            return None
+        return None
+
+    def list_collaborators(self, github_url: str) -> list[dict]:
+        """List repository collaborators with optional public email when available."""
+        owner, repo = self.extract_repo_info(github_url)
+        url = f"{self.github_api_base}/repos/{owner}/{repo}/collaborators"
+        params = {"per_page": 100, "affiliation": "direct"}
+
+        collaborators: list[dict] = []
+        page = 1
+
+        while True:
+            response = requests.get(
+                url,
+                headers={**self.headers, "Accept": "application/vnd.github.v3+json"},
+                params={**params, "page": page},
+                timeout=15,
+            )
+
+            if response.status_code == 401:
+                raise ValueError(
+                    "GitHub authentication failed. Verify GITHUB_TOKEN on the server."
+                )
+            if response.status_code == 404:
+                raise ValueError(
+                    f"Repository not found or inaccessible: {owner}/{repo}. "
+                    "It may be private, deleted, or your token may lack access."
+                )
+            if response.status_code == 403:
+                remaining = response.headers.get("X-RateLimit-Remaining")
+                if remaining == "0":
+                    reset = response.headers.get("X-RateLimit-Reset")
+                    raise ValueError(
+                        "GitHub API rate limit exceeded. Configure GITHUB_TOKEN on the server or retry later."
+                        + (f" Resets at epoch {reset}." if reset else "")
+                    )
+                raise ValueError(
+                    "GitHub API access denied. The token may lack permission for this repository, "
+                    "or collaborator listing requires authentication for this repo."
+                )
+            if response.status_code != 200:
+                raise ValueError(f"Failed to fetch collaborators: HTTP {response.status_code}")
+
+            batch = response.json()
+            if not batch:
+                break
+
+            for item in batch:
+                login = item.get("login") or ""
+                if not login:
+                    continue
+                permissions = item.get("permissions") or {}
+                email = self._fetch_user_public_email(login)
+                collaborators.append(
+                    {
+                        "github_login": login,
+                        "name": item.get("name") or login,
+                        "avatar_url": item.get("avatar_url"),
+                        "role": self._permission_label(permissions),
+                        "email": email,
+                        "email_source": "github" if email else None,
+                    }
+                )
+
+            if len(batch) < 100:
+                break
+            page += 1
+
+        return collaborators
 
