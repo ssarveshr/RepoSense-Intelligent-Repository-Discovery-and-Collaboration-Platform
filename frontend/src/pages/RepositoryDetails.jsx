@@ -12,6 +12,7 @@ export default function RepositoryDetails() {
   const repo = {
     name: "React Task Manager",
     category: "Web Development",
+    githubUrl: "https://github.com/facebook/react",
     stars: 124,
     tech: ["React", "Firebase", "Tailwind CSS"],
     aiSummary: "This project is a React-based task manager application that uses Firebase for backend services. It supports authentication, task management, and real-time updates. The codebase is well-structured, making it easy for beginners to understand state management and cloud integrations.",
@@ -115,7 +116,7 @@ export default function RepositoryDetails() {
         ) : (
           <div className="animate-fade-in-up">
             {/* Render the local Collaboration Hub */}
-            <CollaborationHub repoName={repo.name} isPersonal={repo.isPersonal} />
+            <CollaborationHub repoName={repo.name} githubUrl={repo.githubUrl} isPersonal={repo.isPersonal} />
           </div>
         )}
 
