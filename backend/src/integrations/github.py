@@ -48,6 +48,11 @@ class GitHubAnalyzer:
             'stars': 0,
             'language': '',
             'readme_content': '',
+            'readme_intro': '',
+            'package_description': {},
+            'ui_strings': [],
+            'route_paths': [],
+            'docstrings': [],
             'file_tree': [],
             'config_files': {},
             'key_source_files': {}
@@ -61,6 +66,7 @@ class GitHubAnalyzer:
         # Step 2: Get README
         readme_content = self._get_readme(owner, repo, branch=default_branch)
         result['readme_content'] = readme_content
+        result['readme_intro'] = self._extract_readme_intro(readme_content)
         
         # Step 3: Get recursive file tree
         file_tree = self._get_file_tree(owner, repo, branch=default_branch)
@@ -69,10 +75,17 @@ class GitHubAnalyzer:
         # Step 4: Fetch important config files
         config_files = self._fetch_config_files(owner, repo, file_tree, branch=default_branch)
         result['config_files'] = config_files
+        result['package_description'] = self._extract_package_description(config_files)
         
         # Step 5: Fetch key source code files for deep file analysis
         key_source_files = self._fetch_key_source_files(owner, repo, file_tree, branch=default_branch)
         result['key_source_files'] = key_source_files
+        
+        # Step 5.5: Extract functional signals
+        functional_signals = self._extract_functional_signals(key_source_files)
+        result['ui_strings'] = functional_signals['ui_strings']
+        result['route_paths'] = functional_signals['route_paths']
+        result['docstrings'] = functional_signals['docstrings']
         
         # Step 6: Extract tech stack from configs and source files
         result['tech_stack'] = self._extract_tech_stack_from_configs(config_files, key_source_files)
@@ -127,6 +140,97 @@ class GitHubAnalyzer:
                     continue
         
         return "No README found"
+    
+    def _extract_readme_intro(self, readme_content):
+        """Extract the introductory text from README, removing badges and stopping at first major heading."""
+        if not readme_content or readme_content == "No README found":
+            return ""
+        
+        # Strip markdown images and badges
+        clean_text = re.sub(r'!\[.*?\]\(.*?\)', '', readme_content)
+        clean_text = re.sub(r'<img.*?>', '', clean_text, flags=re.IGNORECASE)
+        clean_text = re.sub(r'<a.*?><img.*?></a>', '', clean_text, flags=re.IGNORECASE)
+        
+        lines = clean_text.split('\n')
+        intro_paragraphs = []
+        started = False
+        
+        for line in lines:
+            line_str = line.strip()
+            # Stop if we hit a major heading after we've started collecting, or common usage headings
+            if started and (line_str.startswith('## ') or line_str.startswith('### ') or re.search(r'(?i)^(installation|getting started|usage|features)', line_str)):
+                break
+            
+            # Start collecting after the main title
+            if line_str.startswith('# '):
+                started = True
+                continue
+            
+            if not started and line_str and not line_str.startswith('#') and not line_str.startswith('='):
+                started = True
+            
+            if started and line_str:
+                intro_paragraphs.append(line_str)
+                
+        return " ".join(intro_paragraphs)[:1000]
+
+    def _extract_package_description(self, config_files):
+        """Parse package.json for description and keywords."""
+        import json
+        result = {'description': '', 'keywords': []}
+        if 'package.json' in config_files:
+            try:
+                data = json.loads(config_files['package.json'])
+                result['description'] = data.get('description', '')
+                result['keywords'] = data.get('keywords', [])
+            except:
+                pass
+        return result
+
+    def _extract_functional_signals(self, key_source_files):
+        """Extract functional elements: UI strings, explicit routes, and docstrings."""
+        ui_strings = []
+        route_paths = []
+        docstrings = []
+        
+        for filepath, content in key_source_files.items():
+            path_lower = filepath.lower()
+            
+            # Extract docstrings from Python / JS
+            if path_lower.endswith(('.py', '.js', '.ts', '.jsx', '.tsx')):
+                # Try to get top-of-file docstrings or class docstrings
+                py_docs = re.findall(r'"""(.*?)"""', content, re.DOTALL)
+                for doc in py_docs:
+                    clean_doc = doc.strip().replace('\n', ' ')
+                    if clean_doc and len(clean_doc) > 10:
+                        docstrings.append(f"{filepath}: {clean_doc[:200]}")
+                        
+                # Extract routes
+                routes = re.findall(r'@(?:app|router)\.(?:get|post|put|delete|patch)\(["\']([^"\']+)["\']', content, re.IGNORECASE)
+                js_routes = re.findall(r'(?:app|router)\.(?:get|post|put|delete|patch)\(["\']([^"\']+)["\']', content, re.IGNORECASE)
+                all_routes = routes + js_routes
+                if all_routes:
+                    route_paths.extend(all_routes)
+
+            # Extract UI strings from React/Vue/HTML
+            if path_lower.endswith(('.jsx', '.tsx', '.html', '.vue')):
+                # Look for simple text inside standard tags
+                texts = re.findall(r'>([^<]{3,50})<', content)
+                for t in texts:
+                    t_strip = t.strip()
+                    if t_strip and not t_strip.startswith('{') and len(t_strip) > 3:
+                        ui_strings.append(t_strip)
+                
+                # Look for placeholder or title attributes
+                attrs = re.findall(r'(?:placeholder|title|label)=["\']([^"\']+)["\']', content, re.IGNORECASE)
+                ui_strings.extend(attrs)
+
+        return {
+            'ui_strings': list(set(ui_strings))[:30],
+            'route_paths': list(set(route_paths))[:30],
+            'docstrings': docstrings[:15]
+        }
+
     
     def _get_file_tree(self, owner, repo, branch='main'):
         """Get recursive file tree from GitHub API"""
@@ -223,6 +327,18 @@ class GitHubAnalyzer:
                 
             if path_lower.endswith(valid_extensions) or '/' not in path:
                 candidate_paths.append(path)
+                
+        def get_priority(p):
+            p_low = p.lower()
+            if re.search(r'(main|app|server|index)\.(py|js|ts|go|rs|java)$', p_low): return 1
+            if 'route' in p_low or 'api' in p_low or 'controller' in p_low: return 2
+            if 'model' in p_low or 'schema' in p_low or 'db' in p_low: return 3
+            if 'component' in p_low or 'page' in p_low or 'view' in p_low: return 4
+            if 'service' in p_low or 'core' in p_low or 'util' in p_low: return 5
+            if p_low.endswith(('.json', '.yaml', '.yml', '.toml', '.env.example')): return 6
+            return 10
+            
+        candidate_paths.sort(key=lambda p: (get_priority(p), p))
         
         # Fetch up to 50 source code files from the repository
         selected_paths = candidate_paths[:50]
@@ -232,8 +348,8 @@ class GitHubAnalyzer:
                 url = f"{self.raw_github_base}/{owner}/{repo}/{branch}/{filepath}"
                 response = requests.get(url, timeout=10)
                 if response.status_code == 200:
-                    # Fetch up to 8KB per file to perform deep code inspection
-                    key_source_files[filepath] = response.text[:8000]
+                    # Fetch up to 15KB per file to perform deep code inspection
+                    key_source_files[filepath] = response.text[:15000]
             except:
                 continue
                 

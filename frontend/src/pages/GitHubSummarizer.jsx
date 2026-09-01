@@ -65,6 +65,13 @@ const GitHubSummarizer = () => {
     return item.file.toLowerCase().includes(q) || item.role.toLowerCase().includes(q) || (item.insights && item.insights.toLowerCase().includes(q));
   }) || [];
 
+  const technicalDetails = summary?.technical_details || {};
+  const techStack = technicalDetails.tech_stack || summary?.tech_stack || [];
+  const architecture = technicalDetails.architecture || summary?.architecture || "";
+  const apiEndpoints = technicalDetails.api_endpoints || summary?.api_endpoints || [];
+  const envVars = technicalDetails.env_vars || summary?.env_vars || [];
+  const dependencies = technicalDetails.dependencies || summary?.dependencies || [];
+
   return (
     <div className="py-4 px-4 bg-transparent">
       <div className="max-w-4xl mx-auto">
@@ -184,9 +191,19 @@ const GitHubSummarizer = () => {
               
               <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700 space-y-4">
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Purpose & Objective</h4>
-                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed font-normal">{summary.purpose}</p>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">What It Does</h4>
+                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed font-normal whitespace-pre-wrap">{(summary.what_it_does && summary.what_it_does !== "-") ? summary.what_it_does : (summary.purpose || "No descriptive information available.")}</p>
                 </div>
+                {summary.core_features && summary.core_features.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1 mt-4">Core Features</h4>
+                    <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 leading-relaxed space-y-1">
+                      {summary.core_features.map((feature, idx) => (
+                        <li key={idx}>{feature}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 {summary.best_for && (
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Target Audience</h4>
@@ -269,14 +286,14 @@ const GitHubSummarizer = () => {
             )}
 
             {/* Detected API Endpoints & Routes */}
-            {summary.api_endpoints && summary.api_endpoints.length > 0 && (
+            {apiEndpoints && apiEndpoints.length > 0 && (
               <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-800">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
                   <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full mr-3"></span>
-                  Detected API Endpoints & Routes ({summary.api_endpoints.length})
+                  Detected API Endpoints & Routes ({apiEndpoints.length})
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-1">
-                  {summary.api_endpoints.map((ep, idx) => (
+                  {apiEndpoints.map((ep, idx) => (
                     <div
                       key={idx}
                       className="p-3 bg-gray-50 dark:bg-gray-800/40 rounded-xl border border-gray-200 dark:border-gray-700/60 flex items-center justify-between"
@@ -303,14 +320,14 @@ const GitHubSummarizer = () => {
             )}
 
             {/* Environment Variables */}
-            {summary.env_vars && summary.env_vars.length > 0 && (
+            {envVars && envVars.length > 0 && (
               <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-800">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
                   <span className="w-2.5 h-2.5 bg-amber-500 rounded-full mr-3"></span>
                   Required Environment Variables
                 </h2>
                 <div className="flex flex-wrap gap-2">
-                  {summary.env_vars.map((v, idx) => (
+                  {envVars.map((v, idx) => (
                     <code
                       key={idx}
                       className="px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50 rounded-lg text-xs font-mono font-semibold"
@@ -329,8 +346,8 @@ const GitHubSummarizer = () => {
                 Tech Stack
               </h2>
               <div className="flex flex-wrap gap-2">
-                {summary.tech_stack && summary.tech_stack.length > 0 ? (
-                  summary.tech_stack.map((tech, idx) => (
+                {techStack && techStack.length > 0 ? (
+                  techStack.map((tech, idx) => (
                     <span
                       key={idx}
                       className="px-4 py-2 bg-gradient-to-r from-green-50 to-emerald-100 dark:from-emerald-950/40 dark:to-green-900/40 text-green-700 dark:text-emerald-300 rounded-full text-sm font-semibold border border-green-200 dark:border-emerald-800/50"
@@ -351,7 +368,7 @@ const GitHubSummarizer = () => {
                 Architecture Overview
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
-                {summary.architecture}
+                {architecture}
               </p>
             </div>
 
@@ -413,8 +430,8 @@ const GitHubSummarizer = () => {
                 Dependencies
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {summary.dependencies && summary.dependencies.length > 0 ? (
-                  summary.dependencies.map((dep, idx) => (
+                {dependencies && dependencies.length > 0 ? (
+                  dependencies.map((dep, idx) => (
                     <div
                       key={idx}
                       className="px-4 py-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg text-sm text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 font-mono"

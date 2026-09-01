@@ -1,10 +1,11 @@
 import requests
 import json
 import re
+import os
 
 class RepoSummarizer:
-    def __init__(self, ollama_url="http://localhost:11434"):
-        self.ollama_url = ollama_url
+    def __init__(self, ollama_url=None):
+        self.ollama_url = ollama_url or os.getenv("OLLAMA_URL", "http://127.0.0.1:11434")
         self.model = "llama3:8b"
     
     def generate_summary(self, analysis_data):
@@ -23,7 +24,7 @@ class RepoSummarizer:
                     "stream": False,
                     "format": "json"
                 },
-                timeout=5
+                timeout=300
             )
             
             if response.status_code == 200:
@@ -33,45 +34,8 @@ class RepoSummarizer:
                     return json.loads(response_text)
                 except json.JSONDecodeError:
                     return self._extract_json(response_text)
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
-            print("[INFO] Ollama LLM unavailable. Performing deep repository content analysis.")
-import requests
-import json
-import re
-
-class RepoSummarizer:
-    def __init__(self, ollama_url="http://localhost:11434"):
-        self.ollama_url = ollama_url
-        self.model = "llama3:8b"
-    
-    def generate_summary(self, analysis_data):
-        """
-        Generates a structured summary of the repository.
-        Tries local Ollama LLM if available; otherwise uses deep repo content analysis.
-        """
-        # Call Ollama API if connected
-        try:
-            prompt = self._build_prompt(analysis_data)
-            response = requests.post(
-                f"{self.ollama_url}/api/generate",
-                json={
-                    "model": self.model,
-                    "prompt": prompt,
-                    "stream": False,
-                    "format": "json"
-                },
-                timeout=5
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                response_text = result.get('response', '')
-                try:
-                    return json.loads(response_text)
-                except json.JSONDecodeError:
-                    return self._extract_json(response_text)
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
-            print("[INFO] Ollama LLM unavailable. Performing deep repository content analysis.")
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+            print(f"[INFO] Ollama LLM unavailable ({type(e).__name__}). Performing deep repository content analysis.")
         except Exception as e:
             print(f"[WARN] Error invoking Ollama: {str(e)}. Falling back to content analysis.")
 
@@ -106,25 +70,72 @@ class RepoSummarizer:
         # --- 3. Environment Variables Extraction ---
         env_vars = self._extract_env_vars(key_source_files, config_files)
 
-        # --- 4. Purpose Analysis ---
+        # --- 4. Purpose Analysis -> what_it_does ---
+        readme_intro = analysis_data.get('readme_intro', '')
+        pkg_desc = analysis_data.get('package_description', {}).get('description', '')
+        
         purpose_parts = []
-        if description and description != 'No description provided':
+        if readme_intro:
+            purpose_parts.append(readme_intro)
+        elif pkg_desc:
+            purpose_parts.append(pkg_desc)
+        elif description and description != 'No description provided':
             purpose_parts.append(description.strip())
         
-        clean_readme = self._clean_readme_markdown(readme)
-        lead_para = self._extract_lead_paragraph(clean_readme, repo_name)
-        if lead_para and lead_para not in purpose_parts:
-            purpose_parts.append(lead_para)
-
         if topics:
             purpose_parts.append(f"Key topics & focus areas: {', '.join(topics[:6])}.")
-
+            
         if purpose_parts:
-            purpose = " ".join(purpose_parts[:2])
-            if len(purpose) > 400:
-                purpose = purpose[:397] + "..."
+            what_it_does = " ".join(purpose_parts[:2]).strip()
+            if len(what_it_does) > 600:
+                what_it_does = what_it_does[:597] + "..."
+            if len(what_it_does) < 5 or what_it_does == "-":
+                what_it_does = f"{repo_name} is a software project built with {', '.join(tech_stack[:3]) if tech_stack else 'modern technologies'}."
         else:
-            purpose = f"{repo_name} is a software project built with {', '.join(tech_stack[:3]) if tech_stack else 'modern technologies'}."
+            what_it_does = f"{repo_name} is a software project built with {', '.join(tech_stack[:3]) if tech_stack else 'modern technologies'}."
+
+        # --- 4.5 Core Features Analysis ---
+        route_paths = analysis_data.get('route_paths', [])
+        ui_strings = analysis_data.get('ui_strings', [])
+        docstrings = analysis_data.get('docstrings', [])
+        
+        keyword_map = {
+            'auth': 'Manages user authentication and authorization',
+            'login': 'Handles user login',
+            'upload': 'Supports file uploads and management',
+            'predict': 'Runs predictive models or machine learning inference',
+            'match': 'Matches data entities based on criteria',
+            'checkout': 'Processes e-commerce checkout and payments',
+            'cart': 'Manages shopping cart functionality',
+            'booking': 'Handles reservations and bookings',
+            'search': 'Provides search capabilities',
+            'profile': 'Manages user profiles',
+            'dashboard': 'Provides a central data dashboard',
+            'generate': 'Generates reports, invoices, or content'
+        }
+        
+        core_features = set()
+        
+        for route in route_paths:
+            for kw, phrase in keyword_map.items():
+                if kw in route.lower():
+                    core_features.add(phrase)
+                    
+        for text in ui_strings + docstrings:
+            for kw, phrase in keyword_map.items():
+                if kw in text.lower():
+                    core_features.add(phrase)
+        
+        # Add basic feature if none found
+        if not core_features:
+            if api_endpoints:
+                core_features.add("Provides REST API endpoints for data integration")
+            if 'React' in tech_stack or 'Vue' in tech_stack:
+                core_features.add("Provides an interactive web user interface")
+            if not core_features:
+                core_features.add("Core application logic and processing")
+
+        core_features = list(core_features)[:6]
 
         # --- 5. How To Run Analysis ---
         how_to_run = self._extract_run_instructions(readme, config_files, tech_stack, key_source_files)
@@ -137,19 +148,22 @@ class RepoSummarizer:
 
         # --- 8. Difficulty & Audience ---
         difficulty = self._assess_difficulty(file_tree, tech_stack, dependencies)
-        best_for = self._determine_best_for(repo_name, tech_stack, topics, purpose)
+        best_for = self._determine_best_for(repo_name, tech_stack, topics, what_it_does)
         contributing_guide = self._extract_contributing_guide(readme, file_tree)
 
         return {
-            "purpose": purpose,
-            "tech_stack": tech_stack if tech_stack else ["Software Development"],
+            "what_it_does": what_it_does,
+            "core_features": core_features,
+            "technical_details": {
+                "tech_stack": tech_stack if tech_stack else ["Software Development"],
+                "architecture": architecture,
+                "dependencies": dependencies[:12] if dependencies else ["Core package modules"],
+                "api_endpoints": api_endpoints,
+                "env_vars": env_vars
+            },
             "how_to_run": how_to_run,
-            "architecture": architecture,
             "key_components": key_components,
             "project_file_analysis": project_file_analysis,
-            "api_endpoints": api_endpoints,
-            "env_vars": env_vars,
-            "dependencies": dependencies[:12] if dependencies else ["Core package modules"],
             "license": analysis_data.get('license', 'Not specified'),
             "difficulty": difficulty,
             "best_for": best_for,
@@ -468,46 +482,63 @@ class RepoSummarizer:
         """Build a detailed prompt for the LLM including inspected code files"""
         key_source_summary = ""
         for path, code in analysis_data.get('key_source_files', {}).items():
-            key_source_summary += f"\n--- FILE: {path} ---\n{code[:1500]}\n"
+            lines = code.splitlines()
+            line_count = len(lines)
+            code_snippet = "\n".join(lines[:100])
+            key_source_summary += f"\n--- FILE: {path} ({line_count} lines) ---\n{code_snippet}\n"
 
-        prompt = f"""You are an expert software architect. Analyze the following repository information and inspected source code files to generate a comprehensive structured summary.
+        # Cap the entire source summary to 15000 characters
+        key_source_summary = key_source_summary[:15000]
+
+        prompt = f"""You are an expert software architect analyzing a codebase.
+Do NOT lead with frameworks or languages. First determine:
+1. What problem does this project solve, in plain language a non-engineer would understand?
+2. Who is the end user, and what can they do with this product?
+3. What is the core workflow (e.g. "user uploads X, system does Y, user receives Z")?
+Only after that, briefly note the tech stack as supporting detail, not the headline.
 
 REPOSITORY ANALYSIS DATA:
 
-READ ME CONTENT:
-{analysis_data.get('readme_content', 'No README found')[:2000]}
+README INTRO:
+{analysis_data.get('readme_intro', '')[:1500]}
 
-LICENSE:
-{analysis_data.get('license', 'No license found')[:500]}
+PACKAGE DESCRIPTION:
+{json.dumps(analysis_data.get('package_description', dict()))}
 
-FOLDER STRUCTURE:
-{json.dumps([item['name'] for item in analysis_data.get('file_tree', [])[:60]], indent=2)[:1500]}
+UI STRINGS (from frontend files):
+{', '.join(analysis_data.get('ui_strings', []))}
 
-INSPECTED SOURCE CODE FILES:
-{key_source_summary[:3000]}
+ROUTES DETECTED:
+{', '.join(analysis_data.get('route_paths', []))}
+
+DOCSTRINGS:
+{chr(10).join(analysis_data.get('docstrings', []))}
+
+INSPECTED SOURCE CODE SNIPPETS:
+{key_source_summary}
 
 TECH STACK DETECTED:
 {', '.join(analysis_data.get('tech_stack', []))}
 
-DEPENDENCIES:
-{chr(10).join(analysis_data.get('dependencies', []))[:800]}
-
 Generate a JSON response with EXACTLY this structure (no additional text, only valid JSON):
 
 {{
-  "purpose": "A clear, concise description of what this project does and its main goal (2-3 sentences)",
-  "tech_stack": ["list", "of", "technologies", "used"],
+  "what_it_does": "A clear, concise, plain-language description of what this project does, the problem it solves, and its core workflow (2-3 sentences)",
+  "core_features": ["Feature 1 (plain language)", "Feature 2", "Feature 3"],
+  "technical_details": {{
+    "tech_stack": ["list", "of", "technologies", "used"],
+    "architecture": "Overview of the project architecture and design patterns used",
+    "dependencies": ["list", "of", "major", "dependencies"],
+    "api_endpoints": [
+      {{"method": "GET", "path": "/endpoint", "source_file": "file.py"}}
+    ],
+    "env_vars": ["VAR_1", "VAR_2"]
+  }},
   "how_to_run": "Step-by-step instructions on how to set up and run this project",
-  "architecture": "Overview of the project architecture and design patterns used",
   "key_components": ["list", "of", "main", "components", "and", "their", "purposes"],
   "project_file_analysis": [
     {{"file": "filename", "lines": 100, "role": "File role", "insights": "Key findings from code"}}
   ],
-  "api_endpoints": [
-    {{"method": "GET", "path": "/endpoint", "source_file": "file.py"}}
-  ],
-  "env_vars": ["VAR_1", "VAR_2"],
-  "dependencies": ["list", "of", "major", "dependencies"],
   "license": "License type",
   "difficulty": "Beginner/Intermediate/Advanced",
   "best_for": "Who this project is best for",
@@ -527,15 +558,18 @@ Generate a JSON response with EXACTLY this structure (no additional text, only v
             pass
         
         return {
-            "purpose": "Analysis complete.",
-            "tech_stack": [],
+            "what_it_does": "Analysis complete.",
+            "core_features": [],
+            "technical_details": {
+                "tech_stack": [],
+                "architecture": "Standard layout.",
+                "dependencies": [],
+                "api_endpoints": [],
+                "env_vars": []
+            },
             "how_to_run": "Refer to README.",
-            "architecture": "Standard layout.",
             "key_components": [],
             "project_file_analysis": [],
-            "api_endpoints": [],
-            "env_vars": [],
-            "dependencies": [],
             "license": "Unknown",
             "difficulty": "Intermediate",
             "best_for": "Developers",

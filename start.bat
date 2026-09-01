@@ -4,7 +4,7 @@ echo Starting RepoSense Platform
 echo ==========================================
 
 echo Starting Backend Server...
-start "RepoSense Backend" cmd /c "cd backend && pip install -r requirements.txt && python -m src.main"
+start "RepoSense Backend" cmd /c "cd backend && pip install -r requirements.txt && py -m src.main"
 
 echo Starting Frontend Server...
 start "RepoSense Frontend" cmd /c "cd frontend && npm install && npm run dev"
