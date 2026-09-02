@@ -4,7 +4,7 @@ echo Starting RepoSense Platform
 echo ==========================================
 
 echo Starting Ollama...
-@REM start "RepoSense Ollama" cmd /c "ollama run llama3.2:3b"
+start "RepoSense Ollama" cmd /c "ollama run qwen2.5-coder:7b"
 
 echo Starting Backend Server...
 start "RepoSense Backend" cmd /c "cd backend && py -m src.main"

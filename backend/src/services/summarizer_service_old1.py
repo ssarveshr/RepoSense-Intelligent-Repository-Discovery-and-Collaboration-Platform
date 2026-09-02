@@ -6,7 +6,7 @@ import os
 class RepoSummarizer:
     def __init__(self, ollama_url=None):
         self.ollama_url = ollama_url or os.getenv("OLLAMA_URL", "http://127.0.0.1:11434")
-        self.model = os.getenv("OLLAMA_MODEL", "qwen2.5-coder:7b")
+        self.model = "llama3:8b"
     
     def generate_summary(self, analysis_data):
         """
@@ -22,13 +22,9 @@ class RepoSummarizer:
                     "model": self.model,
                     "prompt": prompt,
                     "stream": False,
-                    "format": "json",
-                    "options": {
-                        "temperature": 0.1,
-                        "num_ctx": 32768
-                    }
+                    "format": "json"
                 },
-                timeout=1000
+                timeout=300
             )
             
             if response.status_code == 200:
@@ -52,8 +48,8 @@ class RepoSummarizer:
         to generate a deep architectural and code file analysis.
         """
         repo_name = analysis_data.get('name', 'This project')
-        description = ''
-        readme = ''
+        description = analysis_data.get('description', '')
+        readme = analysis_data.get('readme_content', '')
         file_tree = analysis_data.get('file_tree', [])
         config_files = analysis_data.get('config_files', {})
         key_source_files = analysis_data.get('key_source_files', {})
@@ -379,7 +375,7 @@ class RepoSummarizer:
         elif 'Go' in tech_stack:
             return "1. Clone repository.\n2. Run `go run main.go`."
         
-        return "Run using the detected project entry point and configuration files. README was excluded from analysis."
+        return "1. Clone repository.\n2. Install dependencies based on configuration files.\n3. Follow setup commands in README."
 
     def _analyze_architecture(self, file_tree, config_files, tech_stack, key_source_files=None):
         """Infers system architecture from directory layout, configs, and source code files"""
@@ -480,171 +476,74 @@ class RepoSummarizer:
                 if len(extracted) > 20:
                     return extracted[:300]
 
-        return "Contribution workflow cannot be inferred reliably from source code alone."
+        return "Check open issues for 'good first issue' or 'help wanted' tags, fork the repo, and submit a pull request with unit tests."
 
     def _build_prompt(self, analysis_data):
-        """
-        Build a code-first repository understanding prompt.
+        """Build a detailed prompt for the LLM including inspected code files"""
+        key_source_summary = ""
+        for path, code in analysis_data.get('key_source_files', {}).items():
+            lines = code.splitlines()
+            line_count = len(lines)
+            code_snippet = "\n".join(lines[:100])
+            key_source_summary += f"\n--- FILE: {path} ({line_count} lines) ---\n{code_snippet}\n"
 
-        Documentation and repository descriptions are intentionally excluded
-        from the LLM evidence. The model should infer the project from code,
-        structure, routes, imports, models and component behavior.
-        """
-        source_files = analysis_data.get("key_source_files", {})
-        file_tree = analysis_data.get("file_tree", [])
-        tech_stack = analysis_data.get("tech_stack", [])
-        dependencies = analysis_data.get("dependencies", [])
+        # Cap the entire source summary to 15000 characters
+        key_source_summary = key_source_summary[:15000]
 
-        # Repository structure is important even when source files are large.
-        tree_text = "\n".join(
-            f"{item.get('type', 'file')}: {item.get('name', '')}"
-            for item in file_tree
-        )
+        prompt = f"""You are an expert software architect analyzing a codebase.
+Do NOT lead with frameworks or languages. First determine:
+1. What problem does this project solve, in plain language a non-engineer would understand?
+2. Who is the end user, and what can they do with this product?
+3. What is the core workflow (e.g. "user uploads X, system does Y, user receives Z")?
+Only after that, briefly note the tech stack as supporting detail, not the headline.
 
-        # Send substantially more source evidence than the previous 15K limit.
-        # Each file gets a bounded section so one huge file cannot dominate.
-        source_parts = []
-        total_chars = 0
-        max_chars = 50000
+REPOSITORY ANALYSIS DATA:
 
-        for path, code in source_files.items():
-            if not code:
-                continue
+README INTRO:
+{analysis_data.get('readme_intro', '')[:1500]}
 
-            # Remove common comment lines so prose in comments does not become
-            # the model's primary source of project-purpose information.
-            cleaned = code
+PACKAGE DESCRIPTION:
+{json.dumps(analysis_data.get('package_description', dict()))}
 
-            if path.lower().endswith(".py"):
-                import re as _re
-                cleaned = _re.sub(r'(?m)^\\s*#.*$', '', cleaned)
+UI STRINGS (from frontend files):
+{', '.join(analysis_data.get('ui_strings', []))}
 
-            if path.lower().endswith((
-                ".js", ".jsx", ".ts", ".tsx", ".java", ".c", ".cpp",
-                ".h", ".hpp", ".go", ".rs", ".cs", ".kt", ".swift"
-            )):
-                import re as _re
-                cleaned = _re.sub(r'(?m)^\\s*//.*$', '', cleaned)
+ROUTES DETECTED:
+{', '.join(analysis_data.get('route_paths', []))}
 
-            cleaned = cleaned.strip()
-            if not cleaned:
-                continue
+DOCSTRINGS:
+{chr(10).join(analysis_data.get('docstrings', []))}
 
-            # Keep more than the old first-100-lines strategy.
-            if len(cleaned) > 12000:
-                cleaned = cleaned[:12000] + "\n[FILE TRUNCATED]"
+INSPECTED SOURCE CODE SNIPPETS:
+{key_source_summary}
 
-            block = f"\n--- SOURCE FILE: {path} ---\n{cleaned}\n"
+TECH STACK DETECTED:
+{', '.join(analysis_data.get('tech_stack', []))}
 
-            if total_chars + len(block) > max_chars:
-                break
-
-            source_parts.append(block)
-            total_chars += len(block)
-
-        source_text = "".join(source_parts)
-
-        prompt = f"""
-You are an expert software architect analyzing a repository ONLY from its
-source code and code structure.
-
-IMPORTANT: THIS IS CODE-ONLY ANALYSIS.
-
-DO NOT use:
-- README.md or any README
-- documentation files
-- package/project descriptions
-- repository topics or metadata
-- badges
-- author-written project descriptions
-- comments or docstrings as evidence
-
-Do NOT identify the project merely from its framework or language.
-
-Infer the actual purpose from executable/source code such as:
-- imports and libraries actually used
-- classes and functions
-- function calls
-- API endpoints and handlers
-- database models and queries
-- frontend components and user interactions
-- state management
-- authentication/authorization logic
-- file processing
-- algorithms
-- external service integrations
-- configuration used by the application
-- relationships between modules
-- data flow from input to output
-
-Your primary task is to answer:
-
-1. WHAT PROJECT IS THIS?
-2. WHAT REAL-WORLD PROBLEM DOES IT SOLVE?
-3. WHAT DOES THE USER ACTUALLY DO WITH IT?
-4. WHAT IS THE END-TO-END WORKFLOW?
-5. WHAT ARE THE MAIN FEATURES?
-6. HOW DO THE MAJOR CODE COMPONENTS WORK TOGETHER?
-
-Be conservative. If the code does not provide enough evidence, report
-"Unknown" or lower confidence instead of inventing functionality.
-
-REPOSITORY STRUCTURE:
-{tree_text[:20000]}
-
-DETECTED TECHNOLOGIES:
-{json.dumps(tech_stack)}
-
-DETECTED DEPENDENCIES:
-{json.dumps(dependencies[:30])}
-
-SOURCE CODE:
-{source_text}
-
-Return ONLY valid JSON with exactly this structure:
+Generate a JSON response with EXACTLY this structure (no additional text, only valid JSON):
 
 {{
-  "what_it_does": "Clear 2-4 sentence plain-language explanation of the actual software behavior.",
-  "project_type": "Best inferred application/project type.",
-  "confidence": "High/Medium/Low",
-  "confidence_reason": "Strongest code evidence behind the conclusion.",
-  "core_features": [
-    "Feature directly supported by source code"
-  ],
+  "what_it_does": "A clear, concise, plain-language description of what this project does, the problem it solves, and its core workflow (2-3 sentences)",
+  "core_features": ["Feature 1 (plain language)", "Feature 2", "Feature 3"],
   "technical_details": {{
-    "tech_stack": ["technologies evidenced by code"],
-    "architecture": "Architecture inferred from code structure and interactions.",
-    "dependencies": ["major runtime dependencies"],
+    "tech_stack": ["list", "of", "technologies", "used"],
+    "architecture": "Overview of the project architecture and design patterns used",
+    "dependencies": ["list", "of", "major", "dependencies"],
     "api_endpoints": [
-      {{
-        "method": "GET",
-        "path": "/endpoint",
-        "source_file": "file.py"
-      }}
+      {{"method": "GET", "path": "/endpoint", "source_file": "file.py"}}
     ],
-    "env_vars": ["environment variables referenced by source code"]
+    "env_vars": ["VAR_1", "VAR_2"]
   }},
-  "core_workflow": [
-    "Step 1",
-    "Step 2",
-    "Step 3"
-  ],
-  "key_components": [
-    "path/component: purpose inferred from its code"
-  ],
+  "how_to_run": "Step-by-step instructions on how to set up and run this project",
+  "key_components": ["list", "of", "main", "components", "and", "their", "purposes"],
   "project_file_analysis": [
-    {{
-      "file": "filename",
-      "lines": 100,
-      "role": "Role inferred from code",
-      "insights": "Important behavior found in the file"
-    }}
+    {{"file": "filename", "lines": 100, "role": "File role", "insights": "Key findings from code"}}
   ],
+  "license": "License type",
   "difficulty": "Beginner/Intermediate/Advanced",
-  "best_for": "Likely users of the software"
+  "best_for": "Who this project is best for",
+  "contributing_guide": "Brief summary on how to start contributing"
 }}
-
-Do not include any text outside the JSON.
 """
         return prompt
 
