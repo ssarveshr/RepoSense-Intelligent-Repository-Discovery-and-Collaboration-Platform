@@ -2,15 +2,33 @@ import { useState } from 'react';
 import ProfileSkeleton from '../components/profile/ProfileSkeleton';
 import ProfileSidebar from '../components/profile/ProfileSidebar';
 import ProfileActivityFeed from '../components/profile/ProfileActivityFeed';
+import ProfileGitHubSection from '../components/profile/ProfileGitHubSection';
 import EditProfileDialog from '../components/profile/EditProfileDialog';
 import { useProfile } from '../hooks/useProfile';
 import { useProfileActivity } from '../hooks/useProfileActivity';
+import { useGitHubProfile } from '../hooks/useGitHubProfile';
+import { useGitHubConnection } from '../hooks/useGitHubConnection';
 import { useProfileAuth } from '../providers/profileAuthContext.js';
 
 export default function Profile() {
   const { user, usernameSetupState } = useProfileAuth();
   const { profile, loading, error, saveProfile, reloadProfile } = useProfile();
   const { activity, loading: activityLoading, error: activityError, reload } = useProfileActivity();
+  const {
+    data: githubProfile,
+    loading: githubProfileLoading,
+    error: githubProfileError,
+    reload: reloadGitHubProfile,
+  } = useGitHubProfile();
+  const {
+    connection: githubConnection,
+    connectGitHub,
+    disconnect: disconnectGitHub,
+    isConnected: isGitHubConnected,
+    loading: githubConnectionLoading,
+    error: githubConnectionError,
+    reloadConnection: reloadGitHubConnection,
+  } = useGitHubConnection();
   const [editOpen, setEditOpen] = useState(false);
 
   if (loading) {
@@ -49,6 +67,17 @@ export default function Profile() {
         />
 
         <div className="space-y-6 min-w-0">
+          <ProfileGitHubSection
+            data={githubProfile}
+            loading={githubProfileLoading || githubConnectionLoading}
+            error={githubProfileError || githubConnectionError}
+            onRetry={reloadGitHubProfile}
+            onConnectGitHub={connectGitHub}
+            onDisconnectGitHub={disconnectGitHub}
+            isOAuthConnected={isGitHubConnected}
+            connection={githubConnection}
+            onReloadConnection={reloadGitHubConnection}
+          />
           <ProfileActivityFeed
             activity={activity}
             loading={activityLoading}
