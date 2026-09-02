@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { ConnectionState, LiveKitSession, Track } from '../../services/livekitClient';
-import { getMeetingParticipants } from '../../services/meetingApi';
 import MeetingChat from './MeetingChat';
 import MeetingControls from './MeetingControls';
 import MeetingParticipantTile from './MeetingParticipantTile';
@@ -81,18 +80,6 @@ export default function MeetingStage({ meetingId, joinData, media, meetingTitle,
     setParticipantCount(1 + tiles.length);
   }, []);
 
-  const refreshRoster = useCallback(async () => {
-    if (!meetingId) return;
-    try {
-      const participants = await getMeetingParticipants(meetingId);
-      if (participants.length > 0) {
-        setParticipantCount(participants.length);
-      }
-    } catch {
-      // best-effort alongside LiveKit presence
-    }
-  }, [meetingId]);
-
   const cleanupSession = useCallback(async () => {
     if (cleanupDoneRef.current) return;
     cleanupDoneRef.current = true;
@@ -132,7 +119,6 @@ export default function MeetingStage({ meetingId, joinData, media, meetingTitle,
       .then(() => {
         if (cancelled) return;
         refreshTiles(session.room, []);
-        refreshRoster();
       })
       .catch((connectError) => {
         if (cancelled) return;
@@ -140,15 +126,12 @@ export default function MeetingStage({ meetingId, joinData, media, meetingTitle,
         setConnectionState(ConnectionState.Disconnected);
       });
 
-    const rosterInterval = setInterval(refreshRoster, 10000);
-
     return () => {
       cancelled = true;
-      clearInterval(rosterInterval);
       unsubscribe();
       cleanupSession();
     };
-  }, [joinData?.token, livekitUrl, localStream, refreshTiles, refreshRoster, cleanupSession]);
+  }, [joinData?.token, livekitUrl, localStream, refreshTiles, cleanupSession]);
 
   const handleToggleAudio = async () => {
     toggleAudio();

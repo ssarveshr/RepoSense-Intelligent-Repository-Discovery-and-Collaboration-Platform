@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
 import { useLocalMedia } from '../hooks/useLocalMedia';
 import { useMeetingSession } from '../hooks/useMeetingSession';
-import { getMeeting, getMeetingParticipants } from '../services/meetingApi';
+import { resolveMeeting } from '../services/collaborationApi';
 import MeetingLobbyView from '../components/meeting/MeetingLobbyView';
 import MeetingStage from '../components/meeting/MeetingStage';
 import MeetingEndedView from '../components/meeting/MeetingEndedView';
@@ -16,7 +16,6 @@ export default function MeetingRoom() {
     useMeetingSession(meetingId);
 
   const [meetingInfo, setMeetingInfo] = useState(null);
-  const [activeCount, setActiveCount] = useState(null);
   const [loadError, setLoadError] = useState(null);
 
   useEffect(() => {
@@ -26,20 +25,12 @@ export default function MeetingRoom() {
 
     async function loadMeeting() {
       try {
-        const meeting = await getMeeting(meetingId);
+        const meeting = await resolveMeeting(meetingId);
         if (cancelled) return;
         setMeetingInfo(meeting);
 
-        if (meeting.status === 'ended') {
+        if (meeting.status === 'ended' || !meeting.is_joinable) {
           setLoadError('ended');
-          return;
-        }
-
-        try {
-          const participants = await getMeetingParticipants(meetingId);
-          if (!cancelled) setActiveCount(participants.length);
-        } catch {
-          if (!cancelled) setActiveCount(0);
         }
       } catch (error) {
         if (!cancelled) {
@@ -87,10 +78,9 @@ export default function MeetingRoom() {
       joinLabel="Join meeting"
       joinError={joinError || (loadError && loadError !== 'ended' ? loadError : null)}
       joining={joining}
-      showPasscode
+      showPasscode={Boolean(meetingInfo?.passcode_required)}
       meetingTitle={meetingInfo?.title}
       meetingCode={meetingInfo?.short_code}
-      activeParticipantCount={activeCount}
       defaultDisplayName={defaultName}
     />
   );

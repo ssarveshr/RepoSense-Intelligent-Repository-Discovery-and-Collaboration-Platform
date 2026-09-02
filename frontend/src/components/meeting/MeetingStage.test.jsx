@@ -10,7 +10,22 @@ const { mockDisconnect } = vi.hoisted(() => ({
 vi.mock('../../services/livekitClient', () => {
   class MockLiveKitSession {
     constructor() {
-      this.room = null;
+      this.room = {
+        remoteParticipants: new Map([
+          [
+            'remote-1',
+            {
+              identity: 'remote-1',
+              name: 'Bob',
+              getTrackPublication: () => null,
+            },
+          ],
+        ]),
+        localParticipant: {
+          identity: 'local',
+          getTrackPublication: () => null,
+        },
+      };
       this.connect = vi.fn().mockResolvedValue(undefined);
       this.disconnect = mockDisconnect;
       this.onStateChange = vi.fn(() => () => {});
@@ -33,10 +48,6 @@ vi.mock('../../services/livekitClient', () => {
     LiveKitSession: MockLiveKitSession,
   };
 });
-
-vi.mock('../../services/meetingApi', () => ({
-  getMeetingParticipants: vi.fn().mockResolvedValue([]),
-}));
 
 function createMockStream() {
   const track = { kind: 'video', stop: vi.fn(), enabled: true, getSettings: () => ({}) };
@@ -95,6 +106,14 @@ describe('MeetingStage leave flow', () => {
     cleanup();
   });
 
+  it('uses LiveKit remote participant count for header display', async () => {
+    renderStage();
+
+    await waitFor(() => {
+      expect(screen.getByText('2 participants')).toBeInTheDocument();
+    });
+  });
+
   it('shows a pending leave state while cleanup and onLeave are in flight', async () => {
     let resolveLeave;
     const onLeave = vi.fn(
@@ -106,13 +125,14 @@ describe('MeetingStage leave flow', () => {
     const { onExit } = renderStage({ onLeave });
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Leave' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Leave meeting' })).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Leave' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Leave meeting' }));
 
-    const leavingButton = await screen.findByRole('button', { name: 'Leaving…' });
+    const leavingButton = await screen.findByRole('button', { name: 'Leave meeting' });
     expect(leavingButton).toBeDisabled();
+    expect(leavingButton).toHaveTextContent('Leaving…');
     expect(mockDisconnect).toHaveBeenCalledTimes(1);
     expect(onLeave).toHaveBeenCalledTimes(1);
     expect(onExit).not.toHaveBeenCalled();
@@ -130,7 +150,7 @@ describe('MeetingStage leave flow', () => {
 
     renderStage({ onLeave, stopLocalMedia, onExit });
 
-    const leaveButton = await screen.findByRole('button', { name: 'Leave' });
+    const leaveButton = await screen.findByRole('button', { name: 'Leave meeting' });
     fireEvent.click(leaveButton);
 
     await waitFor(() => {
@@ -171,7 +191,7 @@ describe('MeetingStage leave flow', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Leave' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Leave meeting' })).toBeInTheDocument();
     });
 
     unmount();

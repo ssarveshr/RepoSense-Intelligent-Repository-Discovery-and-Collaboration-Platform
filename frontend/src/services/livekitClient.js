@@ -2,6 +2,25 @@ import { Room, RoomEvent, Track, ConnectionState } from 'livekit-client';
 
 const CHAT_TOPIC = 'reposense-chat';
 
+/** Normalize LiveKit active speaker payloads to a stable identity string array. */
+export function normalizeActiveSpeakerIdentities(speakers) {
+  if (speakers == null) return [];
+  if (Array.isArray(speakers)) {
+    return speakers
+      .map((item) => {
+        if (typeof item === 'string') return item;
+        if (item && typeof item === 'object') return item.identity || item.sid || null;
+        return null;
+      })
+      .filter(Boolean);
+  }
+  if (typeof speakers === 'object') {
+    const identity = speakers.identity || speakers.sid;
+    return identity ? [identity] : [];
+  }
+  return [];
+}
+
 /**
  * LiveKit room wrapper. Publishes pre-acquired getUserMedia tracks
  * to avoid a second permission prompt. LiveKit Cloud handles STUN/TURN (Phase 4).
