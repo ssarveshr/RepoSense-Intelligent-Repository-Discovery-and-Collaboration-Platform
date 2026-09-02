@@ -9,6 +9,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from src.config.settings import settings
+from src.utils.github_collaborator_utils import recipient_matches_host_github_identity
 
 EMAIL_PATTERN = re.compile(
     r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@"
@@ -69,8 +70,10 @@ class MeetingInvitationService:
         recipients: list[dict[str, Any]],
         *,
         host_email: str,
+        host_github_user_id: str | None = None,
+        host_github_login: str | None = None,
     ) -> tuple[list[dict[str, Any]], dict[str, int]]:
-        """Validate, dedupe, and exclude host email from outbound invitations."""
+        """Validate, dedupe, and exclude host email/GitHub identity from outbound invitations."""
         host_norm = normalize_email(host_email)
         seen: set[str] = set()
         prepared: list[dict[str, Any]] = []
@@ -83,6 +86,14 @@ class MeetingInvitationService:
         }
 
         for item in recipients:
+            if recipient_matches_host_github_identity(
+                item,
+                host_github_user_id=host_github_user_id,
+                host_github_login=host_github_login,
+            ):
+                stats["skipped_host"] += 1
+                continue
+
             raw_email = item.get("email")
             norm = normalize_email(raw_email) if raw_email else None
 
@@ -126,13 +137,20 @@ class MeetingInvitationService:
         custom_message: str | None = None,
         external_meeting_url: str | None = None,
         meeting_created_at: datetime | None = None,
+        host_github_user_id: str | None = None,
+        host_github_login: str | None = None,
     ) -> dict[str, Any]:
         host_email_norm = normalize_email(host_email)
         if not host_email_norm:
             raise ValueError("Invalid host email address")
 
         host_name_clean = _sanitize_header(host_name or "Host")
-        prepared, prep_stats = self.prepare_recipients(recipients, host_email=host_email_norm)
+        prepared, prep_stats = self.prepare_recipients(
+            recipients,
+            host_email=host_email_norm,
+            host_github_user_id=host_github_user_id,
+            host_github_login=host_github_login,
+        )
 
         join_url = validate_external_url(external_meeting_url) or build_meeting_join_url(meeting_id)
         reposense_join_url = build_meeting_join_url(meeting_id)

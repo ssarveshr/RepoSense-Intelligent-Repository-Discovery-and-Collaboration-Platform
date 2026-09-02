@@ -48,8 +48,33 @@ def _ensure_meeting_joinable(meeting) -> None:
             raise MeetingJoinError("Meeting has expired", status_code=410)
 
 
+def _meeting_is_joinable(meeting) -> bool:
+    if meeting.status == MeetingStatus.ended.value:
+        return False
+    if meeting.expires_at is not None:
+        expires_at = meeting.expires_at
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        if expires_at <= datetime.now(timezone.utc):
+            return False
+    return True
+
+
+def meeting_to_public_resolve(meeting) -> "MeetingPublicResolveResponse":
+    from src.models.meeting import MeetingPublicResolveResponse
+
+    return MeetingPublicResolveResponse(
+        id=meeting.id,
+        short_code=meeting.short_code,
+        title=meeting.title,
+        status=meeting.status,
+        passcode_required=bool(meeting.passcode_hash),
+        is_joinable=_meeting_is_joinable(meeting),
+    )
+
+
 class MeetingService:
-    """Business logic for persisted meetings (parallel to legacy zoom_service)."""
+    """Business logic for persisted RepoSense meetings."""
 
     def __init__(self, session: AsyncSession):
         self.repository = MeetingRepository(session)
@@ -80,8 +105,11 @@ class MeetingService:
             host_display_name=display_name,
             host_clerk_user_id=host_clerk_user_id,
             passcode_hash=passcode_hash,
-            max_participants=min(payload.max_participants, 5),
+            max_participants=payload.max_participants,
             expires_at=payload.expires_at,
+            repository_owner=payload.repository_owner,
+            repository_name=payload.repository_name,
+            repository_url=payload.repository_url,
         )
         return MeetingResponse.model_validate(meeting)
 
@@ -98,21 +126,22 @@ class MeetingService:
         return MeetingResponse.model_validate(meeting)
 
     async def resolve_meeting(self, identifier: str) -> Optional[MeetingResponse]:
-        """Find meeting by UUID or normalized short code."""
-        cleaned = identifier.strip()
-        if not cleaned:
+        """Find meeting by UUID or normalized short code (full host metadata)."""
+        meeting = await self.repository.resolve_meeting_row(identifier)
+        if meeting is None:
             return None
+        return MeetingResponse.model_validate(
+            await self.repository.get_meeting_by_id(meeting.id)
+        )
 
-        by_id = await self.get_meeting(cleaned)
-        if by_id is not None:
-            return by_id
+    async def resolve_meeting_public(self, identifier: str):
+        """Find meeting by UUID or normalized short code; return public-safe fields only."""
+        from src.models.meeting import MeetingPublicResolveResponse
 
-        normalized = cleaned.upper().replace(" ", "").replace("-", "")
-        if len(normalized) == 8:
-            short_code = f"{normalized[:4]}-{normalized[4:]}"
-            return await self.get_meeting_by_short_code(short_code)
-
-        return await self.get_meeting_by_short_code(cleaned)
+        meeting = await self.repository.resolve_meeting_row(identifier)
+        if meeting is None:
+            return None
+        return meeting_to_public_resolve(meeting)
 
     async def list_active_meetings(self) -> list[MeetingResponse]:
         meetings = await self.repository.list_active_meetings()
@@ -165,7 +194,7 @@ class MeetingService:
                 raise MeetingJoinError(INVALID_MEETING_OR_PASSCODE, status_code=400)
 
         active_count = await self.repository.count_active_participants(meeting_id)
-        if active_count >= meeting.max_participants:
+        if meeting.max_participants > 0 and active_count >= meeting.max_participants:
             raise MeetingJoinError("Meeting is full", status_code=409)
 
         participant_token = generate_participant_token()

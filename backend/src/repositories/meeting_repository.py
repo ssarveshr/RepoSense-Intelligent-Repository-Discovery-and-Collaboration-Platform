@@ -5,7 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.models.meeting import Meeting, MeetingStatus, Participant, ParticipantRole
+from src.models.meeting import Meeting, MeetingStatus, Participant, ParticipantRole, normalize_meeting_id_input
 
 
 class MeetingRepository:
@@ -23,6 +23,9 @@ class MeetingRepository:
         passcode_hash: Optional[str] = None,
         max_participants: int = 10,
         expires_at: Optional[datetime] = None,
+        repository_owner: Optional[str] = None,
+        repository_name: Optional[str] = None,
+        repository_url: Optional[str] = None,
     ) -> Meeting:
         meeting = Meeting(
             title=title,
@@ -31,6 +34,9 @@ class MeetingRepository:
             passcode_hash=passcode_hash,
             max_participants=max_participants,
             expires_at=expires_at,
+            repository_owner=repository_owner,
+            repository_name=repository_name,
+            repository_url=repository_url,
             status=MeetingStatus.scheduled.value,
         )
         host_participant = Participant(
@@ -62,6 +68,28 @@ class MeetingRepository:
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def get_meeting_by_id_light(self, meeting_id: str) -> Optional[Meeting]:
+        stmt = select(Meeting).where(Meeting.id == meeting_id)
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_meeting_by_short_code_light(self, short_code: str) -> Optional[Meeting]:
+        stmt = select(Meeting).where(Meeting.short_code == short_code)
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def resolve_meeting_row(self, identifier: str) -> Optional[Meeting]:
+        cleaned = identifier.strip()
+        if not cleaned:
+            return None
+
+        meeting = await self.get_meeting_by_id_light(cleaned)
+        if meeting is not None:
+            return meeting
+
+        normalized_code = normalize_meeting_id_input(cleaned)
+        return await self.get_meeting_by_short_code_light(normalized_code)
 
     async def list_active_meetings(self) -> list[Meeting]:
         active_statuses = (MeetingStatus.scheduled.value, MeetingStatus.active.value)

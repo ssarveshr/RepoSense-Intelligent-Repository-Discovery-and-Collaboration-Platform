@@ -6,11 +6,21 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.pool import StaticPool
 
 from src.api.deps.clerk_auth import ClerkUser, require_clerk_user
+from src.api.deps.rate_limit import limiter
 from src.config import settings
 from src.db import Base, get_session
 import src.models.meeting  # noqa: F401
 import src.models.user_profile  # noqa: F401
+import src.models.github_connection  # noqa: F401
 from src.main import app
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limiter():
+    """Clear slowapi counters between tests without disabling production limits."""
+    limiter.reset()
+    yield
+    limiter.reset()
 
 
 @pytest.fixture

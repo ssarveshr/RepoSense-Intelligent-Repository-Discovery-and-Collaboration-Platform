@@ -40,8 +40,12 @@ class Settings(BaseSettings):
     # Clerk — required for authenticated meeting creation and profile endpoints
     clerk_jwks_url: str | None = None
     clerk_issuer: str | None = None
+    clerk_audience: str | None = None
 
-    # SMTP (meeting invite flow — used by zoom_service today via os.environ)
+    # Auth diagnostics — off by default; never log bearer tokens or JWTs
+    auth_diagnostics: bool = False
+
+    # SMTP (meeting invitation emails — loaded from env at deployment time only)
     smtp_host: str | None = None
     smtp_port: int = 587
     smtp_user: str | None = None
@@ -49,6 +53,15 @@ class Settings(BaseSettings):
 
     # GitHub — optional token for collaborator listing (higher rate limits; no email guarantee)
     github_token: str | None = None
+
+    # GitHub OAuth — per-user connection (client secret stays backend-only)
+    github_client_id: str | None = None
+    github_client_secret: str | None = None
+    github_oauth_redirect_uri: str | None = None
+    github_token_encryption_key: str | None = None
+
+    # GitHub diagnostics — off by default
+    github_diagnostics: bool = False
 
     @field_validator("cors_origins", mode="before")
     @classmethod

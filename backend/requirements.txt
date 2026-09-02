@@ -6,3 +6,11 @@ requests
 python-multipart
 tf-keras
 numpy<2.0.0
+pydantic-settings
+sqlalchemy
+aiosqlite
+passlib[bcrypt]
+PyJWT[crypto]
+livekit-api
+slowapi
+cryptography

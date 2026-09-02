@@ -32,6 +32,7 @@ async def init_db() -> None:
     # Import models so metadata is populated before create_all
     import src.models.meeting  # noqa: F401
     import src.models.user_profile  # noqa: F401
+    import src.models.github_connection  # noqa: F401
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
