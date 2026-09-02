@@ -25,8 +25,7 @@ class RepoSummarizer:
                     "format": "json",
                     "options": {
                         "temperature": 0.1,
-                        "num_ctx": 8192,
-                        "num_predict": 700
+                        "num_ctx": 32768
                     }
                 },
                 timeout=1000
@@ -36,9 +35,9 @@ class RepoSummarizer:
                 result = response.json()
                 response_text = result.get('response', '')
                 try:
-                    return self._merge_deterministic_analysis(json.loads(response_text), analysis_data)
+                    return json.loads(response_text)
                 except json.JSONDecodeError:
-                    return self._merge_deterministic_analysis(self._extract_json(response_text), analysis_data)
+                    return self._extract_json(response_text)
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
             print(f"[INFO] Ollama LLM unavailable ({type(e).__name__}). Performing deep repository content analysis.")
         except Exception as e:
@@ -506,27 +505,9 @@ class RepoSummarizer:
         # Each file gets a bounded section so one huge file cannot dominate.
         source_parts = []
         total_chars = 0
-        max_chars = 16000
+        max_chars = 50000
 
-        # Prioritize entry points, routes, services, models and frontend roots.
-        def source_priority(path):
-            p = path.lower()
-            score = 0
-            if re.search(r'(main|app|server|index)\.(py|js|jsx|ts|tsx)$', p):
-                score += 100
-            if any(x in p for x in ('route', 'router', 'controller', 'service', 'model', 'schema')):
-                score += 60
-            if any(x in p for x in ('api', 'backend', 'frontend', 'src')):
-                score += 20
-            return score
-
-        ordered_sources = sorted(
-            source_files.items(),
-            key=lambda item: source_priority(item[0]),
-            reverse=True
-        )
-
-        for path, code in ordered_sources:
+        for path, code in source_files.items():
             if not code:
                 continue
 
@@ -550,8 +531,8 @@ class RepoSummarizer:
                 continue
 
             # Keep more than the old first-100-lines strategy.
-            if len(cleaned) > 5000:
-                cleaned = cleaned[:5000] + "\n[FILE TRUNCATED]"
+            if len(cleaned) > 12000:
+                cleaned = cleaned[:12000] + "\n[FILE TRUNCATED]"
 
             block = f"\n--- SOURCE FILE: {path} ---\n{cleaned}\n"
 
@@ -609,7 +590,7 @@ Be conservative. If the code does not provide enough evidence, report
 "Unknown" or lower confidence instead of inventing functionality.
 
 REPOSITORY STRUCTURE:
-{tree_text[:6000]}
+{tree_text[:20000]}
 
 DETECTED TECHNOLOGIES:
 {json.dumps(tech_stack)}
@@ -666,26 +647,6 @@ Return ONLY valid JSON with exactly this structure:
 Do not include any text outside the JSON.
 """
         return prompt
-
-    def _merge_deterministic_analysis(self, result, analysis_data):
-        """Attach deterministic repository analysis without spending LLM tokens."""
-        if not isinstance(result, dict):
-            result = {}
-
-        key_source_files = analysis_data.get("key_source_files", {})
-        config_files = analysis_data.get("config_files", {})
-
-        result["project_file_analysis"] = self._extract_project_file_analysis(
-            key_source_files, config_files
-        )
-
-        technical = result.setdefault("technical_details", {})
-        technical["tech_stack"] = analysis_data.get("tech_stack", []) or ["Software Development"]
-        technical["dependencies"] = analysis_data.get("dependencies", [])[:12]
-        technical["api_endpoints"] = self._extract_api_endpoints(key_source_files)
-        technical["env_vars"] = self._extract_env_vars(key_source_files, config_files)
-
-        return result
 
     def _extract_json(self, text):
         """Try to extract JSON from text that might contain additional content"""

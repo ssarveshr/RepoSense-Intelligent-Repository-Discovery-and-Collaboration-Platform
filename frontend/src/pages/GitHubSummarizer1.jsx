@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { summarizeRepo } from '../services/api';
 
@@ -8,29 +8,6 @@ const GitHubSummarizer = () => {
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState('');
   const [fileFilter, setFileFilter] = useState('');
-  const [loadingStage, setLoadingStage] = useState(0);
-
-  const loadingStages = [
-    'Fetching repository structure...',
-    'Inspecting important source files...',
-    'Extracting routes and configuration...',
-    'Qwen is analyzing the code...',
-    'Building the final summary...'
-  ];
-
-  useEffect(() => {
-    if (!loading) {
-      setLoadingStage(0);
-      return;
-    }
-
-    const timer = setInterval(() => {
-      setLoadingStage(prev => Math.min(prev + 1, loadingStages.length - 1));
-    }, 2500);
-
-    return () => clearInterval(timer);
-  }, [loading]);
-
   const navigate = useNavigate();
 
   const validateGitHubUrl = (url) => {
@@ -50,7 +27,6 @@ const GitHubSummarizer = () => {
     }
 
     setLoading(true);
-    setLoadingStage(0);
     setError('');
     setSummary(null);
     setFileFilter('');
@@ -166,9 +142,9 @@ const GitHubSummarizer = () => {
         {loading && (
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-12 text-center border border-gray-100 dark:border-gray-800">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400 font-semibold">{loadingStages[loadingStage]}</p>
+            <p className="text-gray-600 dark:text-gray-400 font-semibold">Performing deep file-by-file codebase analysis...</p>
             <p className="text-sm text-gray-500 mt-2">
-              Local Qwen analysis focuses on important code evidence for faster results.
+              Iterating through repository files, inspecting source code, and extracting API endpoints
             </p>
           </div>
         )}
