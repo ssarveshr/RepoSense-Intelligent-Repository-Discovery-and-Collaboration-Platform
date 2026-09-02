@@ -2,17 +2,40 @@ import requests
 import re
 from urllib.parse import urlparse
 
+from src.integrations.github_errors import (
+    build_diagnostic_payload,
+    classify_forbidden,
+    scopes_include_repo,
+)
+from src.utils.github_diagnostics import log_github_api_denied, log_github_precheck_denied
+
+
+class GitHubApiError(Exception):
+    def __init__(self, message: str, status_code: int = 400, code: str | None = None):
+        self.message = message
+        self.status_code = status_code
+        self.code = code
+        super().__init__(message)
+
+
 class GitHubAnalyzer:
-    def __init__(self, github_token: str | None = None):
+    def __init__(
+        self,
+        github_token: str | None = None,
+        *,
+        github_login: str | None = None,
+        granted_scopes: list[str] | None = None,
+    ):
         self.github_api_base = "https://api.github.com"
         self.raw_github_base = "https://raw.githubusercontent.com"
-        # GitHub API headers (optional token for higher rate limits)
+        self.github_login = github_login
+        self.granted_scopes = granted_scopes or []
         self.headers = {
-            'Accept': 'application/vnd.github.v3+json',
-            'User-Agent': 'RepoSense-Analyzer'
+            "Accept": "application/vnd.github.v3+json",
+            "User-Agent": "RepoSense-Analyzer",
         }
         if github_token:
-            self.headers['Authorization'] = f'Bearer {github_token}'
+            self.headers["Authorization"] = f"Bearer {github_token}"
     
     def extract_repo_info(self, github_url):
         """Extract owner and repo from GitHub URL"""
@@ -420,3 +443,267 @@ class GitHubAnalyzer:
 
         return collaborators
 
+    def _map_repository(self, payload: dict) -> dict:
+        owner = payload.get("owner") or {}
+        permissions = payload.get("permissions") or {}
+        permission_level = "read"
+        if permissions.get("admin"):
+            permission_level = "admin"
+        elif permissions.get("maintain"):
+            permission_level = "maintain"
+        elif permissions.get("push"):
+            permission_level = "write"
+        elif permissions.get("triage"):
+            permission_level = "triage"
+        return {
+            "name": payload.get("name"),
+            "full_name": payload.get("full_name"),
+            "owner": owner.get("login"),
+            "ownerType": owner.get("type"),
+            "url": payload.get("html_url"),
+            "private": payload.get("private", False),
+            "visibility": "private" if payload.get("private") else "public",
+            "permissionLevel": permission_level,
+            "permissions": permissions,
+        }
+
+    def _raise_github_error(
+        self,
+        response: requests.Response,
+        *,
+        operation: str,
+        owner: str,
+        repo: str,
+        repository: dict | None = None,
+    ) -> None:
+        if response.status_code == 401:
+            raise GitHubApiError(
+                "GitHub authentication is required. Please connect your GitHub account.",
+                401,
+                code="GITHUB_CONNECTION_EXPIRED",
+            )
+        if response.status_code == 404:
+            raise GitHubApiError(
+                f"Repository not found or inaccessible: {owner}/{repo}.",
+                404,
+                code="GITHUB_NOT_FOUND",
+            )
+        if response.status_code == 403:
+            remaining = response.headers.get("X-RateLimit-Remaining")
+            if remaining == "0":
+                raise GitHubApiError(
+                    "GitHub API rate limit reached. Please try again later.",
+                    429,
+                    code="GITHUB_RATE_LIMIT",
+                )
+            repo_permissions = (repository or {}).get("permissions")
+            code, message = classify_forbidden(
+                response,
+                operation=operation,
+                owner=owner,
+                repo=repo,
+                granted_scopes=self.granted_scopes,
+                repository_owner_type=(repository or {}).get("ownerType"),
+                repository_permissions=repo_permissions,
+            )
+            log_github_api_denied(
+                build_diagnostic_payload(
+                    operation=operation,
+                    repository=f"{owner}/{repo}",
+                    github_login=self.github_login,
+                    response=response,
+                    granted_scopes=self.granted_scopes,
+                    repository_owner_type=(repository or {}).get("ownerType"),
+                    repository_visibility=(repository or {}).get("visibility"),
+                    repository_permission=(repository or {}).get("permissionLevel"),
+                )
+            )
+            raise GitHubApiError(message, 403, code=code)
+        raise GitHubApiError(
+            f"GitHub API request failed with status {response.status_code}.",
+            response.status_code,
+            code="GITHUB_API_ERROR",
+        )
+
+    def _ensure_can_list_collaborators(self, repository: dict, *, owner: str, repo: str) -> None:
+        if not scopes_include_repo(self.granted_scopes):
+            log_github_precheck_denied(
+                clerk_user_id=None,
+                github_login=self.github_login,
+                repository=f"{owner}/{repo}",
+                denial_code="GITHUB_SCOPE_REQUIRED",
+                denial_message="Additional GitHub permissions are required. Please reconnect GitHub.",
+                oauth_scopes=self.granted_scopes,
+                repository_owner_type=repository.get("ownerType"),
+                repository_visibility=repository.get("visibility"),
+                repository_permission=repository.get("permissionLevel"),
+            )
+            raise GitHubApiError(
+                "Additional GitHub permissions are required. Please reconnect GitHub.",
+                403,
+                code="GITHUB_SCOPE_REQUIRED",
+            )
+
+    def get_repository(self, owner: str, repo: str) -> dict:
+        url = f"{self.github_api_base}/repos/{owner}/{repo}"
+        response = requests.get(url, headers=self.headers, timeout=15)
+        if response.status_code != 200:
+            self._raise_github_error(response, operation="repository", owner=owner, repo=repo)
+        return self._map_repository(response.json())
+
+    def list_collaborators_for_repo(self, owner: str, repo: str) -> list[dict]:
+        repository = self.get_repository(owner, repo)
+        self._ensure_can_list_collaborators(repository, owner=owner, repo=repo)
+
+        url = f"{self.github_api_base}/repos/{owner}/{repo}/collaborators"
+        params = {"per_page": 100, "affiliation": "direct"}
+        collaborators: list[dict] = []
+        page = 1
+
+        while True:
+            response = requests.get(
+                url,
+                headers=self.headers,
+                params={**params, "page": page},
+                timeout=15,
+            )
+            if response.status_code != 200:
+                self._raise_github_error(
+                    response,
+                    operation="collaborators",
+                    owner=owner,
+                    repo=repo,
+                    repository=repository,
+                )
+
+            batch = response.json()
+            if not batch:
+                break
+
+            for item in batch:
+                login = item.get("login") or ""
+                if not login:
+                    continue
+                permissions = item.get("permissions") or {}
+                email = self._fetch_user_public_email(login)
+                collaborators.append(
+                    {
+                        "id": str(item.get("id")) if item.get("id") is not None else None,
+                        "login": login,
+                        "name": item.get("name") or login,
+                        "avatar_url": item.get("avatar_url"),
+                        "url": item.get("html_url"),
+                        "permission": self._permission_label(permissions),
+                        "email": email,
+                        "email_source": "github" if email else None,
+                    }
+                )
+
+            if len(batch) < 100:
+                break
+            page += 1
+
+        return collaborators
+
+    def list_authenticated_user_repositories(self, *, page: int = 1, per_page: int = 30) -> tuple[list[dict], bool]:
+        url = f"{self.github_api_base}/user/repos"
+        response = requests.get(
+            url,
+            headers=self.headers,
+            params={"page": page, "per_page": per_page, "sort": "updated"},
+            timeout=15,
+        )
+        if response.status_code != 200:
+            self._raise_github_error(response, operation="repositories", owner="user", repo="repos")
+        payload = response.json()
+        repositories = [
+            {
+                "name": item.get("name"),
+                "full_name": item.get("full_name"),
+                "owner": (item.get("owner") or {}).get("login"),
+                "description": item.get("description"),
+                "url": item.get("html_url"),
+                "language": item.get("language"),
+                "stars": item.get("stargazers_count", 0),
+                "private": item.get("private", False),
+                "updated_at": item.get("updated_at"),
+            }
+            for item in payload
+        ]
+        return repositories, len(payload) >= per_page
+
+    def get_user_profile(self, login: str) -> dict:
+        response = requests.get(f"{self.github_api_base}/users/{login}", headers=self.headers, timeout=15)
+        if response.status_code != 200:
+            self._raise_github_error(response, operation="profile", owner=login, repo="profile")
+        data = response.json()
+        return {
+            "login": data.get("login"),
+            "name": data.get("name"),
+            "avatarUrl": data.get("avatar_url"),
+            "profileUrl": data.get("html_url"),
+            "bio": data.get("bio"),
+            "publicRepos": data.get("public_repos", 0),
+        }
+
+    def list_user_repositories(self, login: str, *, limit: int = 8) -> list[dict]:
+        response = requests.get(
+            f"{self.github_api_base}/users/{login}/repos",
+            headers=self.headers,
+            params={"per_page": limit, "sort": "updated"},
+            timeout=15,
+        )
+        if response.status_code != 200:
+            self._raise_github_error(response, operation="repositories", owner=login, repo="repos")
+        return [
+            {
+                "name": item.get("name"),
+                "full_name": item.get("full_name"),
+                "owner": (item.get("owner") or {}).get("login"),
+                "description": item.get("description"),
+                "url": item.get("html_url"),
+                "language": item.get("language"),
+                "stars": item.get("stargazers_count", 0),
+                "private": item.get("private", False),
+                "updated_at": item.get("updated_at"),
+            }
+            for item in response.json()
+        ]
+
+    def list_user_public_events(self, login: str, *, limit: int = 10) -> list[dict]:
+        response = requests.get(
+            f"{self.github_api_base}/users/{login}/events/public",
+            headers=self.headers,
+            params={"per_page": limit},
+            timeout=15,
+        )
+        if response.status_code != 200:
+            self._raise_github_error(response, operation="activity", owner=login, repo="events")
+        events = []
+        for item in response.json():
+            event_type = item.get("type") or "Event"
+            repo_name = (item.get("repo") or {}).get("name") or "repository"
+            summary = event_type.replace("Event", "")
+            if event_type == "PushEvent":
+                commits = (item.get("payload") or {}).get("commits") or []
+                summary = f"Pushed {len(commits)} commit(s) to {repo_name}"
+            else:
+                summary = f"{summary} on {repo_name}"
+            events.append(
+                {
+                    "id": str(item.get("id")),
+                    "type": event_type,
+                    "repo": repo_name,
+                    "created_at": item.get("created_at"),
+                    "summary": summary,
+                }
+            )
+        return events
+
+    def summarize_languages_from_repositories(self, repositories: list[dict]) -> list[dict]:
+        counts: dict[str, int] = {}
+        for repo in repositories:
+            language = repo.get("language")
+            if language:
+                counts[language] = counts.get(language, 0) + 1
+        return [{"name": name, "count": count} for name, count in sorted(counts.items(), key=lambda x: (-x[1], x[0]))]
