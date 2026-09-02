@@ -13,6 +13,11 @@ export default defineConfig({
   esbuild: {
     jsx: 'automatic',
   },
+  server: {
+    host: true,
+    port: 5173,
+    allowedHosts: ['.trycloudflare.com'],
+  },
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.js'],
