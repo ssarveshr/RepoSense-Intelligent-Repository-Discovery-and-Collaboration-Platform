@@ -1,11 +1,11 @@
 import { normalizeFetchError } from '../utils/apiError.js';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+function getApiBaseUrl() {
+  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+}
 
 function buildHeaders(token, extra = {}) {
   const headers = { 'Content-Type': 'application/json', ...extra };
-  const apiKey = import.meta.env.VITE_MEETING_API_KEY;
-  if (apiKey) headers['X-Meeting-Api-Key'] = apiKey;
   if (token) headers.Authorization = `Bearer ${token}`;
   return headers;
 }
@@ -22,30 +22,30 @@ async function parseError(response) {
 export async function fetchRepositoryCollaborators(githubUrl, token) {
   const params = new URLSearchParams({ github_url: githubUrl });
   try {
-    const response = await fetch(`${API_BASE_URL}/api/collaboration/collaborators?${params}`, {
+    const response = await fetch(`${getApiBaseUrl()}/api/collaboration/collaborators?${params}`, {
       headers: buildHeaders(token),
     });
     if (!response.ok) throw new Error(await parseError(response));
     return response.json();
   } catch (error) {
-    throw new Error(normalizeFetchError(error, API_BASE_URL));
+    throw new Error(normalizeFetchError(error, getApiBaseUrl()));
   }
 }
 
 export async function resolveMeeting(identifier) {
   const encoded = encodeURIComponent(identifier.trim());
   try {
-    const response = await fetch(`${API_BASE_URL}/api/meetings/resolve/${encoded}`);
+    const response = await fetch(`${getApiBaseUrl()}/api/meetings/resolve/${encoded}`);
     if (!response.ok) throw new Error(await parseError(response));
     return response.json();
   } catch (error) {
-    throw new Error(normalizeFetchError(error, API_BASE_URL));
+    throw new Error(normalizeFetchError(error, getApiBaseUrl()));
   }
 }
 
 export async function sendMeetingInvitations(meetingId, payload, token) {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/meetings/${meetingId}/invitations`, {
+    const response = await fetch(`${getApiBaseUrl()}/api/meetings/${meetingId}/invitations`, {
       method: 'POST',
       headers: buildHeaders(token),
       body: JSON.stringify({
@@ -65,7 +65,7 @@ export async function sendMeetingInvitations(meetingId, payload, token) {
     if (!response.ok) throw new Error(await parseError(response));
     return response.json();
   } catch (error) {
-    throw new Error(normalizeFetchError(error, API_BASE_URL));
+    throw new Error(normalizeFetchError(error, getApiBaseUrl()));
   }
 }
 

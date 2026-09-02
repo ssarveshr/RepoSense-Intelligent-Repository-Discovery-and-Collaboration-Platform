@@ -10,6 +10,8 @@ import {
   sendMeetingInvitations,
   statusLabel,
 } from '../services/collaborationApi.js';
+import { useGitHubConnection } from '../hooks/useGitHubConnection.js';
+import { formatGitHubCollaboratorError } from '../utils/githubError.js';
 import {
   parseGithubRepoInput,
   parseGithubRepoUrl,
@@ -36,12 +38,13 @@ function mapCollaborator(item, index) {
     githubLogin: item.github_login,
     email,
     emailSource: item.email_source || (email ? 'github' : null),
-    role: item.role || 'Collaborator',
+    role: item.role || item.permission || 'Collaborator',
     avatarUrl: item.avatar_url || null,
     avatar: (item.name || item.github_login || '?').charAt(0).toUpperCase(),
     invitationStatus: email ? INVITATION_STATUS.NOT_SENT : INVITATION_STATUS.EMAIL_UNAVAILABLE,
     inviteTime: null,
     isManual: false,
+    isCurrentUser: Boolean(item.is_current_user),
   };
 }
 
@@ -111,6 +114,7 @@ function normalizeErrorMessage(message) {
 export default function CollaborationStudio() {
   const navigate = useNavigate();
   const { getAuthToken, isSignedIn, isLoaded, user } = useContext(ProfileAuthContext);
+  const { connectGitHub } = useGitHubConnection();
   const {
     githubUrl: contextGithubUrl,
     repoName: contextRepoName,
@@ -139,6 +143,9 @@ export default function CollaborationStudio() {
   const [collaborators, setCollaborators] = useState([]);
   const [collaboratorsLoading, setCollaboratorsLoading] = useState(true);
   const [collaboratorsError, setCollaboratorsError] = useState('');
+  const [collaboratorsReconnectRequired, setCollaboratorsReconnectRequired] = useState(false);
+  const [collaboratorsLoadedMessage, setCollaboratorsLoadedMessage] = useState('');
+  const [selectedCollaboratorIds, setSelectedCollaboratorIds] = useState([]);
 
   const [creatingMeeting, setCreatingMeeting] = useState(false);
   const [joiningMeeting, setJoiningMeeting] = useState(false);
@@ -190,6 +197,8 @@ export default function CollaborationStudio() {
 
       setCollaboratorsLoading(true);
       setCollaboratorsError('');
+      setCollaboratorsReconnectRequired(false);
+      setCollaboratorsLoadedMessage('');
       try {
         const token = await getAuthToken();
         if (!token) {
@@ -198,9 +207,21 @@ export default function CollaborationStudio() {
           return;
         }
         const data = await fetchRepositoryCollaborators(url, token);
-        setCollaborators((data.collaborators || []).map(mapCollaborator));
+        const mapped = (data.collaborators || []).map(mapCollaborator);
+        setCollaborators(mapped);
+        setSelectedCollaboratorIds([]);
+        const repoLabel =
+          data.repository?.fullName ||
+          data.repository?.full_name ||
+          parseGithubRepoUrl(url)?.fullName ||
+          'repository';
+        setCollaboratorsLoadedMessage(
+          `Loaded ${mapped.length} collaborator${mapped.length === 1 ? '' : 's'} from ${repoLabel}`,
+        );
       } catch (err) {
-        setCollaboratorsError(err.message || 'Unable to load repository collaborators.');
+        const formatted = formatGitHubCollaboratorError(err);
+        setCollaboratorsError(formatted.message);
+        setCollaboratorsReconnectRequired(Boolean(formatted.reconnectRequired));
         setCollaborators([]);
       } finally {
         setCollaboratorsLoading(false);
@@ -315,6 +336,15 @@ export default function CollaborationStudio() {
       missing: collaborators.length - withEmail,
     };
   }, [collaborators]);
+
+  const inviteableCollaborators = useMemo(
+    () => collaborators.filter((collaborator) => !collaborator.isCurrentUser),
+    [collaborators],
+  );
+
+  const handleSelectAllInviteable = () => {
+    setSelectedCollaboratorIds(inviteableCollaborators.map((collaborator) => collaborator.id));
+  };
 
   const invitePreview = useMemo(() => {
     const hostEmailNorm = hostEmail.trim().toLowerCase();
@@ -918,11 +948,47 @@ export default function CollaborationStudio() {
             {!collaboratorsLoading && collaboratorsError && (
               <div className="text-sm text-amber-700 dark:text-amber-300 py-4 space-y-2">
                 <p>{collaboratorsError}</p>
-                {isSignedIn && (
+                {collaboratorsReconnectRequired && (
+                  <button
+                    type="button"
+                    onClick={() => connectGitHub()}
+                    className="text-xs font-semibold text-blue-600 dark:text-blue-400 underline"
+                  >
+                    Reconnect GitHub
+                  </button>
+                )}
+                {isSignedIn && !collaboratorsReconnectRequired && (
                   <button type="button" onClick={loadCollaborators} className="text-blue-600 underline text-xs">
                     Retry
                   </button>
                 )}
+              </div>
+            )}
+
+            {!collaboratorsLoading && !collaboratorsError && collaboratorsLoadedMessage && (
+              <p className="text-xs text-emerald-700 dark:text-emerald-300 mb-3">{collaboratorsLoadedMessage}</p>
+            )}
+
+            {!collaboratorsLoading && !collaboratorsError && inviteableCollaborators.length > 0 && (
+              <div className="flex items-center justify-between mb-3 gap-2">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {inviteableCollaborators.length} inviteable collaborator
+                  {inviteableCollaborators.length === 1 ? '' : 's'}
+                </p>
+                <div className="flex items-center gap-2">
+                  {selectedCollaboratorIds.length > 0 && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {selectedCollaboratorIds.length} selected
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleSelectAllInviteable}
+                    className="text-xs font-semibold text-blue-600 dark:text-blue-400 underline"
+                  >
+                    Select all
+                  </button>
+                </div>
               </div>
             )}
 
@@ -981,29 +1047,35 @@ export default function CollaborationStudio() {
                       >
                         {invitationStatusDisplay(c.invitationStatus, c.inviteTime)}
                       </span>
-                      <div className="flex items-center space-x-1.5 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => handleSendSingleInvite(c)}
-                          disabled={
-                            !isValidEmail(c.email) ||
-                            sendingSingleId === c.id ||
-                            !createdMeeting
-                          }
-                          title="Send invitation email via backend SMTP"
-                          className="text-xs px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl shadow-md transition-all disabled:opacity-40"
-                        >
-                          {sendingSingleId === c.id ? 'Sending…' : '📬 Send Mail'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleAutoLog(c)}
-                          className="text-[11px] px-2.5 py-1.5 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-xl transition-all"
-                          title="Log invitation status"
-                        >
-                          Auto Log
-                        </button>
-                      </div>
+                      {c.isCurrentUser ? (
+                        <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-300 shrink-0">
+                          You&apos;re the meeting host
+                        </span>
+                      ) : (
+                        <div className="flex items-center space-x-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleSendSingleInvite(c)}
+                            disabled={
+                              !isValidEmail(c.email) ||
+                              sendingSingleId === c.id ||
+                              !createdMeeting
+                            }
+                            title="Send invitation email via backend SMTP"
+                            className="text-xs px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl shadow-md transition-all disabled:opacity-40"
+                          >
+                            {sendingSingleId === c.id ? 'Sending…' : '📬 Send Mail'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleAutoLog(c)}
+                            className="text-[11px] px-2.5 py-1.5 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-xl transition-all"
+                            title="Log invitation status"
+                          >
+                            Auto Log
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
