@@ -47,6 +47,9 @@ async def test_participant_leave_and_roster(async_session):
         created.id, "Bob", token_service=FakeTokenService()
     )
 
+    assert join_a.is_host is True
+    assert join_b.is_host is False
+
     roster = await participant_service.list_roster(created.id)
     assert len(roster) == 2
 
@@ -194,3 +197,23 @@ async def test_join_respects_max_participants(async_session):
         await service.join_meeting(created.id, "Extra", token_service=FakeTokenService())
 
     assert exc_info.value.status_code == 409
+
+
+@pytest.mark.asyncio
+async def test_unlimited_max_participants_allows_sixth_join(async_session):
+    service = MeetingService(async_session)
+    created = await service.create_meeting(
+        MeetingCreate(title="Open room", host_display_name="Host", max_participants=0),
+        host_display_name="Host",
+    )
+
+    await service.join_meeting(created.id, "Host", token_service=FakeTokenService())
+    for index in range(1, 6):
+        response = await service.join_meeting(
+            created.id,
+            f"Guest {index}",
+            token_service=FakeTokenService(),
+        )
+        assert response.token.startswith("fake-token:")
+
+    assert created.max_participants == 0

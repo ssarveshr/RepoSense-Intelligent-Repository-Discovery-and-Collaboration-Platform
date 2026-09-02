@@ -19,10 +19,28 @@ vi.mock('../services/collaborationApi.js', async () => {
   };
 });
 
+vi.mock('../hooks/useGitHubConnection.js', () => ({
+  useGitHubConnection: () => ({
+    connection: { connected: false },
+    repositories: [],
+    loading: false,
+    reposLoading: false,
+    error: null,
+    reposError: null,
+    connectGitHub: vi.fn(),
+    disconnect: vi.fn(),
+    reloadConnection: vi.fn(),
+    reloadRepositories: vi.fn(),
+    githubLogin: null,
+    isConnected: false,
+  }),
+}));
+
 const authValue = {
   clerkEnabled: true,
   isLoaded: true,
   isSignedIn: true,
+  isSessionReady: true,
   user: {
     fullName: 'Test Host',
     primaryEmailAddress: { emailAddress: 'host@example.com' },
@@ -36,7 +54,7 @@ describe('CollaborationStudio', () => {
     vi.clearAllMocks();
   });
 
-  it('renders hero and host configuration card', () => {
+  it('renders host configuration and meeting controls', () => {
     render(
       <MemoryRouter>
         <ProfileAuthContext.Provider value={authValue}>
@@ -45,14 +63,14 @@ describe('CollaborationStudio', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('RepoSense Collaboration Studio')).toBeInTheDocument();
-    expect(screen.getByText('RepoSense Meeting & Collaboration Workspace')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Host & Launch Meeting/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Host Meeting & Broadcast Collaborator Invites/i })).toBeInTheDocument();
     expect(screen.getByText('Host Setup & Meeting Configuration')).toBeInTheDocument();
+    expect(screen.getByText('GitHub connection')).toBeInTheDocument();
     expect(screen.getByText('Select a repository')).toBeInTheDocument();
     expect(screen.getByText('Your Active Meetings')).toBeInTheDocument();
     expect(screen.queryByText('Sarah Frontend')).not.toBeInTheDocument();
     expect(screen.queryByText(/Zoom Collaboration/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('RepoSense Collaboration Studio')).not.toBeInTheDocument();
   });
 
   it('loads collaborators when repository is provided via navigation state', async () => {

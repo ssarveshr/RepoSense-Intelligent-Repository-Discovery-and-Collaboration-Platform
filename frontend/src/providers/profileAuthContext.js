@@ -6,6 +6,7 @@ export const defaultAuth = {
   clerkEnabled: false,
   isLoaded: true,
   isSignedIn: false,
+  isSessionReady: true,
   user: null,
   openUserProfile: null,
   getAuthToken: async () => null,

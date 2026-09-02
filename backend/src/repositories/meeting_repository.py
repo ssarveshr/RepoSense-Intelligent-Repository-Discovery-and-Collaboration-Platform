@@ -21,7 +21,7 @@ class MeetingRepository:
         host_display_name: str,
         host_clerk_user_id: Optional[str] = None,
         passcode_hash: Optional[str] = None,
-        max_participants: int = 10,
+        max_participants: int = 0,
         expires_at: Optional[datetime] = None,
         repository_owner: Optional[str] = None,
         repository_name: Optional[str] = None,

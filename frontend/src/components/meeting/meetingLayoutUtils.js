@@ -1,25 +1,28 @@
 /**
  * Responsive participant grid classes based on tile count and layout context.
+ * Uses min-height: 0 + auto-rows so tiles fill the flexible meeting viewport.
  */
 export function getParticipantGridClass(count, { chatOpen = false, compact = false } = {}) {
+  const shell = 'grid h-full min-h-0 w-full auto-rows-[minmax(0,1fr)]';
+
   if (count <= 1) {
-    return 'grid-cols-1 max-w-3xl mx-auto w-full items-center';
+    return `${shell} grid-cols-1 place-content-center max-w-5xl mx-auto`;
   }
   if (count === 2) {
     return chatOpen && !compact
-      ? 'grid-cols-1 sm:grid-cols-2 w-full items-start'
-      : 'grid-cols-1 sm:grid-cols-2 w-full items-start content-center';
+      ? `${shell} grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3`
+      : `${shell} grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 content-center`;
   }
   if (count <= 4) {
-    return 'grid-cols-1 sm:grid-cols-2 w-full items-start';
+    return `${shell} grid-cols-2 gap-2 sm:gap-3`;
   }
   if (count <= 6) {
-    return 'grid-cols-2 lg:grid-cols-3 w-full items-start';
+    return `${shell} grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3`;
   }
   if (count <= 9) {
-    return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 w-full items-start';
+    return `${shell} grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3`;
   }
-  return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 w-full items-start';
+  return `${shell} grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3`;
 }
 
 export function getThumbnailGridClass(count) {

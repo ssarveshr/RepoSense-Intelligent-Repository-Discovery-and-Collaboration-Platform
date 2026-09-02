@@ -1,15 +1,6 @@
+import { fetchAuthenticatedApi, getApiBaseUrl, parseApiError } from '../config/apiBase.js';
 import { normalizeFetchError } from '../utils/apiError.js';
-
-function getApiBaseUrl() {
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-}
-
-function buildHeaders(token, extra = {}) {
-  const headers = { 'Content-Type': 'application/json', ...extra };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  return headers;
-}
-
+import { GitHubRequestError, parseStructuredApiError } from '../utils/githubError.js';
 async function parseError(response) {
   try {
     const body = await response.json();
@@ -19,51 +10,71 @@ async function parseError(response) {
   }
 }
 
+async function parseJsonResponse(response) {
+  if (!response.ok) {
+    try {
+      await parseStructuredApiError(response);
+    } catch (error) {
+      if (error instanceof GitHubRequestError) {
+        throw error;
+      }
+      throw new Error(await parseError(response));
+    }
+  }
+  return response.json();
+}
+
 export async function fetchRepositoryCollaborators(githubUrl, token) {
   const params = new URLSearchParams({ github_url: githubUrl });
   try {
-    const response = await fetch(`${getApiBaseUrl()}/api/collaboration/collaborators?${params}`, {
-      headers: buildHeaders(token),
-    });
-    if (!response.ok) throw new Error(await parseError(response));
-    return response.json();
+    const response = await fetchAuthenticatedApi(
+      `/api/collaboration/collaborators?${params}`,
+      { method: 'GET' },
+      token,
+    );
+    return parseJsonResponse(response);
   } catch (error) {
+    if (error?.name === 'AuthenticationRequiredError' || error instanceof GitHubRequestError) {
+      throw error;
+    }
     throw new Error(normalizeFetchError(error, getApiBaseUrl()));
   }
 }
 
 export async function resolveMeeting(identifier) {
   const encoded = encodeURIComponent(identifier.trim());
+  const apiBaseUrl = getApiBaseUrl();
   try {
-    const response = await fetch(`${getApiBaseUrl()}/api/meetings/resolve/${encoded}`);
-    if (!response.ok) throw new Error(await parseError(response));
-    return response.json();
+    const response = await fetch(`${apiBaseUrl}/api/meetings/resolve/${encoded}`);
+    return parseJsonResponse(response);
   } catch (error) {
-    throw new Error(normalizeFetchError(error, getApiBaseUrl()));
+    throw new Error(normalizeFetchError(error, apiBaseUrl));
   }
 }
 
 export async function sendMeetingInvitations(meetingId, payload, token) {
   try {
-    const response = await fetch(`${getApiBaseUrl()}/api/meetings/${meetingId}/invitations`, {
-      method: 'POST',
-      headers: buildHeaders(token),
-      body: JSON.stringify({
-        host_email: payload.hostEmail,
-        host_name: payload.hostName,
-        repo_name: payload.repoName,
-        custom_message: payload.customMessage || undefined,
-        external_meeting_url: payload.externalMeetingUrl || undefined,
-        recipients: payload.recipients.map((r) => ({
-          email: r.email || undefined,
-          name: r.name,
-          github_login: r.githubLogin || undefined,
-          email_source: r.emailSource || undefined,
-        })),
-      }),
-    });
-    if (!response.ok) throw new Error(await parseError(response));
-    return response.json();
+    const response = await fetchAuthenticatedApi(
+      `/api/meetings/${meetingId}/invitations`,
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          host_email: payload.hostEmail,
+          host_name: payload.hostName,
+          repo_name: payload.repoName,
+          custom_message: payload.customMessage || undefined,
+          external_meeting_url: payload.externalMeetingUrl || undefined,
+          recipients: payload.recipients.map((r) => ({
+            email: r.email || undefined,
+            name: r.name,
+            github_login: r.githubLogin || undefined,
+            email_source: r.emailSource || undefined,
+          })),
+        }),
+      },
+      token,
+    );
+    return parseJsonResponse(response);
   } catch (error) {
     throw new Error(normalizeFetchError(error, getApiBaseUrl()));
   }

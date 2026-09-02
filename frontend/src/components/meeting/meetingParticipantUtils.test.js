@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { Track } from '../../services/livekitClient';
 import {
   buildRemoteParticipantTiles,
+  buildPanelParticipants,
+  assertParticipantCountConsistency,
   countLiveParticipants,
   getActiveParticipantCount,
   isActiveSpeaker,
@@ -117,5 +119,25 @@ describe('meetingParticipantUtils', () => {
   it('countLiveParticipants includes the local participant', () => {
     expect(countLiveParticipants(0)).toBe(1);
     expect(countLiveParticipants(2)).toBe(3);
+  });
+
+  it('buildPanelParticipants matches live participant count', () => {
+    const localTile = { id: 'host', label: 'Host', muted: false, isLocal: true };
+    const remoteTiles = [
+      { id: 'a', label: 'Alice', muted: true, isLocal: false },
+      { id: 'b', label: 'Bob', muted: false, isLocal: false },
+    ];
+    const panel = buildPanelParticipants({ localTile, remoteTiles, handRaised: true, handStates: { b: { raised: true } } });
+    expect(panel).toHaveLength(3);
+    expect(panel[0]).toMatchObject({ id: 'host', handRaised: true });
+    expect(panel[2]).toMatchObject({ id: 'b', handRaised: true });
+    expect(assertParticipantCountConsistency(3, panel)).toBe(true);
+    expect(assertParticipantCountConsistency(2, panel)).toBe(false);
+  });
+
+  it('getActiveParticipantCount matches panel length for six remotes', () => {
+    const remotes = new Map(Array.from({ length: 6 }, (_, index) => [`guest-${index}`, { identity: `guest-${index}` }]));
+    const room = { localParticipant: { identity: 'host' }, remoteParticipants: remotes };
+    expect(getActiveParticipantCount(room)).toBe(7);
   });
 });

@@ -30,6 +30,7 @@ export default function ParticipantGrid({
 }) {
   const allTiles = [localTile, ...remoteTiles];
   const count = allTiles.length;
+  const solo = count === 1;
   const gridClass = getParticipantGridClass(count, { chatOpen, compact: isMobile });
 
   const presenterTile = allTiles.find((t) => t.screenStream);
@@ -49,7 +50,7 @@ export default function ParticipantGrid({
     );
 
     return (
-      <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 h-full min-h-0">
+      <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 h-full min-h-0 w-full overflow-hidden">
         <div className="flex-1 min-w-0 min-h-0 flex flex-col">
           <MeetingParticipantTile
             {...presenterDisplay}
@@ -77,13 +78,14 @@ export default function ParticipantGrid({
   }
 
   return (
-    <div className={`grid gap-2 sm:gap-3 ${gridClass}`}>
+    <div className={gridClass} data-participant-count={count} data-testid="participant-grid">
       {allTiles.map((tile, index) => {
         const display = tileForGrid(tile);
         return (
           <MeetingParticipantTile
             key={tile.id || `participant-${index}`}
             {...display}
+            solo={solo}
             mirror={display.isLocal && !display.isScreenShare}
             handRaised={handStates[tile.id]?.raised}
           />

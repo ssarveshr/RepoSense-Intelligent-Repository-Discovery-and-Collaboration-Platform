@@ -112,6 +112,7 @@ describe('CollaborationStudio host invitation exclusion', () => {
 
     expect(await screen.findByText(/1 inviteable collaborator/i)).toBeInTheDocument();
     expect(screen.getByText("You're the meeting host")).toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: /suhanganesh is the meeting host/i })).not.toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: /Send Mail/i })).toHaveLength(1);
     expect(screen.getAllByRole('button', { name: /Auto Log/i })).toHaveLength(1);
   });
@@ -121,6 +122,6 @@ describe('CollaborationStudio host invitation exclusion', () => {
     await screen.findByText('PraveenKumarM17');
 
     fireEvent.click(screen.getByRole('button', { name: /Select all/i }));
-    expect(screen.getByText('1 selected')).toBeInTheDocument();
+    expect(screen.getByText(/· 1 selected/i)).toBeInTheDocument();
   });
 });

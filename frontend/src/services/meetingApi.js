@@ -1,13 +1,8 @@
+import { fetchAuthenticatedApi, getApiBaseUrl, parseApiError } from '../config/apiBase.js';
 import { normalizeFetchError } from '../utils/apiError.js';
 
-function getApiBaseUrl() {
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-}
-
-function buildHeaders(token, extra = {}) {
-  const headers = { 'Content-Type': 'application/json', ...extra };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  return headers;
+function buildHeaders(extra = {}) {
+  return { 'Content-Type': 'application/json', ...extra };
 }
 
 async function parseError(response) {
@@ -19,107 +14,119 @@ async function parseError(response) {
   }
 }
 
-async function request(url, options = {}) {
-  try {
-    const response = await fetch(url, options);
-    if (!response.ok) throw new Error(await parseError(response));
-    return response.json();
-  } catch (error) {
-    if (error instanceof Error && error.message.startsWith('Request failed')) {
-      throw error;
-    }
-    throw new Error(normalizeFetchError(error, getApiBaseUrl()));
-  }
+async function parseJsonResponse(response) {
+  if (!response.ok) throw new Error(await parseError(response));
+  return response.json();
 }
 
 export async function createMeeting(payload, token) {
-  return request(`${getApiBaseUrl()}/api/meetings`, {
-    method: 'POST',
-    headers: buildHeaders(token),
-    body: JSON.stringify(payload),
-  });
+  const response = await fetchAuthenticatedApi(
+    '/api/meetings',
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+    token,
+  );
+  return parseJsonResponse(response);
 }
 
 export async function listMeetings(token) {
-  return request(`${getApiBaseUrl()}/api/meetings`, {
-    headers: buildHeaders(token),
-  });
+  const response = await fetchAuthenticatedApi('/api/meetings', { method: 'GET' }, token);
+  return parseJsonResponse(response);
 }
 
 export async function getUserProfile(token) {
-  const response = await fetch(`${getApiBaseUrl()}/api/profile`, {
-    headers: buildHeaders(token),
-  });
-  if (!response.ok) throw new Error(await parseError(response));
-  return response.json();
+  const response = await fetchAuthenticatedApi('/api/profile', { method: 'GET' }, token);
+  return parseJsonResponse(response);
 }
 
 export async function updateUserProfile(token, payload) {
-  const response = await fetch(`${getApiBaseUrl()}/api/profile`, {
-    method: 'PATCH',
-    headers: buildHeaders(token),
-    body: JSON.stringify(payload),
-  });
-  if (!response.ok) throw new Error(await parseError(response));
-  return response.json();
+  const response = await fetchAuthenticatedApi(
+    '/api/profile',
+    {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    },
+    token,
+  );
+  return parseJsonResponse(response);
 }
 
 export async function getProfileActivity(token) {
-  const response = await fetch(`${getApiBaseUrl()}/api/profile/activity`, {
-    headers: buildHeaders(token),
-  });
-  if (!response.ok) throw new Error(await parseError(response));
-  return response.json();
+  const response = await fetchAuthenticatedApi('/api/profile/activity', { method: 'GET' }, token);
+  return parseJsonResponse(response);
 }
 
 export async function resolveMeeting(identifier) {
   const encoded = encodeURIComponent(identifier.trim());
-  const response = await fetch(`${getApiBaseUrl()}/api/meetings/resolve/${encoded}`);
-  if (!response.ok) throw new Error(await parseError(response));
-  return response.json();
+  const apiBaseUrl = getApiBaseUrl();
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/meetings/resolve/${encoded}`);
+    return parseJsonResponse(response);
+  } catch (error) {
+    throw new Error(normalizeFetchError(error, apiBaseUrl));
+  }
 }
 
 export async function getMeeting(meetingId, token) {
-  const response = await fetch(`${getApiBaseUrl()}/api/meetings/${meetingId}`, {
-    headers: buildHeaders(token),
-  });
-  if (!response.ok) throw new Error(await parseError(response));
-  return response.json();
+  const response = await fetchAuthenticatedApi(`/api/meetings/${meetingId}`, { method: 'GET' }, token);
+  return parseJsonResponse(response);
 }
 
 export async function getMeetingParticipants(meetingId, { token, participantId, participantToken } = {}) {
-  const headers = buildHeaders(token);
-  if (participantId) headers['X-Participant-Id'] = participantId;
-  if (participantToken) headers['X-Participant-Token'] = participantToken;
-  const response = await fetch(`${getApiBaseUrl()}/api/meetings/${meetingId}/participants`, { headers });
-  if (!response.ok) throw new Error(await parseError(response));
-  return response.json();
+  const extraHeaders = {};
+  if (participantId) extraHeaders['X-Participant-Id'] = participantId;
+  if (participantToken) extraHeaders['X-Participant-Token'] = participantToken;
+  const response = await fetchAuthenticatedApi(
+    `/api/meetings/${meetingId}/participants`,
+    {
+      method: 'GET',
+      headers: extraHeaders,
+    },
+    token,
+  );
+  return parseJsonResponse(response);
 }
 
 export async function joinMeeting(meetingId, { displayName, passcode }) {
-  const response = await fetch(`${getApiBaseUrl()}/api/meetings/${meetingId}/join`, {
-    method: 'POST',
-    headers: buildHeaders(),
-    body: JSON.stringify({
-      display_name: displayName,
-      passcode: passcode || undefined,
-    }),
-  });
-  if (!response.ok) throw new Error(await parseError(response));
-  return response.json();
+  const apiBaseUrl = getApiBaseUrl();
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/meetings/${meetingId}/join`, {
+      method: 'POST',
+      headers: buildHeaders(),
+      body: JSON.stringify({
+        display_name: displayName,
+        passcode: passcode || undefined,
+      }),
+    });
+    return parseJsonResponse(response);
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith('Request failed')) {
+      throw error;
+    }
+    throw new Error(normalizeFetchError(error, apiBaseUrl));
+  }
 }
 
 export async function leaveMeeting(meetingId, participantId, participantToken) {
-  const response = await fetch(`${getApiBaseUrl()}/api/meetings/${meetingId}/leave`, {
-    method: 'POST',
-    headers: buildHeaders(),
-    body: JSON.stringify({
-      participant_id: participantId,
-      participant_token: participantToken,
-    }),
-  });
-  if (!response.ok) throw new Error(await parseError(response));
-  return response.json();
+  const apiBaseUrl = getApiBaseUrl();
+  try {
+    const response = await fetch(`${apiBaseUrl}/api/meetings/${meetingId}/leave`, {
+      method: 'POST',
+      headers: buildHeaders(),
+      body: JSON.stringify({
+        participant_id: participantId,
+        participant_token: participantToken,
+      }),
+    });
+    return parseJsonResponse(response);
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith('Request failed')) {
+      throw error;
+    }
+    throw new Error(normalizeFetchError(error, apiBaseUrl));
+  }
 }
 
 /**
@@ -151,8 +158,10 @@ export function beaconLeaveMeeting(meetingId, participantId, participantToken) {
 }
 
 export async function endMeeting(meetingId, token) {
-  return request(`${getApiBaseUrl()}/api/meetings/${meetingId}/end`, {
-    method: 'POST',
-    headers: buildHeaders(token),
-  });
+  const response = await fetchAuthenticatedApi(
+    `/api/meetings/${meetingId}/end`,
+    { method: 'POST' },
+    token,
+  );
+  return parseJsonResponse(response);
 }

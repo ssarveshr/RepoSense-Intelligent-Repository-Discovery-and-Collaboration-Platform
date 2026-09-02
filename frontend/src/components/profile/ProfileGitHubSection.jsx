@@ -62,12 +62,17 @@ export default function ProfileGitHubSection({
   data,
   loading,
   error,
+  connectionError = null,
   onRetry,
   onConnectGitHub,
   onDisconnectGitHub,
   isOAuthConnected = false,
+  connection = null,
+  onReloadConnection,
   githubLogin = null,
 }) {
+  const resolvedLogin = githubLogin || connection?.github_user?.login || data?.github_username || null;
+
   if (loading) {
     return (
       <section className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 sm:p-6">
@@ -76,31 +81,45 @@ export default function ProfileGitHubSection({
     );
   }
 
-  if (error) {
+  if (error && !data?.connected && !isOAuthConnected) {
     return (
       <section className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 sm:p-6">
         <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-3">GitHub</h2>
         <div className="text-center py-8">
           <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">Unable to load GitHub data.</p>
-          <button
-            type="button"
-            onClick={onRetry}
-            className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-          >
-            Retry
-          </button>
+          <div className="flex items-center justify-center gap-4">
+            <button
+              type="button"
+              onClick={onRetry}
+              className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Retry profile data
+            </button>
+            {onReloadConnection && (
+              <button
+                type="button"
+                onClick={onReloadConnection}
+                className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                Retry connection
+              </button>
+            )}
+          </div>
         </div>
       </section>
     );
   }
 
-  if (!data?.connected) {
+  if (!data?.connected && !isOAuthConnected) {
     return (
       <section className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 sm:p-6">
         <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-2">GitHub</h2>
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
           Connect GitHub to display your repositories and activity.
         </p>
+        {connectionError && (
+          <p className="text-sm text-amber-700 dark:text-amber-300 mb-4">{connectionError}</p>
+        )}
         {onConnectGitHub && (
           <button
             type="button"
@@ -114,32 +133,39 @@ export default function ProfileGitHubSection({
     );
   }
 
-  const { profile, repositories = [], activity = [], languages = [], github_username: githubUsername } = data;
+  const { profile, repositories = [], activity = [], languages = [], github_username: githubUsername } =
+    data || {};
+  const displayUsername = githubUsername || resolvedLogin;
 
   return (
     <div className="space-y-6 min-w-0">
       <section className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 sm:p-6">
         <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-3">GitHub</h2>
         <div className="flex items-center gap-3">
-          {profile?.avatarUrl && (
+          {(profile?.avatarUrl || connection?.github_user?.avatar_url) && (
             <img
-              src={profile.avatarUrl}
+              src={profile?.avatarUrl || connection?.github_user?.avatar_url}
               alt=""
               className="w-10 h-10 rounded-full border border-gray-200 dark:border-gray-700"
             />
           )}
           <div className="min-w-0 flex-1">
-            {profile?.name && profile.name !== profile.login && (
-              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{profile.name}</p>
+            {(profile?.name || connection?.github_user?.name) &&
+              (profile?.name || connection?.github_user?.name) !== displayUsername && (
+              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                {profile?.name || connection?.github_user?.name}
+              </p>
             )}
-            <a
-              href={profile?.htmlUrl || `https://github.com/${githubUsername}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              @{githubUsername}
-            </a>
+            {displayUsername && (
+              <a
+                href={profile?.htmlUrl || `https://github.com/${displayUsername}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                @{displayUsername}
+              </a>
+            )}
           </div>
           {onDisconnectGitHub && isOAuthConnected && (
             <button
@@ -151,6 +177,11 @@ export default function ProfileGitHubSection({
             </button>
           )}
         </div>
+        {error && (
+          <p className="mt-3 text-sm text-amber-700 dark:text-amber-300">
+            Some GitHub profile details could not be loaded.
+          </p>
+        )}
       </section>
 
       <section className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 sm:p-6">

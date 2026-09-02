@@ -88,6 +88,31 @@ describe('ProfileGitHubSection', () => {
     );
 
     expect(screen.getByText('Unable to load GitHub data.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Retry profile data' })).toBeInTheDocument();
+  });
+
+  it('shows OAuth connection details when connected via connection hook only', () => {
+    render(
+      <ProfileGitHubSection
+        data={null}
+        loading={false}
+        error={null}
+        onRetry={vi.fn()}
+        onConnectGitHub={vi.fn()}
+        onDisconnectGitHub={vi.fn()}
+        isOAuthConnected
+        connection={{
+          connected: true,
+          github_user: {
+            login: 'dev-user',
+            name: 'Dev User',
+            avatar_url: 'https://avatars.example/dev-user',
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByText('@dev-user')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Disconnect' })).toBeInTheDocument();
   });
 });

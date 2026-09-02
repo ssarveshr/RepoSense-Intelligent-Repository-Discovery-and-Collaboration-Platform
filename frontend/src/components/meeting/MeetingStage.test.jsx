@@ -2,9 +2,15 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import MeetingStage from './MeetingStage';
+import { MeetLayoutContext } from '../../layouts/meetLayoutContext.js';
 
-const { mockDisconnect } = vi.hoisted(() => ({
+vi.mock('../../services/collaborationApi', () => ({
+  resolveMeeting: vi.fn().mockResolvedValue({ status: 'active', is_joinable: true }),
+}));
+
+const { mockDisconnect, mockConnect } = vi.hoisted(() => ({
   mockDisconnect: vi.fn().mockResolvedValue(undefined),
+  mockConnect: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('../../services/livekitClient', () => {
@@ -26,9 +32,13 @@ vi.mock('../../services/livekitClient', () => {
           getTrackPublication: () => null,
         },
       };
-      this.connect = vi.fn().mockResolvedValue(undefined);
+      this.connect = mockConnect;
       this.disconnect = mockDisconnect;
       this.onStateChange = vi.fn(() => () => {});
+      this.onReaction = vi.fn(() => () => {});
+      this.onHandState = vi.fn(() => () => {});
+      this.onCaption = vi.fn(() => () => {});
+      this.sendCaption = vi.fn().mockResolvedValue(undefined);
     }
   }
 
@@ -45,7 +55,15 @@ vi.mock('../../services/livekitClient', () => {
         ScreenShare: 'screen_share',
       },
     },
+    REACTION_DISPLAY_MS: 4000,
     LiveKitSession: MockLiveKitSession,
+    normalizeActiveSpeakerIdentities: (speakers) => {
+      if (!speakers) return [];
+      if (Array.isArray(speakers)) {
+        return speakers.map((item) => (typeof item === 'string' ? item : item?.identity)).filter(Boolean);
+      }
+      return [];
+    },
   };
 });
 
@@ -58,9 +76,17 @@ function createMockStream() {
   };
 }
 
-function renderStage({ onLeave = vi.fn().mockResolvedValue(undefined), onExit = vi.fn(), stopLocalMedia = vi.fn() } = {}) {
+function renderStage({
+  onLeave = vi.fn().mockResolvedValue(undefined),
+  onExit = vi.fn(),
+  onEndMeeting = vi.fn().mockResolvedValue(undefined),
+  onMeetingEnded = vi.fn(),
+  stopLocalMedia = vi.fn(),
+  localStream = createMockStream(),
+  isHost = false,
+} = {}) {
   const media = {
-    localStream: createMockStream(),
+    localStream,
     isAudioEnabled: true,
     isVideoEnabled: true,
     toggleAudio: vi.fn(),
@@ -71,20 +97,27 @@ function renderStage({ onLeave = vi.fn().mockResolvedValue(undefined), onExit = 
   const joinData = {
     token: 'test-token',
     livekit_url: 'wss://test.livekit.cloud',
-    room_name: 'ABCD-EFGH',
+    room_name: 'room-uuid',
+    short_code: 'ABCD-EFGH',
     displayName: 'Alice',
     participant_id: 'participant-1',
     participant_token: 'leave-token',
   };
 
   render(
-    <MeetingStage
-      meetingId="meeting-1"
-      joinData={joinData}
-      media={media}
-      onLeave={onLeave}
-      onExit={onExit}
-    />,
+    <MeetLayoutContext.Provider value={{ standalone: true }}>
+      <MeetingStage
+        meetingId="meeting-1"
+        joinData={joinData}
+        media={media}
+        meetingShortCode="ABCD-EFGH"
+        isHost={isHost}
+        onLeave={onLeave}
+        onEndMeeting={onEndMeeting}
+        onMeetingEnded={onMeetingEnded}
+        onExit={onExit}
+      />
+    </MeetLayoutContext.Provider>,
   );
 
   return { onLeave, onExit, stopLocalMedia };
@@ -166,28 +199,96 @@ describe('MeetingStage leave flow', () => {
     );
   });
 
+  it('connects even when local media stream is unavailable', async () => {
+    mockConnect.mockClear();
+    renderStage({ localStream: null });
+
+    await waitFor(() => {
+      expect(mockConnect).toHaveBeenCalledWith(
+        expect.objectContaining({
+          token: 'test-token',
+          localStream: null,
+        }),
+      );
+    });
+  });
+
+  it('shows meeting short code in the header', async () => {
+    renderStage();
+
+    expect(await screen.findByText('ABCD-EFGH')).toBeInTheDocument();
+  });
+
+  it('keeps People panel count aligned with header participant count', async () => {
+    renderStage();
+
+    await waitFor(() => {
+      expect(screen.getByText('2 participants')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: '2 participants' }));
+
+    expect(await screen.findByRole('dialog', { name: 'Participants' })).toBeInTheDocument();
+    expect(screen.getByText('People (2)')).toBeInTheDocument();
+    const panel = screen.getByRole('dialog', { name: 'Participants' });
+    expect(panel).toHaveTextContent('Alice (You)');
+    expect(panel).toHaveTextContent('Bob');
+  });
+
+  it('shows host End meeting control and confirms before ending', async () => {
+    const onEndMeeting = vi.fn().mockResolvedValue(undefined);
+    const onMeetingEnded = vi.fn();
+    renderStage({ isHost: true, onEndMeeting, onMeetingEnded });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'End meeting for everyone' })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'End meeting for everyone' }));
+    expect(screen.getByRole('dialog', { name: /End meeting/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'End meeting' }));
+
+    await waitFor(() => {
+      expect(onEndMeeting).toHaveBeenCalledTimes(1);
+      expect(onMeetingEnded).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('does not show End meeting for non-host participants', async () => {
+    renderStage({ isHost: false });
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Leave meeting' })).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole('button', { name: 'End meeting for everyone' })).not.toBeInTheDocument();
+  });
+
   it('runs cleanup on unmount', async () => {
     const stopLocalMedia = vi.fn();
     const { unmount } = render(
-      <MeetingStage
-        meetingId="meeting-1"
-        joinData={{
-          token: 'test-token',
-          livekit_url: 'wss://test.livekit.cloud',
-          room_name: 'ABCD-EFGH',
-          displayName: 'Alice',
-        }}
-        media={{
-          localStream: createMockStream(),
-          isAudioEnabled: true,
-          isVideoEnabled: true,
-          toggleAudio: vi.fn(),
-          toggleVideo: vi.fn(),
-          stopLocalMedia,
-        }}
-        onLeave={vi.fn()}
-        onExit={vi.fn()}
-      />,
+      <MeetLayoutContext.Provider value={{ standalone: true }}>
+        <MeetingStage
+          meetingId="meeting-1"
+          joinData={{
+            token: 'test-token',
+            livekit_url: 'wss://test.livekit.cloud',
+            room_name: 'ABCD-EFGH',
+            displayName: 'Alice',
+          }}
+          media={{
+            localStream: createMockStream(),
+            isAudioEnabled: true,
+            isVideoEnabled: true,
+            toggleAudio: vi.fn(),
+            toggleVideo: vi.fn(),
+            stopLocalMedia,
+          }}
+          onLeave={vi.fn()}
+          onExit={vi.fn()}
+        />
+      </MeetLayoutContext.Provider>,
     );
 
     await waitFor(() => {

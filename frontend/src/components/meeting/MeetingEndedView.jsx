@@ -1,8 +1,15 @@
 import { Link } from 'react-router-dom';
+import { useMeetLayout } from '../../layouts/meetLayoutContext.js';
 
 export default function MeetingEndedView({ title, message, onReturn }) {
+  const { standalone } = useMeetLayout();
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] px-4 text-center">
+    <div
+      className={`flex flex-col items-center justify-center px-4 text-center ${
+        standalone ? 'min-h-full h-full bg-gray-950' : 'min-h-[calc(100vh-8rem)]'
+      }`}
+    >
       <div className="w-full max-w-md bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-10 shadow-xl">
         <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-blue-500/20 flex items-center justify-center">
           <svg className="w-8 h-8 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">

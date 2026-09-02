@@ -60,19 +60,18 @@ export default function MeetingHeader({
           onClick={onToggleParticipants}
           aria-label={`${participantCount} participants`}
           aria-pressed={showParticipants}
-          className={`hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-full transition-colors ${
+          className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-full transition-colors ${
             showParticipants
               ? 'bg-[#222222] text-white'
               : 'text-[#A1A1A1] hover:text-white hover:bg-[#222222]'
           }`}
         >
           <PeopleIcon className="w-3.5 h-3.5" />
-          {participantCount} {participantCount === 1 ? 'participant' : 'participants'}
+          <span className="sm:hidden">{participantCount}</span>
+          <span className="hidden sm:inline">
+            {participantCount} {participantCount === 1 ? 'participant' : 'participants'}
+          </span>
         </button>
-
-        <span className="sm:hidden text-xs text-[#A1A1A1] font-semibold">
-          {participantCount}
-        </span>
 
         <span
           className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${

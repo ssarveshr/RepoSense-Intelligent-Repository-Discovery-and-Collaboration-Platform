@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { CloseIcon, CopyIcon, InfoIcon } from './MeetingIcons';
+import { buildMeetJoinUrl } from '../../utils/frontendBaseUrl.js';
 
 export default function MeetingInfoPopover({
   meetingTitle,
@@ -29,9 +30,7 @@ export default function MeetingInfoPopover({
     return () => document.removeEventListener('mousedown', handleClick);
   }, [onClose]);
 
-  const meetingLink = meetingCode
-    ? `${window.location.origin}/meet/join/${meetingCode}`
-    : window.location.href;
+  const meetingLink = meetingCode ? buildMeetJoinUrl(meetingCode) : window.location.href;
 
   const handleCopy = async () => {
     try {

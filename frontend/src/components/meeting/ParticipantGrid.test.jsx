@@ -127,4 +127,51 @@ describe('ParticipantGrid', () => {
     expect(screen.getByText('Guest Two')).toBeInTheDocument();
     expect(screen.getByText('Guest Three')).toBeInTheDocument();
   });
+
+  it('marks solo layout for one participant', () => {
+    render(
+      <ParticipantGrid
+        localTile={buildLocalTile()}
+        remoteTiles={[]}
+        chatOpen={false}
+        isMobile={false}
+        handStates={{}}
+      />,
+    );
+
+    expect(screen.getByTestId('participant-grid')).toHaveAttribute('data-participant-count', '1');
+    expect(screen.getAllByTestId('participant-tile')).toHaveLength(1);
+  });
+
+  it('renders six participants in the grid', () => {
+    render(
+      <ParticipantGrid
+        localTile={buildLocalTile()}
+        remoteTiles={Array.from({ length: 5 }, (_, index) =>
+          buildRemoteTile({ id: `guest-${index}`, label: `Guest ${index + 1}` }),
+        )}
+        chatOpen={false}
+        isMobile={false}
+        handStates={{}}
+      />,
+    );
+
+    expect(screen.getByTestId('participant-grid')).toHaveAttribute('data-participant-count', '6');
+    expect(screen.getAllByTestId('participant-tile')).toHaveLength(6);
+  });
+
+  it('shows avatar fallback when remote video is missing', () => {
+    render(
+      <ParticipantGrid
+        localTile={buildLocalTile({ stream: null, cameraStream: null })}
+        remoteTiles={[buildRemoteTile()]}
+        chatOpen={false}
+        isMobile={false}
+        handStates={{}}
+      />,
+    );
+
+    expect(screen.getByText('Guest')).toBeInTheDocument();
+    expect(document.querySelectorAll('video')).toHaveLength(0);
+  });
 });

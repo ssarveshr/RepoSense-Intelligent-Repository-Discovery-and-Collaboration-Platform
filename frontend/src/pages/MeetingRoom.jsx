@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { useUser } from '@clerk/clerk-react';
+import { useAuth, useUser } from '@clerk/clerk-react';
 import { useLocalMedia } from '../hooks/useLocalMedia';
 import { useMeetingSession } from '../hooks/useMeetingSession';
+import { useMeetDocumentTitle } from '../hooks/useMeetDocumentTitle';
 import { resolveMeeting } from '../services/collaborationApi';
+import { endMeeting } from '../services/meetingApi';
 import MeetingLobbyView from '../components/meeting/MeetingLobbyView';
 import MeetingStage from '../components/meeting/MeetingStage';
 import MeetingEndedView from '../components/meeting/MeetingEndedView';
@@ -11,8 +13,9 @@ import MeetingEndedView from '../components/meeting/MeetingEndedView';
 export default function MeetingRoom() {
   const { id: meetingId } = useParams();
   const { user } = useUser();
+  const { getToken } = useAuth();
   const media = useLocalMedia();
-  const { phase, session, joinError, joining, endedReason, handleJoin, leave, exitToLobby } =
+  const { phase, session, joinError, joining, endedReason, handleJoin, leave, markMeetingEnded, exitToLobby } =
     useMeetingSession(meetingId);
 
   const [meetingInfo, setMeetingInfo] = useState(null);
@@ -45,8 +48,25 @@ export default function MeetingRoom() {
     };
   }, [meetingId]);
 
+  const titlePhase =
+    endedReason === 'ended' || loadError === 'ended'
+      ? 'ended'
+      : phase === 'stage' && session
+        ? 'stage'
+        : 'lobby';
+
+  useMeetDocumentTitle(meetingInfo?.title, titlePhase);
+
   const defaultName =
     user?.fullName || user?.username || user?.firstName || '';
+
+  const handleEndMeeting = useCallback(async () => {
+    const token = await getToken();
+    if (!token) {
+      throw new Error('Sign in is required to end this meeting.');
+    }
+    await endMeeting(meetingId, token);
+  }, [getToken, meetingId]);
 
   if (endedReason === 'ended' || loadError === 'ended') {
     return (
@@ -60,19 +80,26 @@ export default function MeetingRoom() {
 
   if (phase === 'stage' && session) {
     return (
-      <MeetingStage
-        meetingId={meetingId}
-        joinData={session}
-        media={media}
-        meetingTitle={meetingInfo?.title}
-        onLeave={leave}
-        onExit={exitToLobby}
-      />
+      <div className="h-full min-h-0 flex flex-col">
+        <MeetingStage
+          meetingId={meetingId}
+          joinData={session}
+          media={media}
+          meetingTitle={meetingInfo?.title}
+          meetingShortCode={meetingInfo?.short_code}
+          isHost={Boolean(session.is_host)}
+          onLeave={leave}
+          onEndMeeting={handleEndMeeting}
+          onMeetingEnded={markMeetingEnded}
+          onExit={exitToLobby}
+        />
+      </div>
     );
   }
 
   return (
-    <MeetingLobbyView
+    <div className="h-full min-h-0 overflow-y-auto">
+      <MeetingLobbyView
       media={media}
       onJoin={handleJoin}
       joinLabel="Join meeting"
@@ -83,5 +110,6 @@ export default function MeetingRoom() {
       meetingCode={meetingInfo?.short_code}
       defaultDisplayName={defaultName}
     />
+    </div>
   );
 }

@@ -72,5 +72,20 @@ class Settings(BaseSettings):
             return [origin.strip() for origin in value.split(",") if origin.strip()]
         return value
 
+    @field_validator(
+        "api_base_url",
+        "frontend_base_url",
+        "livekit_url",
+        "github_oauth_redirect_uri",
+        "github_client_secret",
+        "github_token_encryption_key",
+        mode="before",
+    )
+    @classmethod
+    def strip_whitespace(cls, value):
+        if isinstance(value, str):
+            return value.strip()
+        return value
+
 
 settings = Settings()

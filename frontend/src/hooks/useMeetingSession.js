@@ -123,6 +123,14 @@ export function useMeetingSession(meetingId) {
     navigate('/meetings');
   }, [navigate]);
 
+  const markMeetingEnded = useCallback(() => {
+    explicitLeaveRef.current = true;
+    setEndedReason('ended');
+    setPhase('lobby');
+    setSession(null);
+    setJoinError(null);
+  }, []);
+
   return {
     phase,
     session,
@@ -131,6 +139,7 @@ export function useMeetingSession(meetingId) {
     endedReason,
     handleJoin,
     leave,
+    markMeetingEnded,
     exitToLobby,
   };
 }

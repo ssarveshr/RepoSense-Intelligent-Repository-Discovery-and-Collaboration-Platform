@@ -23,7 +23,11 @@ vi.mock('../components/profile/ProfileSidebar', () => ({
 }));
 
 vi.mock('../components/profile/ProfileGitHubSection', () => ({
-  default: () => <div data-testid="profile-github">GitHub section</div>,
+  default: ({ loading, isOAuthConnected }) => (
+    <div data-testid="profile-github">
+      {loading ? 'github-loading' : isOAuthConnected ? 'github-connected' : 'github-disconnected'}
+    </div>
+  ),
 }));
 
 vi.mock('../components/profile/EditProfileDialog', () => ({
@@ -41,10 +45,11 @@ describe('Profile', () => {
     useProfileAuth.mockReturnValue({
       user: { fullName: 'Suhan G', username: 'suhan-g' },
       usernameSetupState: 'ready',
+      isLoaded: true,
+      isSessionReady: true,
     });
     useProfile.mockReturnValue({
       profile: { displayName: 'Suhan G', bio: 'hello', skills: ['python'] },
-      githubUsername: null,
       loading: false,
       error: null,
       saveProfile: vi.fn(),
@@ -57,27 +62,74 @@ describe('Profile', () => {
       reload: vi.fn(),
     });
     useGitHubConnection.mockReturnValue({
+      connection: { connected: false },
       connectGitHub: vi.fn(),
       disconnect: vi.fn(),
       isConnected: false,
-      githubLogin: null,
+      loading: false,
+      error: null,
+      reloadConnection: vi.fn(),
     });
   });
 
-  it('renders profile identity and GitHub section without meeting activity', async () => {
+  it('renders profile identity and GitHub section without meeting activity', () => {
     render(<Profile />);
 
     expect(screen.getByTestId('profile-sidebar')).toBeInTheDocument();
     expect(screen.getByTestId('profile-github')).toBeInTheDocument();
+    expect(screen.getByText('github-disconnected')).toBeInTheDocument();
     expect(screen.queryByText(/Completed meeting/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/Created meeting/i)).not.toBeInTheDocument();
+  });
+
+  it('does not keep the page skeleton after profile data is ready', () => {
+    render(<Profile />);
+
+    expect(screen.queryByTestId('profile-skeleton')).not.toBeInTheDocument();
+    expect(screen.getByTestId('profile-sidebar')).toBeInTheDocument();
+  });
+
+  it('shows connected GitHub section when OAuth is connected', () => {
+    useGitHubConnection.mockReturnValue({
+      connection: { connected: true, github_user: { login: 'dev' } },
+      connectGitHub: vi.fn(),
+      disconnect: vi.fn(),
+      isConnected: true,
+      loading: false,
+      error: null,
+      reloadConnection: vi.fn(),
+    });
+
+    render(<Profile />);
+
+    expect(screen.getByText('github-connected')).toBeInTheDocument();
+  });
+
+  it('does not skeleton the GitHub section when only the secondary profile request is still loading', () => {
+    useGitHubConnection.mockReturnValue({
+      connection: { connected: true, github_user: { login: 'dev' } },
+      connectGitHub: vi.fn(),
+      disconnect: vi.fn(),
+      isConnected: true,
+      loading: false,
+      error: null,
+      reloadConnection: vi.fn(),
+    });
+    useGitHubProfile.mockReturnValue({
+      data: null,
+      loading: true,
+      error: null,
+      reload: vi.fn(),
+    });
+
+    render(<Profile />);
+
+    expect(screen.getByText('github-connected')).toBeInTheDocument();
   });
 
   it('does not fetch meeting activity endpoints', () => {
     const fetchSpy = vi.spyOn(global, 'fetch');
     render(<Profile />);
-
-    expect(screen.getByTestId('profile-github')).toBeInTheDocument();
 
     const activityCalls = fetchSpy.mock.calls.filter(([url]) =>
       String(url).includes('/api/profile/activity'),

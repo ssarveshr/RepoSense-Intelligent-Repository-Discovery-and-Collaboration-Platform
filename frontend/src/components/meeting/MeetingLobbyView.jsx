@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { CameraIcon, CameraOffIcon, MicIcon, MicOffIcon } from './MeetingIcons';
+import { useMeetLayout } from '../../layouts/meetLayoutContext.js';
 
 function avatarGradient(name) {
   const hash = (name || '?').split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -19,6 +20,7 @@ export default function MeetingLobbyView({
   activeParticipantCount = null,
   defaultDisplayName = '',
 }) {
+  const { standalone } = useMeetLayout();
   const videoRef = useRef(null);
   const [displayName, setDisplayName] = useState(defaultDisplayName);
   const [passcode, setPasscode] = useState('');
@@ -70,7 +72,13 @@ export default function MeetingLobbyView({
           : `${activeParticipantCount} people in the meeting`;
 
   return (
-    <div className="-mx-4 sm:-mx-6 lg:-mx-8 -my-12 min-h-[calc(100vh-4rem)] bg-gray-50 dark:bg-gray-950">
+    <div
+      className={
+        standalone
+          ? 'min-h-full h-full bg-gray-950'
+          : '-mx-4 sm:-mx-6 lg:-mx-8 -my-12 min-h-[calc(100vh-4rem)] bg-gray-50 dark:bg-gray-950'
+      }
+    >
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 items-start">
           {/* Preview column */}

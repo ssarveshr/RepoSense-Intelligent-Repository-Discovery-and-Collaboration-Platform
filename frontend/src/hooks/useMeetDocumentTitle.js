@@ -14,6 +14,8 @@ export function useMeetDocumentTitle(meetingTitle, phase) {
       document.title = meetingTitle
         ? `Join ${meetingTitle} — RepoSense Meet`
         : `Join — ${DEFAULT_TITLE}`;
+    } else if (phase === 'ended') {
+      document.title = 'Meeting ended — RepoSense Meet';
     } else {
       document.title = DEFAULT_TITLE;
     }

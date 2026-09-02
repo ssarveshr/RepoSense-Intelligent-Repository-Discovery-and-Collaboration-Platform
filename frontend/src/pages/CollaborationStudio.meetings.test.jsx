@@ -24,10 +24,28 @@ vi.mock('../services/collaborationApi.js', async () => {
   };
 });
 
+vi.mock('../hooks/useGitHubConnection.js', () => ({
+  useGitHubConnection: () => ({
+    connection: { connected: true, github_user: { login: 'owner' } },
+    repositories: [],
+    loading: false,
+    reposLoading: false,
+    error: null,
+    reposError: null,
+    connectGitHub: vi.fn(),
+    disconnect: vi.fn(),
+    reloadConnection: vi.fn(),
+    reloadRepositories: vi.fn(),
+    githubLogin: 'owner',
+    isConnected: true,
+  }),
+}));
+
 const authValue = {
   clerkEnabled: true,
   isLoaded: true,
   isSignedIn: true,
+  isSessionReady: true,
   user: {
     id: 'user_host_1',
     fullName: 'Test Host',

@@ -11,6 +11,31 @@ export function countLiveParticipants(remoteTileCount) {
   return Math.max(1, 1 + remoteTileCount);
 }
 
+/** Build People panel rows from the same tile sources used by the grid. */
+export function buildPanelParticipants({ localTile, remoteTiles, handRaised, handStates = {} }) {
+  return [
+    {
+      id: localTile.id,
+      label: localTile.label,
+      muted: localTile.muted,
+      isLocal: true,
+      handRaised: Boolean(handRaised),
+    },
+    ...remoteTiles.map((tile) => ({
+      id: tile.id,
+      label: tile.label,
+      muted: tile.muted,
+      isLocal: false,
+      handRaised: Boolean(handStates[tile.id]?.raised),
+    })),
+  ];
+}
+
+/** Header/People count must match panel list length when derived from the same tiles. */
+export function assertParticipantCountConsistency(participantCount, panelParticipants) {
+  return participantCount === panelParticipants.length;
+}
+
 /** Authoritative active in-call count: local participant + unique remote participants. */
 export function getActiveParticipantCount(room) {
   if (!room?.localParticipant) {

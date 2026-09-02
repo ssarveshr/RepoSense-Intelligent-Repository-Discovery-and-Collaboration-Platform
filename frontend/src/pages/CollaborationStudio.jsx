@@ -1,5 +1,5 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ProfileAuthContext } from '../providers/profileAuthContext.js';
 import { createMeeting, endMeeting, listMeetings } from '../services/meetingApi.js';
 import {
@@ -17,6 +17,7 @@ import {
   parseGithubRepoUrl,
   useMeetingRepositoryContext,
 } from '../hooks/useMeetingRepositoryContext.js';
+import { openMeetingTabPlaceholder, navigateMeetingTab } from '../utils/openMeetingTab.js';
 
 const VideoCameraIcon = ({ className = 'w-6 h-6' }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -32,15 +33,16 @@ const ArrowRightIcon = ({ className = 'w-5 h-5' }) => (
 
 function mapCollaborator(item, index) {
   const email = item.email || null;
+  const githubLogin = item.github_login || item.login || null;
   return {
-    id: item.github_login || `github-${index}`,
-    name: item.name || item.github_login,
-    githubLogin: item.github_login,
+    id: githubLogin || item.id || `github-${index}`,
+    name: item.name || githubLogin,
+    githubLogin,
     email,
     emailSource: item.email_source || (email ? 'github' : null),
     role: item.role || item.permission || 'Collaborator',
     avatarUrl: item.avatar_url || null,
-    avatar: (item.name || item.github_login || '?').charAt(0).toUpperCase(),
+    avatar: (item.name || githubLogin || '?').charAt(0).toUpperCase(),
     invitationStatus: email ? INVITATION_STATUS.NOT_SENT : INVITATION_STATUS.EMAIL_UNAVAILABLE,
     inviteTime: null,
     isManual: false,
@@ -113,8 +115,22 @@ function normalizeErrorMessage(message) {
 
 export default function CollaborationStudio() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { getAuthToken, isSignedIn, isLoaded, user } = useContext(ProfileAuthContext);
-  const { connectGitHub } = useGitHubConnection();
+  const {
+    connection: githubConnection,
+    repositories,
+    loading: githubConnectionLoading,
+    reposLoading,
+    error: githubConnectionError,
+    reposError,
+    connectGitHub,
+    disconnect: disconnectGitHub,
+    reloadConnection: reloadGitHubConnection,
+    reloadRepositories,
+    githubLogin,
+    isConnected: isGitHubConnected,
+  } = useGitHubConnection();
   const {
     githubUrl: contextGithubUrl,
     repoName: contextRepoName,
@@ -176,15 +192,51 @@ export default function CollaborationStudio() {
   const [endingMeetingId, setEndingMeetingId] = useState(null);
   const [endMeetingError, setEndMeetingError] = useState('');
   const [endMeetingSuccess, setEndMeetingSuccess] = useState('');
+  const [selectedRepoFullName, setSelectedRepoFullName] = useState('');
+  const [githubOAuthNotice, setGithubOAuthNotice] = useState('');
+
+  const githubOAuthResult = new URLSearchParams(location.search).get('github_oauth');
+
+  useEffect(() => {
+    if (!githubOAuthResult) return undefined;
+
+    if (githubOAuthResult === 'success') {
+      setGithubOAuthNotice('GitHub connected successfully.');
+      reloadGitHubConnection();
+      reloadRepositories();
+    } else {
+      setGithubOAuthNotice('GitHub connection failed. Please try again.');
+    }
+
+    const nextParams = new URLSearchParams(location.search);
+    nextParams.delete('github_oauth');
+    const nextSearch = nextParams.toString();
+    navigate(
+      { pathname: location.pathname, search: nextSearch ? `?${nextSearch}` : '' },
+      { replace: true },
+    );
+    return undefined;
+  }, [githubOAuthResult, location.pathname, location.search, navigate, reloadGitHubConnection, reloadRepositories]);
 
   useEffect(() => {
     if (contextGithubUrl) {
       const parsed = parseGithubRepoInput(contextGithubUrl);
       setSelectedGithubUrl(contextGithubUrl);
       setRepoInput(contextGithubUrl);
-      if (parsed) setActiveRepository(parsed);
+      if (parsed) {
+        setActiveRepository(parsed);
+        setSelectedRepoFullName(parsed.slug);
+      }
     }
   }, [contextGithubUrl]);
+
+  useEffect(() => {
+    if (!githubUrl || selectedRepoFullName) return;
+    const parsed = parseGithubRepoInput(githubUrl);
+    if (parsed?.slug) {
+      setSelectedRepoFullName(parsed.slug);
+    }
+  }, [githubUrl, selectedRepoFullName]);
 
   const loadCollaboratorsForUrl = useCallback(
     async (url) => {
@@ -285,6 +337,40 @@ export default function CollaborationStudio() {
     setActiveRepository(parsed);
     setSelectedGithubUrl(parsed.githubUrl);
     setRepoInput(parsed.githubUrl);
+    setSelectedRepoFullName(parsed.slug);
+    await loadCollaboratorsForUrl(parsed.githubUrl);
+  };
+
+  const handleRepositorySelect = async (event) => {
+    const fullName = event.target.value;
+    setSelectedRepoFullName(fullName);
+    setRepoInputError('');
+
+    if (!fullName) {
+      clearRepository();
+      setActiveRepository(null);
+      setSelectedGithubUrl('');
+      setRepoInput('');
+      setCollaborators([]);
+      setCollaboratorsError('Select a repository to load collaborators.');
+      return;
+    }
+
+    const repository = repositories.find(
+      (item) => (item.full_name || item.fullName) === fullName,
+    );
+    const githubRepoUrl =
+      repository?.url || repository?.htmlUrl || `https://github.com/${fullName}`;
+    const parsed = parseGithubRepoInput(githubRepoUrl);
+    if (!parsed) {
+      setRepoInputError('Unable to use the selected repository.');
+      return;
+    }
+
+    setRepository(parsed.githubUrl);
+    setActiveRepository(parsed);
+    setSelectedGithubUrl(parsed.githubUrl);
+    setRepoInput(parsed.githubUrl);
     await loadCollaboratorsForUrl(parsed.githubUrl);
   };
 
@@ -342,9 +428,57 @@ export default function CollaborationStudio() {
     [collaborators],
   );
 
-  const handleSelectAllInviteable = () => {
-    setSelectedCollaboratorIds(inviteableCollaborators.map((collaborator) => collaborator.id));
+  const selectableCollaborators = useMemo(
+    () => inviteableCollaborators.filter((collaborator) => isValidEmail(collaborator.email)),
+    [inviteableCollaborators],
+  );
+
+  const selectedInviteableCount = useMemo(
+    () =>
+      selectedCollaboratorIds.filter((id) =>
+        selectableCollaborators.some((collaborator) => collaborator.id === id),
+      ).length,
+    [selectedCollaboratorIds, selectableCollaborators],
+  );
+
+  const allSelectableSelected =
+    selectableCollaborators.length > 0 &&
+    selectableCollaborators.every((collaborator) => selectedCollaboratorIds.includes(collaborator.id));
+
+  const handleToggleCollaboratorSelection = (collaborator) => {
+    if (collaborator.isCurrentUser || !isValidEmail(collaborator.email)) return;
+
+    setSelectedCollaboratorIds((previous) =>
+      previous.includes(collaborator.id)
+        ? previous.filter((id) => id !== collaborator.id)
+        : [...previous, collaborator.id],
+    );
   };
+
+  const handleToggleSelectAllInviteable = () => {
+    if (allSelectableSelected) {
+      setSelectedCollaboratorIds([]);
+      return;
+    }
+    setSelectedCollaboratorIds(selectableCollaborators.map((collaborator) => collaborator.id));
+  };
+
+  const handleClearSelection = () => {
+    setSelectedCollaboratorIds([]);
+  };
+
+  const selectedCollaboratorsForInvite = useMemo(
+    () => {
+      const selectedIds = new Set(selectedCollaboratorIds);
+      return collaborators.filter(
+        (collaborator) =>
+          selectedIds.has(collaborator.id) &&
+          !collaborator.isCurrentUser &&
+          isValidEmail(collaborator.email),
+      );
+    },
+    [collaborators, selectedCollaboratorIds],
+  );
 
   const invitePreview = useMemo(() => {
     const hostEmailNorm = hostEmail.trim().toLowerCase();
@@ -354,7 +488,7 @@ export default function CollaborationStudio() {
     let skippedHost = 0;
     let skippedDuplicate = 0;
 
-    collaborators.forEach((collab) => {
+    selectedCollaboratorsForInvite.forEach((collab) => {
       const email = collab.email?.trim().toLowerCase();
       if (!isValidEmail(email)) {
         emailUnavailable += 1;
@@ -373,14 +507,14 @@ export default function CollaborationStudio() {
     });
 
     return {
-      total: collaborators.length,
+      total: selectedCollaboratorsForInvite.length,
       validEmail,
       emailUnavailable,
       skippedHost,
       skippedDuplicate,
       willSend: validEmail,
     };
-  }, [collaborators, hostEmail]);
+  }, [selectedCollaboratorsForInvite, hostEmail]);
 
   const applyInviteResults = (results) => {
     if (!results?.length) return;
@@ -404,6 +538,7 @@ export default function CollaborationStudio() {
   };
 
   const validateHostForm = () => {
+    if (!isGitHubConnected) return 'Connect your GitHub account to access repositories.';
     if (!hostName.trim()) return 'Host name is required.';
     if (!isValidEmail(hostEmail)) return 'A valid host email address is required.';
     if (!topic.trim()) return 'Meeting topic is required.';
@@ -422,6 +557,10 @@ export default function CollaborationStudio() {
     }
     if (!isSignedIn) {
       setErrorMessage('Sign in to host a RepoSense meeting.');
+      return;
+    }
+    if (selectedCollaboratorsForInvite.length === 0) {
+      setErrorMessage('Select at least one collaborator with a valid email address.');
       return;
     }
 
@@ -446,7 +585,7 @@ export default function CollaborationStudio() {
           hostName: hostName.trim(),
           repoName: repoSlug || repoName,
           externalMeetingUrl: externalMeetingUrl.trim() || undefined,
-          recipients: buildRecipientList(collaborators),
+          recipients: buildRecipientList(selectedCollaboratorsForInvite),
         },
         token,
       );
@@ -479,6 +618,10 @@ export default function CollaborationStudio() {
       setErrorMessage('Sign in to host a RepoSense meeting.');
       return;
     }
+    if (selectedCollaboratorsForInvite.length === 0) {
+      setErrorMessage('Select at least one collaborator with a valid email address.');
+      return;
+    }
     setShowInviteSummaryModal(true);
   };
 
@@ -492,7 +635,7 @@ export default function CollaborationStudio() {
     setJoiningMeeting(true);
     try {
       const meeting = await resolveMeeting(id);
-      navigate(`/meetings/${meeting.id}`);
+      openMeetingInNewTab(meeting.id);
     } catch (err) {
       setErrorMessage(normalizeErrorMessage(err.message || 'Meeting not found.'));
     } finally {
@@ -601,6 +744,7 @@ export default function CollaborationStudio() {
         invitationStatus: INVITATION_STATUS.NOT_SENT,
         inviteTime: null,
         isManual: true,
+        isCurrentUser: false,
       },
     ]);
     setNewCollabName('');
@@ -608,62 +752,22 @@ export default function CollaborationStudio() {
     setShowAddCollabModal(false);
   };
 
+  const openMeetingInNewTab = (meetingId) => {
+    if (!meetingId) return;
+    const tab = openMeetingTabPlaceholder();
+    navigateMeetingTab(tab, meetingId);
+  };
+
   const enterMeeting = () => {
     if (createdMeeting?.id) {
-      navigate(`/meetings/${createdMeeting.id}`);
+      openMeetingInNewTab(createdMeeting.id);
     }
   };
 
   const busy = creatingMeeting || sendingInvites || joiningMeeting;
-  const heroBusyLabel = creatingMeeting
-    ? 'Creating meeting…'
-    : sendingInvites
-      ? 'Sending invitations…'
-      : null;
 
   return (
     <div className="max-w-7xl mx-auto py-6 px-4 animate-fade-in-up">
-      {/* Hero */}
-      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-3xl p-8 md:p-10 text-white shadow-2xl mb-8 flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex-1 min-w-0">
-          <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-white/20 text-xs font-bold uppercase tracking-wider mb-3 backdrop-blur-md">
-            <svg className="w-4 h-4 text-cyan-300 animate-pulse" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="8" />
-            </svg>
-            <span>RepoSense Meeting &amp; Collaboration Workspace</span>
-          </div>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">
-            RepoSense Collaboration Studio
-          </h1>
-          <p className="text-blue-100 mt-2 max-w-xl text-sm md:text-base leading-relaxed">
-            Host a RepoSense meeting, invite repository collaborators, and collaborate with the AI Code Agent.
-          </p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 shrink-0 w-full md:w-auto">
-          {createdMeeting ? (
-            <button
-              type="button"
-              onClick={enterMeeting}
-              className="px-8 py-4 bg-white text-blue-700 hover:bg-blue-50 font-extrabold rounded-2xl shadow-xl transition-all transform hover:scale-[1.02] flex items-center justify-center space-x-3"
-            >
-              <VideoCameraIcon className="w-6 h-6 text-blue-600" />
-              <span>Enter Meeting</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleRequestBroadcast}
-              disabled={busy}
-              className="px-8 py-4 bg-white text-blue-700 hover:bg-blue-50 font-extrabold rounded-2xl shadow-xl transition-all transform hover:scale-[1.02] flex items-center justify-center space-x-3 disabled:opacity-60 disabled:hover:scale-100"
-            >
-              <VideoCameraIcon className="w-6 h-6 text-blue-600" />
-              <span>{heroBusyLabel || 'Host & Launch Meeting'}</span>
-            </button>
-          )}
-        </div>
-      </div>
-
       {/* Toast notification */}
       {inviteNotification && (
         <div className="mb-6 p-4 bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 rounded-2xl shadow-lg flex items-center justify-between gap-4">
@@ -683,14 +787,122 @@ export default function CollaborationStudio() {
         </div>
       )}
 
+      {githubOAuthNotice && (
+        <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 rounded-2xl text-sm font-medium">
+          {githubOAuthNotice}
+        </div>
+      )}
+
+      <section className="mb-6 p-6 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl shadow-lg space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">GitHub connection</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              Connect GitHub to load your repositories and collaborators automatically.
+            </p>
+          </div>
+          {githubConnectionLoading ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400">Checking GitHub connection…</p>
+          ) : isGitHubConnected ? (
+            <div className="flex items-center gap-3">
+              {githubConnection?.github_user?.avatar_url && (
+                <img
+                  src={githubConnection.github_user.avatar_url}
+                  alt=""
+                  className="w-10 h-10 rounded-full border border-gray-200 dark:border-gray-700"
+                />
+              )}
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                  @{githubLogin || githubConnection?.github_user?.login}
+                </p>
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold">Connected</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => disconnectGitHub()}
+                className="text-xs font-semibold text-gray-500 hover:text-red-600 dark:hover:text-red-400"
+              >
+                Disconnect
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => connectGitHub()}
+              className="px-5 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold rounded-xl text-sm hover:opacity-90 transition-opacity"
+            >
+              Connect GitHub
+            </button>
+          )}
+        </div>
+
+        {githubConnectionError && !isGitHubConnected && (
+          <p className="text-sm text-amber-700 dark:text-amber-300">{githubConnectionError}</p>
+        )}
+
+        {isGitHubConnected && (
+          <div className="space-y-3 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <label
+              htmlFor="github-repo-select"
+              className="block text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300"
+            >
+              Your GitHub repositories
+            </label>
+            {reposLoading ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">Loading repositories…</p>
+            ) : (
+              <select
+                id="github-repo-select"
+                value={selectedRepoFullName}
+                onChange={handleRepositorySelect}
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="">Select a repository…</option>
+                {repositories.map((repository) => {
+                  const fullName = repository.full_name || repository.fullName;
+                  return (
+                    <option key={fullName} value={fullName}>
+                      {fullName}
+                      {repository.private ? ' (private)' : ''}
+                    </option>
+                  );
+                })}
+              </select>
+            )}
+            {reposError && (
+              <div className="flex items-center gap-3 text-sm text-amber-700 dark:text-amber-300">
+                <span>{reposError}</span>
+                <button
+                  type="button"
+                  onClick={() => reloadRepositories()}
+                  className="font-semibold text-blue-600 dark:text-blue-400 underline"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+            {!reposLoading && repositories.length === 0 && !reposError && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                No repositories found for your GitHub account.
+              </p>
+            )}
+          </div>
+        )}
+      </section>
+
       {!githubUrl && (
         <form
           onSubmit={handleApplyRepository}
           className="mb-6 p-6 bg-white dark:bg-gray-900 border border-amber-200 dark:border-amber-900/40 rounded-3xl shadow-lg space-y-3"
         >
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Select a repository</h2>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+            {isGitHubConnected ? 'Or enter a repository manually' : 'Select a repository'}
+          </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Load collaborators from the GitHub repository you are working with. No default or mock collaborators are shown.
+            {isGitHubConnected
+              ? 'Use the dropdown above when possible. Manual entry remains available for repositories not listed.'
+              : 'Connect GitHub above for the repository dropdown, or enter a repository URL manually.'}
           </p>
           {repoInputError && (
             <p className="text-sm text-red-600 dark:text-red-400" role="alert">
@@ -732,6 +944,7 @@ export default function CollaborationStudio() {
               setActiveRepository(null);
               setSelectedGithubUrl('');
               setRepoInput('');
+              setSelectedRepoFullName('');
               setCollaborators([]);
               setCollaboratorsError('Select a repository to load collaborators.');
             }}
@@ -974,20 +1187,32 @@ export default function CollaborationStudio() {
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {inviteableCollaborators.length} inviteable collaborator
                   {inviteableCollaborators.length === 1 ? '' : 's'}
-                </p>
-                <div className="flex items-center gap-2">
-                  {selectedCollaboratorIds.length > 0 && (
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {selectedCollaboratorIds.length} selected
+                  {selectedInviteableCount > 0 && (
+                    <span className="text-gray-700 dark:text-gray-200 font-semibold">
+                      {' '}
+                      · {selectedInviteableCount} selected
                     </span>
                   )}
-                  <button
-                    type="button"
-                    onClick={handleSelectAllInviteable}
-                    className="text-xs font-semibold text-blue-600 dark:text-blue-400 underline"
-                  >
-                    Select all
-                  </button>
+                </p>
+                <div className="flex items-center gap-2 shrink-0">
+                  {selectableCollaborators.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleToggleSelectAllInviteable}
+                      className="text-xs font-semibold text-blue-600 dark:text-blue-400 underline"
+                    >
+                      {allSelectableSelected ? 'Deselect all' : 'Select all'}
+                    </button>
+                  )}
+                  {selectedInviteableCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleClearSelection}
+                      className="text-xs font-semibold text-gray-500 dark:text-gray-400 underline"
+                    >
+                      Clear selection
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -1001,41 +1226,108 @@ export default function CollaborationStudio() {
             <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
               {!collaboratorsLoading &&
                 !collaboratorsError &&
-                collaborators.map((c) => (
+                collaborators.map((c) => {
+                  const isSelectable = !c.isCurrentUser && isValidEmail(c.email);
+                  const isSelected = selectedCollaboratorIds.includes(c.id);
+                  const selectionLabel = c.isCurrentUser
+                    ? `${c.name} is the meeting host and cannot be invited`
+                    : isValidEmail(c.email)
+                      ? `Select ${c.name} for invitation`
+                      : `${c.name} cannot be invited because email is unavailable`;
+
+                  const checkboxId = `collaborator-select-${c.id}`;
+
+                  return (
                   <div
                     key={c.id}
-                    className="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800 space-y-2.5 transition-colors hover:border-blue-200 dark:hover:border-blue-800/60"
+                    className={`p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-800/40 border space-y-2.5 transition-colors ${
+                      isSelected
+                        ? 'border-blue-400 dark:border-blue-600 ring-2 ring-blue-500/20 bg-blue-50/50 dark:bg-blue-950/20'
+                        : 'border-gray-100 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-800/60'
+                    }`}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center space-x-3 min-w-0">
-                        {c.avatarUrl ? (
-                          <img
-                            src={c.avatarUrl}
-                            alt=""
-                            className="w-8 h-8 rounded-full shrink-0 object-cover"
+                      {isSelectable ? (
+                        <label
+                          htmlFor={checkboxId}
+                          className="flex items-center space-x-3 min-w-0 flex-1 cursor-pointer"
+                        >
+                          <input
+                            id={checkboxId}
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleCollaboratorSelection(c)}
+                            aria-label={selectionLabel}
+                            className="w-5 h-5 shrink-0 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-2 focus:ring-blue-500"
                           />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                            {c.avatar}
+                          {c.avatarUrl ? (
+                            <img
+                              src={c.avatarUrl}
+                              alt=""
+                              className="w-8 h-8 rounded-full shrink-0 object-cover"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                              {c.avatar}
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <h4 className="font-semibold text-sm text-gray-900 dark:text-white truncate">
+                              {c.name}
+                            </h4>
+                            {c.githubLogin && (
+                              <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">@{c.githubLogin}</p>
+                            )}
+                            <p className="text-xs text-blue-600 dark:text-blue-400 font-mono truncate">
+                              {c.email}
+                            </p>
+                            {c.isManual && (
+                              <span className="text-[10px] font-semibold text-purple-600 dark:text-purple-400">
+                                Manual email
+                              </span>
+                            )}
                           </div>
-                        )}
-                        <div className="min-w-0">
-                          <h4 className="font-semibold text-sm text-gray-900 dark:text-white truncate">
-                            {c.name}
-                          </h4>
-                          {c.githubLogin && (
-                            <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">@{c.githubLogin}</p>
+                        </label>
+                      ) : (
+                        <div className="flex items-center space-x-3 min-w-0 flex-1">
+                          {!c.isCurrentUser && (
+                            <input
+                              type="checkbox"
+                              checked={false}
+                              disabled
+                              aria-label={selectionLabel}
+                              className="w-5 h-5 shrink-0 rounded border-gray-300 dark:border-gray-600 disabled:cursor-not-allowed disabled:opacity-40"
+                            />
                           )}
-                          <p className="text-xs text-blue-600 dark:text-blue-400 font-mono truncate">
-                            {c.email || 'Email unavailable'}
-                          </p>
-                          {c.isManual && (
-                            <span className="text-[10px] font-semibold text-purple-600 dark:text-purple-400">
-                              Manual email
-                            </span>
+                          {c.avatarUrl ? (
+                            <img
+                              src={c.avatarUrl}
+                              alt=""
+                              className="w-8 h-8 rounded-full shrink-0 object-cover"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                              {c.avatar}
+                            </div>
                           )}
+                          <div className="min-w-0">
+                            <h4 className="font-semibold text-sm text-gray-900 dark:text-white truncate">
+                              {c.name}
+                            </h4>
+                            {c.githubLogin && (
+                              <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate">@{c.githubLogin}</p>
+                            )}
+                            <p className={`text-xs font-mono truncate ${isValidEmail(c.email) ? 'text-blue-600 dark:text-blue-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                              {c.email || 'Email unavailable'}
+                            </p>
+                            {c.isManual && (
+                              <span className="text-[10px] font-semibold text-purple-600 dark:text-purple-400">
+                                Manual email
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      )}
                       <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 shrink-0">
                         {c.role}
                       </span>
@@ -1052,7 +1344,11 @@ export default function CollaborationStudio() {
                           You&apos;re the meeting host
                         </span>
                       ) : (
-                        <div className="flex items-center space-x-1.5 shrink-0">
+                        <div
+                          className="flex items-center space-x-1.5 shrink-0"
+                          onClick={(event) => event.stopPropagation()}
+                          onKeyDown={(event) => event.stopPropagation()}
+                        >
                           <button
                             type="button"
                             onClick={() => handleSendSingleInvite(c)}
@@ -1078,7 +1374,8 @@ export default function CollaborationStudio() {
                       )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
 
               {!collaboratorsLoading && !collaboratorsError && collaborators.length === 0 && (
                 <p className="text-sm text-gray-500 text-center py-8">

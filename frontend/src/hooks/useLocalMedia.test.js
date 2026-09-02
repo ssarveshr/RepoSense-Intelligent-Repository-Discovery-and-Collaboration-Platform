@@ -54,7 +54,10 @@ describe('useLocalMedia', () => {
       expect(result.current.localStream).toBe(mockStream);
     });
 
-    expect(getUserMedia).toHaveBeenCalledWith({ video: true, audio: true });
+    expect(getUserMedia).toHaveBeenCalledWith({
+      video: { facingMode: 'user' },
+      audio: { echoCancellation: true, noiseSuppression: true },
+    });
     expect(result.current.isAudioEnabled).toBe(true);
     expect(result.current.isVideoEnabled).toBe(true);
   });
@@ -128,7 +131,8 @@ describe('useLocalMedia', () => {
   });
 
   it('maps NotAllowedError to permissionError message', async () => {
-    getUserMedia.mockRejectedValueOnce(Object.assign(new Error('denied'), { name: 'NotAllowedError' }));
+    const deniedError = Object.assign(new Error('denied'), { name: 'NotAllowedError' });
+    getUserMedia.mockRejectedValue(deniedError);
 
     const { result } = renderHook(() => useLocalMedia());
 

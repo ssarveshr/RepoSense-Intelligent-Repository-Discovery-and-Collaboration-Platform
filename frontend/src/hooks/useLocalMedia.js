@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { getUserMediaWithFallback, streamTrackFlags } from '../utils/localMediaUtils';
 
 const PERMISSION_DENIED_MSG =
   'Camera/microphone access denied — please allow access in your browser settings and reload.';
@@ -73,13 +74,12 @@ export function useLocalMedia() {
 
       stopLocalMedia();
 
-      const constraints = {
-        video: cameraId ? { deviceId: { exact: cameraId } } : true,
-        audio: micId ? { deviceId: { exact: micId } } : true,
-      };
-
       try {
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        const { stream } = await getUserMediaWithFallback(
+          navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices),
+          cameraId,
+          micId,
+        );
         if (!mountedRef.current) {
           stream.getTracks().forEach((track) => track.stop());
           return;
@@ -95,12 +95,15 @@ export function useLocalMedia() {
         setPermissionError(null);
         syncEnabledFromStream(stream);
 
+        const { hasVideo, hasAudio } = streamTrackFlags(stream);
         const videoDeviceId = videoTrack?.getSettings?.().deviceId ?? cameraId;
         const audioDeviceId = audioTrack?.getSettings?.().deviceId ?? micId;
-        selectedCameraIdRef.current = videoDeviceId;
-        selectedMicIdRef.current = audioDeviceId;
-        setSelectedCameraIdState(videoDeviceId);
-        setSelectedMicIdState(audioDeviceId);
+        selectedCameraIdRef.current = hasVideo ? videoDeviceId : '';
+        selectedMicIdRef.current = hasAudio ? audioDeviceId : '';
+        setSelectedCameraIdState(hasVideo ? videoDeviceId : '');
+        setSelectedMicIdState(hasAudio ? audioDeviceId : '');
+        setIsVideoEnabled(hasVideo ? isVideoEnabledRef.current : false);
+        setIsAudioEnabled(hasAudio ? isAudioEnabledRef.current : false);
 
         await enumerateDevices();
       } catch (error) {

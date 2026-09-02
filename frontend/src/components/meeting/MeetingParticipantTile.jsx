@@ -16,6 +16,8 @@ export default function MeetingParticipantTile({
   isActiveSpeaker = false,
   isLocal = false,
   compact = false,
+  solo = false,
+  handRaised = false,
 }) {
   const videoRef = useRef(null);
   const initial = (label || '?').charAt(0).toUpperCase();
@@ -28,16 +30,19 @@ export default function MeetingParticipantTile({
   }, [stream]);
 
   const tileClass = isScreenShare
-    ? 'col-span-full aspect-video min-h-[200px]'
-    : compact
-      ? 'aspect-video min-h-[140px]'
-      : 'aspect-video min-h-[180px]';
+    ? 'w-full h-full min-h-[160px] max-h-full aspect-video'
+    : solo
+      ? 'w-full h-full min-h-[200px] max-h-full aspect-video'
+      : compact
+        ? 'w-full aspect-video min-h-[100px] max-h-[180px]'
+        : 'w-full h-full min-h-[140px] max-h-[50vh] aspect-video';
 
   return (
     <div
-      className={`relative bg-gray-900 rounded-2xl overflow-hidden shadow-lg transition-all duration-200 ${tileClass} ${
+      className={`relative bg-gray-900 rounded-2xl overflow-hidden shadow-lg transition-all duration-200 min-h-0 min-w-0 ${tileClass} ${
         isActiveSpeaker ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-950' : 'ring-1 ring-gray-800'
       }`}
+      data-testid="participant-tile"
     >
       {stream ? (
         <video
@@ -45,7 +50,7 @@ export default function MeetingParticipantTile({
           autoPlay
           playsInline
           muted={muted || isLocal}
-          className={`w-full h-full object-cover ${mirror ? 'mirror' : ''}`}
+          className={`w-full h-full ${isScreenShare ? 'object-contain bg-black' : 'object-cover'} ${mirror ? 'mirror' : ''}`}
         />
       ) : (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-950">
@@ -60,6 +65,15 @@ export default function MeetingParticipantTile({
       <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-3 py-3 flex items-center justify-between gap-2">
         <span className="text-white text-xs font-semibold truncate">{displayLabel}</span>
         <div className="flex items-center gap-1.5 shrink-0">
+          {handRaised && (
+            <span
+              className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/90 text-white text-xs"
+              title="Hand raised"
+              aria-label="Hand raised"
+            >
+              ✋
+            </span>
+          )}
           {muted && (
             <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-500/90 text-white" title="Muted">
               <MicOffIcon className="w-3.5 h-3.5" />

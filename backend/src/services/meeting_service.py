@@ -251,6 +251,7 @@ class MeetingService:
             room_name=room_name,
             participant_id=participant.id,
             participant_token=participant_token,
+            is_host=participant.role == ParticipantRole.host.value,
         )
 
     async def leave_meeting(

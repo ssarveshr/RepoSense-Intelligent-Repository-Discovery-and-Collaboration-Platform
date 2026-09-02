@@ -9,6 +9,7 @@ import {
   ScreenShareIcon,
   SendIcon,
 } from './MeetingIcons';
+import { useMeetLayout } from '../../layouts/meetLayoutContext.js';
 
 export default function MeetingChat({ sessionRef, displayName, open, onClose, isMobile = false }) {
   const [messages, setMessages] = useState([]);
@@ -51,13 +52,17 @@ export default function MeetingChat({ sessionRef, displayName, open, onClose, is
     }
   };
 
+  const { standalone } = useMeetLayout();
+  const mobilePanelClass = standalone ? 'fixed inset-0 z-50' : 'fixed inset-0 top-16 z-50';
+  const mobileBackdropClass = standalone ? 'fixed inset-0 bg-black/50 z-40' : 'fixed inset-0 top-16 bg-black/50 z-40';
+
   if (!open) return null;
 
   const panel = (
     <div
       className={`flex flex-col bg-gray-900 border-gray-800 overflow-hidden ${
         isMobile
-          ? 'fixed inset-0 top-16 z-50'
+          ? mobilePanelClass
           : 'w-[340px] shrink-0 border-l h-full'
       }`}
       role="dialog"
@@ -131,7 +136,7 @@ export default function MeetingChat({ sessionRef, displayName, open, onClose, is
       <>
         <button
           type="button"
-          className="fixed inset-0 top-16 bg-black/50 z-40"
+          className={mobileBackdropClass}
           aria-label="Close messages overlay"
           onClick={onClose}
         />
