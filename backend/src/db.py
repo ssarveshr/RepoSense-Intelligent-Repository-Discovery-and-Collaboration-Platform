@@ -60,5 +60,9 @@ async def _migrate_schema(conn) -> None:
                     "ON meetings (host_clerk_user_id)"
                 )
             )
+        if "empty_since" not in columns:
+            sync_conn.execute(
+                text("ALTER TABLE meetings ADD COLUMN empty_since DATETIME")
+            )
 
     await conn.run_sync(_apply_migrations)

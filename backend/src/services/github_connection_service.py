@@ -18,7 +18,7 @@ class GitHubNotConnectedError(Exception):
 class GitHubConnectionExpiredError(Exception):
     def __init__(self, message: str = "Your GitHub connection has expired. Please reconnect GitHub."):
         self.message = message
-        self.status_code = 401
+        self.status_code = 403
         super().__init__(message)
 
 

@@ -47,11 +47,11 @@ export default function MeetingInfoPopover({
       ref={panelRef}
       role="dialog"
       aria-label="Meeting information"
-      className="absolute top-full left-0 mt-2 w-80 bg-[#111111] border border-[#2F2F2F] rounded-2xl shadow-2xl z-50 overflow-hidden"
+      className="absolute top-full left-0 mt-2 w-80 bg-[#171B22] border border-[#2F3640]/80 rounded-2xl shadow-2xl z-50 overflow-hidden"
     >
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#2F2F2F]">
-        <div className="flex items-center gap-2 text-white text-sm font-bold">
-          <InfoIcon className="w-4 h-4 text-[#A1A1A1]" />
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[#2F3640]/80">
+        <div className="flex items-center gap-2 text-[#F5F7FA] text-sm font-bold">
+          <InfoIcon className="w-4 h-4 text-[#9AA3AF]" />
           Meeting info
         </div>
         <button
@@ -108,7 +108,7 @@ export default function MeetingInfoPopover({
               <CopyIcon className="w-4 h-4" />
             </button>
           </div>
-          {copied && <p className="text-emerald-400 text-xs mt-1">Link copied</p>}
+          {copied && <p className="text-[#9CA3AF] text-xs mt-1">Link copied</p>}
         </div>
       </div>
     </div>

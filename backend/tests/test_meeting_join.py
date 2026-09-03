@@ -229,7 +229,7 @@ def test_join_endpoint_passcode_protected_wrong_id_with_passcode(authenticated_c
     assert wrong_id_resp.json()["detail"] == wrong_pass_resp.json()["detail"]
 
 
-def test_leave_endpoint_requires_valid_token(authenticated_client, monkeypatch):
+def test_leave_endpoint_requires_valid_token(authenticated_client, monkeypatch, zero_empty_grace):
     client, _user = authenticated_client
     create_resp = client.post(
         "/api/meetings",

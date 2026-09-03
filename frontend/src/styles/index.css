@@ -22,7 +22,8 @@
   }
 
   html.meet-standalone body {
-    @apply bg-gray-950 text-gray-100;
+    @apply text-[#F5F7FA];
+    background-color: #0f1115;
   }
 
   html.meet-standalone .meet-root {

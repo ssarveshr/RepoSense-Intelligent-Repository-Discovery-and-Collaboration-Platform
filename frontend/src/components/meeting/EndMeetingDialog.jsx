@@ -14,12 +14,12 @@ export default function EndMeetingDialog({ open, onCancel, onConfirm, ending = f
         role="dialog"
         aria-modal="true"
         aria-labelledby="end-meeting-title"
-        className="relative w-full max-w-md rounded-2xl bg-gray-900 border border-gray-700 shadow-2xl p-6"
+        className="relative w-full max-w-md rounded-2xl bg-[#171B22] border border-[#2F3640]/80 shadow-2xl p-6"
       >
-        <h2 id="end-meeting-title" className="text-white text-lg font-bold mb-2">
+        <h2 id="end-meeting-title" className="text-[#F5F7FA] text-lg font-bold mb-2">
           End meeting?
         </h2>
-        <p className="text-gray-400 text-sm leading-relaxed mb-6">
+        <p className="text-[#9AA3AF] text-sm leading-relaxed mb-6">
           This will end the meeting for everyone and prevent new participants from joining.
         </p>
         <div className="flex gap-3">
@@ -27,7 +27,7 @@ export default function EndMeetingDialog({ open, onCancel, onConfirm, ending = f
             type="button"
             onClick={onCancel}
             disabled={ending}
-            className="flex-1 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-semibold text-sm disabled:opacity-50"
+            className="flex-1 py-2.5 rounded-xl bg-[#242A33] hover:bg-[#2B313B] text-white font-semibold text-sm disabled:opacity-50 border border-[#2F3640]/80 focus:outline-none focus:ring-2 focus:ring-white/20"
           >
             Cancel
           </button>

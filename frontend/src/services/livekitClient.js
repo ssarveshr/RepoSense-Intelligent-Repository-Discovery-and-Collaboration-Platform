@@ -223,20 +223,7 @@ export class LiveKitSession {
     return [local, ...remotes].filter(Boolean);
   }
 
-  async connect({ livekitUrl, token, localStream }) {
-    this.room = new Room({ adaptiveStream: true, dynacast: true });
-
-    const notify = (activeSpeakerIdentities) => {
-      if (activeSpeakerIdentities) {
-        this._lastActiveSpeakers = activeSpeakerIdentities;
-      }
-      this._emitState({
-        connectionState: this.getConnectionState(),
-        remoteParticipants: this.getRemoteParticipants(),
-        liveParticipants: this.getLiveParticipants(),
-      });
-    };
-
+  _registerRoomListeners(notify) {
     this._lastActiveSpeakers = [];
 
     this.room.on(RoomEvent.ConnectionStateChanged, notify);
@@ -267,31 +254,69 @@ export class LiveKitSession {
     this.room.on(RoomEvent.DataReceived, (payload, participant) => {
       this._handleDataMessage(payload, participant);
     });
+  }
 
-    await this.room.connect(livekitUrl, token);
+  async _publishLocalTracks(localStream) {
+    if (!this.room || !localStream) return;
 
-    this._remoteAudio.attachRoomRemoteAudio(this.room);
-
-    const videoTrack = localStream?.getVideoTracks()[0];
-    const audioTrack = localStream?.getAudioTracks()[0];
+    const videoTrack = localStream.getVideoTracks()[0];
+    const audioTrack = localStream.getAudioTracks()[0];
 
     if (videoTrack) {
-      await this.room.localParticipant.publishTrack(videoTrack, {
-        source: Track.Source.Camera,
-        name: 'camera',
-      });
+      const existingVideo = this.room.localParticipant.getTrackPublication(Track.Source.Camera);
+      if (!existingVideo) {
+        await this.room.localParticipant.publishTrack(videoTrack, {
+          source: Track.Source.Camera,
+          name: 'camera',
+        });
+      }
       const videoPub = this.room.localParticipant.getTrackPublication(Track.Source.Camera);
       if (videoPub && !videoTrack.enabled) await videoPub.mute();
     }
 
     if (audioTrack) {
-      await this.room.localParticipant.publishTrack(audioTrack, {
-        source: Track.Source.Microphone,
-        name: 'microphone',
-      });
+      const existingAudio = this.room.localParticipant.getTrackPublication(Track.Source.Microphone);
+      if (!existingAudio) {
+        await this.room.localParticipant.publishTrack(audioTrack, {
+          source: Track.Source.Microphone,
+          name: 'microphone',
+        });
+      }
       const audioPub = this.room.localParticipant.getTrackPublication(Track.Source.Microphone);
       if (audioPub && !audioTrack.enabled) await audioPub.mute();
     }
+  }
+
+  async publishLocalStream(localStream) {
+    await this._publishLocalTracks(localStream);
+    this._emitState({
+      connectionState: this.getConnectionState(),
+      remoteParticipants: this.getRemoteParticipants(),
+      liveParticipants: this.getLiveParticipants(),
+    });
+  }
+
+  async connect({ livekitUrl, token, localStream }) {
+    this.room = new Room({ adaptiveStream: true, dynacast: true });
+
+    const notify = (activeSpeakerIdentities) => {
+      if (activeSpeakerIdentities) {
+        this._lastActiveSpeakers = activeSpeakerIdentities;
+      }
+      this._emitState({
+        connectionState: this.getConnectionState(),
+        remoteParticipants: this.getRemoteParticipants(),
+        liveParticipants: this.getLiveParticipants(),
+      });
+    };
+
+    this._registerRoomListeners(notify);
+
+    await this.room.connect(livekitUrl, token);
+
+    this._remoteAudio.attachRoomRemoteAudio(this.room);
+
+    await this._publishLocalTracks(localStream);
 
     notify();
     return this.room;
@@ -355,9 +380,18 @@ export class LiveKitSession {
     await this.room.localParticipant.publishData(payload, { reliable: true, topic: CAPTION_TOPIC });
   }
 
-  async setMicrophoneEnabled(enabled) {
-    const publication = this.room?.localParticipant.getTrackPublication(Track.Source.Microphone);
-    const mediaTrack = publication?.track?.mediaStreamTrack;
+  async setMicrophoneEnabled(enabled, localStream = null) {
+    if (!this.room) return;
+
+    let publication = this.room.localParticipant.getTrackPublication(Track.Source.Microphone);
+
+    if (enabled && !publication && localStream?.getAudioTracks?.()[0]) {
+      await this._publishLocalTracks(localStream);
+      publication = this.room.localParticipant.getTrackPublication(Track.Source.Microphone);
+    }
+
+    const mediaTrack =
+      publication?.track?.mediaStreamTrack ?? localStream?.getAudioTracks?.()[0];
     if (mediaTrack) mediaTrack.enabled = enabled;
     if (publication) {
       if (enabled) await publication.unmute();
@@ -365,9 +399,18 @@ export class LiveKitSession {
     }
   }
 
-  async setCameraEnabled(enabled) {
-    const publication = this.room?.localParticipant.getTrackPublication(Track.Source.Camera);
-    const mediaTrack = publication?.track?.mediaStreamTrack;
+  async setCameraEnabled(enabled, localStream = null) {
+    if (!this.room) return;
+
+    let publication = this.room.localParticipant.getTrackPublication(Track.Source.Camera);
+
+    if (enabled && !publication && localStream?.getVideoTracks?.()[0]) {
+      await this._publishLocalTracks(localStream);
+      publication = this.room.localParticipant.getTrackPublication(Track.Source.Camera);
+    }
+
+    const mediaTrack =
+      publication?.track?.mediaStreamTrack ?? localStream?.getVideoTracks?.()[0];
     if (mediaTrack) mediaTrack.enabled = enabled;
     if (publication) {
       if (enabled) await publication.unmute();
@@ -433,12 +476,15 @@ export class LiveKitSession {
 
         for (const publication of publications) {
           const mediaTrack = publication.track?.mediaStreamTrack;
+          const isScreenShare = publication.source === Track.Source.ScreenShare;
           if (mediaTrack) {
             mediaTrack.enabled = false;
-            try {
-              mediaTrack.stop();
-            } catch {
-              // Track may already be stopped.
+            if (isScreenShare) {
+              try {
+                mediaTrack.stop();
+              } catch {
+                // Track may already be stopped.
+              }
             }
           }
           if (publication.track) {

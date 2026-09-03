@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getUserMediaWithFallback, streamTrackFlags } from '../utils/localMediaUtils';
+import {
+  buildMediaConstraints,
+  getUserMediaWithFallback,
+  streamTrackFlags,
+} from '../utils/localMediaUtils';
 
 const PERMISSION_DENIED_MSG =
   'Camera/microphone access denied — please allow access in your browser settings and reload.';
@@ -56,14 +60,7 @@ export function useLocalMedia() {
     isVideoEnabledRef.current = true;
   }, []);
 
-  const syncEnabledFromStream = useCallback((stream) => {
-    const videoTrack = stream.getVideoTracks()[0];
-    const audioTrack = stream.getAudioTracks()[0];
-    setIsVideoEnabled(videoTrack?.enabled ?? false);
-    setIsAudioEnabled(audioTrack?.enabled ?? false);
-    isVideoEnabledRef.current = videoTrack?.enabled ?? false;
-    isAudioEnabledRef.current = audioTrack?.enabled ?? false;
-  }, []);
+  const getLocalStream = useCallback(() => localStreamRef.current, []);
 
   const acquireStream = useCallback(
     async (cameraId, micId) => {
@@ -72,7 +69,14 @@ export function useLocalMedia() {
         return;
       }
 
-      stopLocalMedia();
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach((track) => {
+          track.enabled = false;
+          track.stop();
+        });
+        localStreamRef.current = null;
+      }
+      setLocalStream(null);
 
       try {
         const { stream } = await getUserMediaWithFallback(
@@ -87,13 +91,14 @@ export function useLocalMedia() {
 
         const videoTrack = stream.getVideoTracks()[0];
         const audioTrack = stream.getAudioTracks()[0];
-        if (videoTrack) videoTrack.enabled = isVideoEnabledRef.current;
-        if (audioTrack) audioTrack.enabled = isAudioEnabledRef.current;
+        const desiredVideo = isVideoEnabledRef.current;
+        const desiredAudio = isAudioEnabledRef.current;
+        if (videoTrack) videoTrack.enabled = desiredVideo;
+        if (audioTrack) audioTrack.enabled = desiredAudio;
 
         localStreamRef.current = stream;
         setLocalStream(stream);
         setPermissionError(null);
-        syncEnabledFromStream(stream);
 
         const { hasVideo, hasAudio } = streamTrackFlags(stream);
         const videoDeviceId = videoTrack?.getSettings?.().deviceId ?? cameraId;
@@ -102,8 +107,10 @@ export function useLocalMedia() {
         selectedMicIdRef.current = hasAudio ? audioDeviceId : '';
         setSelectedCameraIdState(hasVideo ? videoDeviceId : '');
         setSelectedMicIdState(hasAudio ? audioDeviceId : '');
-        setIsVideoEnabled(hasVideo ? isVideoEnabledRef.current : false);
-        setIsAudioEnabled(hasAudio ? isAudioEnabledRef.current : false);
+        setIsVideoEnabled(hasVideo ? desiredVideo : false);
+        setIsAudioEnabled(hasAudio ? desiredAudio : false);
+        isVideoEnabledRef.current = hasVideo ? desiredVideo : false;
+        isAudioEnabledRef.current = hasAudio ? desiredAudio : false;
 
         await enumerateDevices();
       } catch (error) {
@@ -111,7 +118,7 @@ export function useLocalMedia() {
         setPermissionError(mapPermissionError(error));
       }
     },
-    [stopLocalMedia, syncEnabledFromStream, enumerateDevices],
+    [enumerateDevices],
   );
 
   useEffect(() => {
@@ -142,21 +149,121 @@ export function useLocalMedia() {
     [acquireStream],
   );
 
-  const toggleAudio = useCallback(() => {
-    const track = localStreamRef.current?.getAudioTracks()[0];
-    if (!track) return;
-    track.enabled = !track.enabled;
-    setIsAudioEnabled(track.enabled);
-    isAudioEnabledRef.current = track.enabled;
-  }, []);
+  const setAudioEnabled = useCallback(
+    async (enabled) => {
+      isAudioEnabledRef.current = enabled;
+      setIsAudioEnabled(enabled);
 
-  const toggleVideo = useCallback(() => {
-    const track = localStreamRef.current?.getVideoTracks()[0];
-    if (!track) return;
-    track.enabled = !track.enabled;
-    setIsVideoEnabled(track.enabled);
-    isVideoEnabledRef.current = track.enabled;
-  }, []);
+      let stream = localStreamRef.current;
+      let audioTrack = stream?.getAudioTracks()[0];
+
+      if (enabled) {
+        if (!audioTrack) {
+          if (!navigator.mediaDevices?.getUserMedia) return;
+
+          try {
+            const { audio } = buildMediaConstraints('', selectedMicIdRef.current);
+            const audioStream = await navigator.mediaDevices.getUserMedia({
+              audio,
+              video: false,
+            });
+            audioTrack = audioStream.getAudioTracks()[0];
+            if (!audioTrack) return;
+
+            if (stream) {
+              stream.addTrack(audioTrack);
+            } else {
+              stream = new MediaStream([audioTrack]);
+              localStreamRef.current = stream;
+              setLocalStream(stream);
+            }
+
+            const deviceId = audioTrack.getSettings?.().deviceId ?? selectedMicIdRef.current;
+            if (deviceId) {
+              selectedMicIdRef.current = deviceId;
+              setSelectedMicIdState(deviceId);
+            }
+
+            await enumerateDevices();
+            setPermissionError(null);
+          } catch (error) {
+            if (!mountedRef.current) return;
+            isAudioEnabledRef.current = false;
+            setIsAudioEnabled(false);
+            setPermissionError(mapPermissionError(error));
+            return;
+          }
+        }
+
+        audioTrack.enabled = true;
+      } else if (audioTrack) {
+        audioTrack.enabled = false;
+      }
+    },
+    [enumerateDevices],
+  );
+
+  const setVideoEnabled = useCallback(
+    async (enabled) => {
+      isVideoEnabledRef.current = enabled;
+      setIsVideoEnabled(enabled);
+
+      let stream = localStreamRef.current;
+      let videoTrack = stream?.getVideoTracks()[0];
+
+      if (enabled) {
+        if (!videoTrack) {
+          if (!navigator.mediaDevices?.getUserMedia) return;
+
+          try {
+            const { video } = buildMediaConstraints(selectedCameraIdRef.current, '');
+            const videoStream = await navigator.mediaDevices.getUserMedia({
+              video,
+              audio: false,
+            });
+            videoTrack = videoStream.getVideoTracks()[0];
+            if (!videoTrack) return;
+
+            if (stream) {
+              stream.addTrack(videoTrack);
+            } else {
+              stream = new MediaStream([videoTrack]);
+              localStreamRef.current = stream;
+              setLocalStream(stream);
+            }
+
+            const deviceId = videoTrack.getSettings?.().deviceId ?? selectedCameraIdRef.current;
+            if (deviceId) {
+              selectedCameraIdRef.current = deviceId;
+              setSelectedCameraIdState(deviceId);
+            }
+
+            await enumerateDevices();
+            setPermissionError(null);
+          } catch (error) {
+            if (!mountedRef.current) return;
+            isVideoEnabledRef.current = false;
+            setIsVideoEnabled(false);
+            setPermissionError(mapPermissionError(error));
+            return;
+          }
+        }
+
+        videoTrack.enabled = true;
+      } else if (videoTrack) {
+        videoTrack.enabled = false;
+      }
+    },
+    [enumerateDevices],
+  );
+
+  const toggleAudio = useCallback(async () => {
+    await setAudioEnabled(!isAudioEnabledRef.current);
+  }, [setAudioEnabled]);
+
+  const toggleVideo = useCallback(async () => {
+    await setVideoEnabled(!isVideoEnabledRef.current);
+  }, [setVideoEnabled]);
 
   return {
     localStream,
@@ -169,6 +276,9 @@ export function useLocalMedia() {
     isVideoEnabled,
     toggleAudio,
     toggleVideo,
+    setAudioEnabled,
+    setVideoEnabled,
+    getLocalStream,
     permissionError,
     stopLocalMedia,
   };

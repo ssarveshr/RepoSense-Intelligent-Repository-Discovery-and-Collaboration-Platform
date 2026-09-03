@@ -220,11 +220,17 @@ describe('CollaborationStudio GitHub integration', () => {
   });
 
   it('shows OAuth success notice after redirect', async () => {
+    mockReloadGitHubConnection.mockResolvedValue({
+      connected: true,
+      github_user: { login: 'octocat' },
+    });
     mockUseGitHubConnection.mockReturnValue(connectedGitHubState());
     renderStudio([{ pathname: '/meetings', search: '?github_oauth=success' }]);
 
     expect(await screen.findByText(/GitHub connected successfully/i)).toBeInTheDocument();
     expect(mockReloadGitHubConnection).toHaveBeenCalled();
-    expect(mockReloadRepositories).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mockReloadRepositories).toHaveBeenCalled();
+    });
   });
 });

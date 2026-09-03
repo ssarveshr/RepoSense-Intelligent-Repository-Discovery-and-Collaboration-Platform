@@ -26,13 +26,13 @@ export default function ParticipantPanel({
       ref={panelRef}
       role="dialog"
       aria-label="Participants"
-      className={`flex flex-col bg-[#111111] border-[#2F2F2F] overflow-hidden ${
+      className={`flex flex-col bg-[#171B22] border-[#2F3640]/80 overflow-hidden ${
         isMobile
           ? 'fixed inset-0 z-50'
           : 'w-72 shrink-0 border-l h-full'
       }`}
     >
-      <div className="px-4 py-3 border-b border-[#2F2F2F] flex items-center justify-between bg-[#0A0A0A]/95 backdrop-blur-md">
+      <div className="px-4 py-3 border-b border-[#2F3640]/80 flex items-center justify-between bg-[#12161C]/95 backdrop-blur-md">
         <h2 className="text-white text-sm font-bold flex items-center gap-2">
           <PeopleIcon className="w-4 h-4" />
           People ({count})
@@ -41,7 +41,7 @@ export default function ParticipantPanel({
           type="button"
           onClick={onClose}
           aria-label="Close participants panel"
-          className="p-2 rounded-lg text-[#A1A1A1] hover:text-white hover:bg-[#222222] transition-colors"
+          className="p-2 rounded-lg text-[#9AA3AF] hover:text-white hover:bg-[#242A33] transition-colors focus:outline-none focus:ring-2 focus:ring-white/20"
         >
           <CloseIcon className="w-5 h-5" />
         </button>
@@ -51,7 +51,7 @@ export default function ParticipantPanel({
         {participants.map((participant) => (
           <li
             key={participant.id}
-            className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl hover:bg-[#161616] transition-colors"
+            className="flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl hover:bg-[#242A33] transition-colors"
           >
             <div className="min-w-0">
               <p className="text-white text-sm font-medium truncate">

@@ -1,5 +1,6 @@
 import { fetchAuthenticatedApi, getApiBaseUrl, parseApiError } from '../config/apiBase.js';
 import { normalizeFetchError } from '../utils/apiError.js';
+import { GitHubRequestError, parseStructuredApiError } from '../utils/githubError.js';
 
 async function parseError(response) {
   return parseApiError(response);
@@ -59,7 +60,7 @@ export async function disconnectGitHub(token) {
   }
 }
 
-export async function listGitHubRepositories(token, { page = 1, perPage = 30 } = {}) {
+export async function listGitHubRepositories({ page = 1, perPage = 30 } = {}, tokenOverride) {
   const apiBaseUrl = getApiBaseUrl();
   try {
     const params = new URLSearchParams({
@@ -69,12 +70,21 @@ export async function listGitHubRepositories(token, { page = 1, perPage = 30 } =
     const response = await fetchAuthenticatedApi(
       `/api/github/repositories?${params}`,
       { method: 'GET' },
-      token,
+      tokenOverride,
     );
-    if (!response.ok) throw new Error(await parseError(response));
+    if (!response.ok) {
+      try {
+        await parseStructuredApiError(response);
+      } catch (error) {
+        if (error instanceof GitHubRequestError) {
+          throw error;
+        }
+        throw new Error(await parseError(response));
+      }
+    }
     return response.json();
   } catch (error) {
-    if (error?.name === 'AuthenticationRequiredError') {
+    if (error?.name === 'AuthenticationRequiredError' || error instanceof GitHubRequestError) {
       throw error;
     }
     throw new Error(normalizeFetchError(error, apiBaseUrl));

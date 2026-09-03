@@ -130,11 +130,39 @@ class MeetingRepository:
         meeting = await self.get_meeting_by_id(meeting_id)
         if meeting is None:
             return None
+        if meeting.status == MeetingStatus.ended.value:
+            return meeting
         meeting.status = MeetingStatus.ended.value
         meeting.ended_at = datetime.now(timezone.utc)
+        meeting.empty_since = None
         await self.session.flush()
         await self.session.refresh(meeting, attribute_names=["participants"])
         return meeting
+
+    async def mark_meeting_empty(self, meeting_id: str) -> None:
+        meeting = await self.get_meeting_by_id_light(meeting_id)
+        if meeting is None or meeting.status == MeetingStatus.ended.value:
+            return
+        if meeting.empty_since is None:
+            meeting.empty_since = datetime.now(timezone.utc)
+            await self.session.flush()
+
+    async def clear_meeting_empty(self, meeting_id: str) -> None:
+        meeting = await self.get_meeting_by_id_light(meeting_id)
+        if meeting is None or meeting.empty_since is None:
+            return
+        meeting.empty_since = None
+        await self.session.flush()
+
+    async def list_joinable_meetings(self) -> list[Meeting]:
+        active_statuses = (MeetingStatus.scheduled.value, MeetingStatus.active.value)
+        stmt = (
+            select(Meeting)
+            .where(Meeting.status.in_(active_statuses))
+            .options(selectinload(Meeting.participants))
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
 
     async def count_active_participants(self, meeting_id: str) -> int:
         stmt = (

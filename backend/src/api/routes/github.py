@@ -16,7 +16,7 @@ from src.services.github_connection_service import (
 from src.integrations.github_errors import GITHUB_OAUTH_SCOPES
 from src.services.github_oauth_service import GitHubOAuthError, GitHubOAuthService
 from src.utils.github_collaborator_utils import annotate_collaborators_with_host
-from src.utils.github_diagnostics import log_github_precheck_denied
+from src.utils.github_diagnostics import log_github_precheck_denied, log_github_repositories_request
 from src.utils.github_oauth_diagnostics import log_github_oauth_stage
 
 router = APIRouter(prefix="/api/github", tags=["github"])
@@ -102,11 +102,39 @@ async def list_github_repositories(
             clerk_user.user_id,
             lambda analyzer: analyzer.list_authenticated_user_repositories(page=page, per_page=per_page),
         )
-    except (GitHubNotConnectedError, GitHubConnectionExpiredError, GitHubApiError) as exc:
+    except GitHubNotConnectedError as exc:
+        log_github_repositories_request(
+            clerk_user_id=clerk_user.user_id,
+            outcome="not_connected",
+        )
+        raise _handle_github_errors(exc) from exc
+    except GitHubConnectionExpiredError as exc:
+        log_github_repositories_request(
+            clerk_user_id=clerk_user.user_id,
+            outcome="connection_expired",
+        )
+        raise _handle_github_errors(exc) from exc
+    except GitHubApiError as exc:
+        log_github_repositories_request(
+            clerk_user_id=clerk_user.user_id,
+            outcome="github_api_error",
+            github_status=exc.status_code,
+            github_code=exc.code,
+        )
         raise _handle_github_errors(exc) from exc
     except Exception as exc:
+        log_github_repositories_request(
+            clerk_user_id=clerk_user.user_id,
+            outcome="unexpected_error",
+            error_type=type(exc).__name__,
+        )
         raise HTTPException(status_code=502, detail="Unable to load GitHub repositories.") from exc
 
+    log_github_repositories_request(
+        clerk_user_id=clerk_user.user_id,
+        outcome="success",
+        repository_count=len(repositories),
+    )
     return {
         "repositories": repositories,
         "page": page,

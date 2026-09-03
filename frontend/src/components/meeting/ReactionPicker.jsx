@@ -30,7 +30,7 @@ export default function ReactionPicker({ open, onClose, onSelect }) {
       ref={panelRef}
       role="menu"
       aria-label="Send a reaction"
-      className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 bg-[#111111] border border-[#2F2F2F] rounded-2xl shadow-2xl p-2 flex gap-1 z-50"
+      className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 bg-[#171B22] border border-[#2F3640]/80 rounded-2xl shadow-2xl p-2 flex gap-1 z-50"
     >
       {REACTIONS.map((emoji) => (
         <button
@@ -42,7 +42,7 @@ export default function ReactionPicker({ open, onClose, onSelect }) {
             onSelect(emoji);
             onClose();
           }}
-          className="w-10 h-10 flex items-center justify-center text-xl rounded-xl hover:bg-[#222222] transition-colors focus:outline-none focus:ring-2 focus:ring-[#737373]"
+          className="w-10 h-10 flex items-center justify-center text-xl rounded-xl hover:bg-[#242A33] transition-colors focus:outline-none focus:ring-2 focus:ring-white/20"
         >
           {emoji}
         </button>

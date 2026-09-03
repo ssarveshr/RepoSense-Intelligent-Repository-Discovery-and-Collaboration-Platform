@@ -1,8 +1,10 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.config.settings import settings
 
 from src.models.meeting import (
     MeetingCreate,
@@ -231,6 +233,7 @@ class MeetingService:
                 display_name=display_name,
                 leave_token_hash=leave_token_hash,
             )
+        await self.repository.clear_meeting_empty(meeting_id)
         await self.repository.mark_meeting_active(meeting_id)
 
         try:
@@ -281,9 +284,9 @@ class MeetingService:
         if meeting.status != MeetingStatus.ended.value:
             active_count = await self.repository.count_active_participants(meeting_id)
             if active_count == 0:
-                ended = await self.repository.end_meeting(meeting_id)
-                if ended is not None:
-                    auto_ended = True
+                await self.repository.mark_meeting_empty(meeting_id)
+                auto_ended = await self._try_end_empty_meeting_after_grace(meeting_id)
+                if auto_ended:
                     meeting_status = MeetingStatus.ended.value
 
         return MeetingLeaveResponse(
@@ -291,3 +294,69 @@ class MeetingService:
             meeting_status=meeting_status,
             auto_ended=auto_ended,
         )
+
+    def _empty_reference_time(self, meeting) -> datetime | None:
+        if meeting.empty_since is not None:
+            empty_since = meeting.empty_since
+            if empty_since.tzinfo is None:
+                empty_since = empty_since.replace(tzinfo=timezone.utc)
+            return empty_since
+
+        ever_joined = any(p.joined_at is not None for p in meeting.participants)
+        if ever_joined:
+            return None
+
+        created_at = meeting.created_at
+        if created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=timezone.utc)
+        return created_at
+
+    def _meeting_empty_past_grace(self, meeting) -> bool:
+        reference = self._empty_reference_time(meeting)
+        if reference is None:
+            return False
+        grace = max(0, settings.empty_meeting_grace_seconds)
+        cutoff = datetime.now(timezone.utc) - timedelta(seconds=grace)
+        return reference <= cutoff
+
+    async def _try_end_empty_meeting_after_grace(self, meeting_id: str) -> bool:
+        meeting = await self.repository.get_meeting_by_id(meeting_id)
+        if meeting is None or meeting.status == MeetingStatus.ended.value:
+            return False
+
+        active_count = await self.repository.count_active_participants(meeting_id)
+        if active_count > 0:
+            await self.repository.clear_meeting_empty(meeting_id)
+            return False
+
+        if not self._meeting_empty_past_grace(meeting):
+            return False
+
+        ended = await self.repository.end_meeting(meeting_id)
+        return ended is not None
+
+    async def cleanup_empty_meetings(self) -> int:
+        """End joinable meetings that have been empty beyond the configured grace period."""
+        ended_count = 0
+        candidates = await self.repository.list_joinable_meetings()
+
+        for meeting in candidates:
+            active_count = await self.repository.count_active_participants(meeting.id)
+            if active_count > 0:
+                if meeting.empty_since is not None:
+                    await self.repository.clear_meeting_empty(meeting.id)
+                continue
+
+            if meeting.empty_since is None:
+                await self.repository.mark_meeting_empty(meeting.id)
+                meeting = await self.repository.get_meeting_by_id(meeting.id)
+                if meeting is None:
+                    continue
+
+            if not self._meeting_empty_past_grace(meeting):
+                continue
+
+            if await self._try_end_empty_meeting_after_grace(meeting.id):
+                ended_count += 1
+
+        return ended_count

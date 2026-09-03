@@ -24,6 +24,11 @@ def reset_rate_limiter():
 
 
 @pytest.fixture
+def zero_empty_grace(monkeypatch):
+    monkeypatch.setattr(settings, "empty_meeting_grace_seconds", 0)
+
+
+@pytest.fixture
 def clerk_settings(monkeypatch):
     monkeypatch.setattr(settings, "clerk_jwks_url", "https://test.clerk.accounts.dev/.well-known/jwks.json")
     monkeypatch.setattr(settings, "clerk_issuer", "https://test.clerk.accounts.dev")

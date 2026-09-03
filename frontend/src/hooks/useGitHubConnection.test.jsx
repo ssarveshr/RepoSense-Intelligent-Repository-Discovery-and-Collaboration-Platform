@@ -11,7 +11,7 @@ vi.mock('../services/githubApi.js', () => ({
   disconnectGitHub: vi.fn(),
 }));
 
-import { getGitHubConnection } from '../services/githubApi.js';
+import { getGitHubConnection, listGitHubRepositories } from '../services/githubApi.js';
 
 function createWrapper(authValue) {
   return function Wrapper({ children }) {
@@ -58,6 +58,7 @@ describe('useGitHubConnection readiness', () => {
 
   it('loads GitHub connection after session token is ready', async () => {
     getGitHubConnection.mockResolvedValue({ connected: true, github_user: { login: 'dev' } });
+    listGitHubRepositories.mockResolvedValue({ repositories: [{ full_name: 'dev/repo' }] });
 
     const authValue = {
       isLoaded: true,
@@ -73,7 +74,27 @@ describe('useGitHubConnection readiness', () => {
     });
 
     await waitFor(() => {
+      expect(listGitHubRepositories).toHaveBeenCalledOnce();
       expect(result.current.isConnected).toBe(true);
+      expect(result.current.repositories).toHaveLength(1);
+    });
+  });
+
+  it('does not load repositories before session is ready', async () => {
+    getGitHubConnection.mockResolvedValue({ connected: true, github_user: { login: 'dev' } });
+
+    const authValue = {
+      isLoaded: true,
+      isSignedIn: true,
+      isSessionReady: false,
+      getAuthToken: vi.fn(),
+    };
+
+    renderHook(() => useGitHubConnection(), { wrapper: createWrapper(authValue) });
+
+    await waitFor(() => {
+      expect(getGitHubConnection).not.toHaveBeenCalled();
+      expect(listGitHubRepositories).not.toHaveBeenCalled();
     });
   });
 });

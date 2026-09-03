@@ -1,11 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { MicOffIcon } from './MeetingIcons';
-
-function avatarGradient(name) {
-  const hash = (name || '?').split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const hues = ['from-indigo-600 to-blue-600', 'from-violet-600 to-purple-600', 'from-blue-600 to-cyan-600', 'from-indigo-500 to-violet-600'];
-  return hues[hash % hues.length];
-}
+import { meetAvatarGradient } from './meetTheme.js';
 
 export default function MeetingParticipantTile({
   label,
@@ -26,7 +21,17 @@ export default function MeetingParticipantTile({
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    video.srcObject = stream;
+    video.srcObject = stream || null;
+    if (stream) {
+      try {
+        const playPromise = video.play();
+        playPromise?.catch?.(() => {
+          // Autoplay may require a user gesture in some browsers.
+        });
+      } catch {
+        // jsdom and some environments do not implement HTMLMediaElement.play().
+      }
+    }
   }, [stream]);
 
   const tileClass = isScreenShare
@@ -39,8 +44,8 @@ export default function MeetingParticipantTile({
 
   return (
     <div
-      className={`relative bg-gray-900 rounded-2xl overflow-hidden shadow-lg transition-all duration-200 min-h-0 min-w-0 ${tileClass} ${
-        isActiveSpeaker ? 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-gray-950' : 'ring-1 ring-gray-800'
+      className={`relative bg-[#101318] rounded-2xl overflow-hidden shadow-lg transition-all duration-200 min-h-0 min-w-0 ${tileClass} ${
+        isActiveSpeaker ? 'ring-2 ring-[#2B3038] ring-offset-2 ring-offset-[#0B0D10]' : 'ring-1 ring-[#2B3038]'
       }`}
       data-testid="participant-tile"
     >
@@ -53,9 +58,9 @@ export default function MeetingParticipantTile({
           className={`w-full h-full ${isScreenShare ? 'object-contain bg-black' : 'object-cover'} ${mirror ? 'mirror' : ''}`}
         />
       ) : (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-950">
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-[#12161C] to-[#0F1115]">
           <div
-            className={`w-20 h-20 rounded-full bg-gradient-to-br ${avatarGradient(label)} text-white font-bold text-2xl flex items-center justify-center border-2 border-white/10 shadow-xl`}
+            className={`w-20 h-20 rounded-full bg-gradient-to-br ${meetAvatarGradient(label)} text-white font-bold text-2xl flex items-center justify-center border-2 border-white/10 shadow-xl`}
           >
             {initial}
           </div>

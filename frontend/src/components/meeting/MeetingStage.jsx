@@ -35,7 +35,6 @@ export default function MeetingStage({
 }) {
   const { standalone } = useMeetLayout();
   const sessionRef = useRef(null);
-  const cleanupDoneRef = useRef(false);
   const [connectionState, setConnectionState] = useState(ConnectionState.Disconnected);
   const [remoteTiles, setRemoteTiles] = useState([]);
   const [activeSpeakers, setActiveSpeakers] = useState([]);
@@ -53,6 +52,7 @@ export default function MeetingStage({
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [ending, setEnding] = useState(false);
   const localIdentityRef = useRef(null);
+  const lobbyMediaPrefsAppliedRef = useRef(false);
 
   const handleFinalCaption = useCallback(
     (text) => {
@@ -72,10 +72,23 @@ export default function MeetingStage({
     localStream,
     isAudioEnabled,
     isVideoEnabled,
-    toggleAudio,
-    toggleVideo,
+    setAudioEnabled,
+    setVideoEnabled,
+    getLocalStream,
     stopLocalMedia,
   } = media;
+
+  useEffect(() => {
+    if (lobbyMediaPrefsAppliedRef.current) return;
+    lobbyMediaPrefsAppliedRef.current = true;
+
+    if (joinData.isAudioEnabled === false) {
+      setAudioEnabled(false);
+    }
+    if (joinData.isVideoEnabled === false) {
+      setVideoEnabled(false);
+    }
+  }, [joinData.isAudioEnabled, joinData.isVideoEnabled, setAudioEnabled, setVideoEnabled]);
 
   const livekitUrl = joinData.livekit_url || import.meta.env.VITE_LIVEKIT_URL;
   const displayMeetingCode = meetingShortCode || joinData.short_code || joinData.room_name;
@@ -100,20 +113,21 @@ export default function MeetingStage({
     setParticipantCount(getActiveParticipantCount(room));
   }, []);
 
-  const cleanupSession = useCallback(async () => {
-    if (cleanupDoneRef.current) return;
-    cleanupDoneRef.current = true;
-
+  const disconnectLiveKit = useCallback(async () => {
+    const session = sessionRef.current;
+    sessionRef.current = null;
+    if (!session) return;
     try {
-      await sessionRef.current?.disconnect();
+      await session.disconnect();
     } catch (disconnectError) {
       console.error('Failed to disconnect LiveKit session:', disconnectError);
-    } finally {
-      sessionRef.current = null;
     }
+  }, []);
 
+  const teardownMeeting = useCallback(async () => {
+    await disconnectLiveKit();
     stopLocalMedia();
-  }, [stopLocalMedia]);
+  }, [disconnectLiveKit, stopLocalMedia]);
 
   useEffect(() => {
     if (!joinData?.token || !livekitUrl) return undefined;
@@ -122,7 +136,6 @@ export default function MeetingStage({
     let connectTimeoutId = null;
     const session = new LiveKitSession();
     sessionRef.current = session;
-    cleanupDoneRef.current = false;
 
     const unsubscribe = session.onStateChange(
       ({ connectionState: state, isScreenSharing: sharing, activeSpeakerIdentities }) => {
@@ -199,18 +212,37 @@ export default function MeetingStage({
       unsubscribeReaction();
       unsubscribeHand();
       unsubscribeCaption();
-      cleanupSession();
+      disconnectLiveKit();
     };
-  }, [joinData?.token, livekitUrl, localStream, refreshTiles, cleanupSession]);
+  }, [joinData?.token, livekitUrl, refreshTiles, disconnectLiveKit]);
+
+  useEffect(() => {
+    if (connectionState !== ConnectionState.Connected || !localStream) return undefined;
+
+    let cancelled = false;
+    sessionRef.current
+      ?.publishLocalStream(localStream)
+      .catch((publishError) => {
+        if (!cancelled) {
+          console.error('Failed to publish local media tracks:', publishError);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [connectionState, localStream]);
 
   const handleToggleAudio = async () => {
-    toggleAudio();
-    await sessionRef.current?.setMicrophoneEnabled(!isAudioEnabled);
+    const nextEnabled = !isAudioEnabled;
+    await setAudioEnabled(nextEnabled);
+    await sessionRef.current?.setMicrophoneEnabled(nextEnabled, getLocalStream());
   };
 
   const handleToggleVideo = async () => {
-    toggleVideo();
-    await sessionRef.current?.setCameraEnabled(!isVideoEnabled);
+    const nextEnabled = !isVideoEnabled;
+    await setVideoEnabled(nextEnabled);
+    await sessionRef.current?.setCameraEnabled(nextEnabled, getLocalStream());
   };
 
   const handleToggleScreenShare = async () => {
@@ -232,7 +264,7 @@ export default function MeetingStage({
     setLeaving(true);
     setCaptionsEnabled(false);
     try {
-      await cleanupSession();
+      await teardownMeeting();
       await onLeave();
     } catch (leaveError) {
       console.error('Failed to record meeting leave:', leaveError);
@@ -247,7 +279,7 @@ export default function MeetingStage({
     setCaptionsEnabled(false);
     try {
       await onEndMeeting();
-      await cleanupSession();
+      await teardownMeeting();
       onMeetingEnded?.();
     } catch (endError) {
       console.error('Failed to end meeting:', endError);
@@ -268,7 +300,7 @@ export default function MeetingStage({
         const meeting = await resolveMeeting(meetingId);
         if (!cancelled && (meeting.status === 'ended' || !meeting.is_joinable)) {
           setCaptionsEnabled(false);
-          await cleanupSession();
+          await teardownMeeting();
           onMeetingEnded();
         }
       } catch {
@@ -281,7 +313,7 @@ export default function MeetingStage({
       cancelled = true;
       window.clearInterval(intervalId);
     };
-  }, [cleanupSession, meetingId, onMeetingEnded]);
+  }, [meetingId, onMeetingEnded, teardownMeeting]);
 
   const localScreenPub = sessionRef.current?.room?.localParticipant?.getTrackPublication(
     Track.Source.ScreenShare,
@@ -341,8 +373,8 @@ export default function MeetingStage({
   };
 
   const rootClassName = standalone
-    ? 'h-full w-full flex flex-col overflow-hidden bg-gray-950'
-    : 'fixed inset-0 top-16 z-40 bg-gray-950 flex flex-col overflow-hidden';
+    ? 'h-full w-full flex flex-col overflow-hidden bg-[#0B0D10]'
+    : 'fixed inset-0 top-16 z-40 bg-[#0B0D10] flex flex-col overflow-hidden';
 
   return (
     <div className={rootClassName}>
@@ -356,18 +388,18 @@ export default function MeetingStage({
       />
 
       {(isConnecting || isReconnecting || error) && (
-        <div className="shrink-0 px-4 py-2 bg-gray-900/90 border-b border-gray-800 text-sm">
+        <div className="shrink-0 px-4 py-2 bg-[#161A20]/90 border-b border-[#2B3038] text-sm">
           {isConnecting && !error && (
-            <p className="text-amber-300 flex items-center gap-2">
-              <span className="w-4 h-4 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+            <p className="text-[#9CA3AF] flex items-center gap-2">
+              <span className="w-4 h-4 border-2 border-[#6B7280] border-t-transparent rounded-full animate-spin" />
               Connecting to the meeting room…
             </p>
           )}
           {isReconnecting && !error && (
-            <p className="text-amber-300">Reconnecting… Your call will resume shortly.</p>
+            <p className="text-[#9CA3AF]">Reconnecting… Your call will resume shortly.</p>
           )}
           {error && (
-            <p className="text-red-400 font-semibold" role="alert">
+            <p className="text-red-400/90 font-semibold" role="alert">
               {error}
             </p>
           )}
@@ -393,7 +425,7 @@ export default function MeetingStage({
             />
 
             {remoteTiles.length === 0 && isConnected && (
-              <p className="text-center text-gray-500 text-sm mt-6">Waiting for others to join…</p>
+              <p className="text-center text-[#737373] text-sm mt-6">Waiting for others to join…</p>
             )}
           </div>
         </div>
@@ -414,6 +446,7 @@ export default function MeetingStage({
           open={showChat}
           onClose={() => setShowChat(false)}
           isMobile={isMobile}
+          connected={isConnected}
         />
       </div>
 

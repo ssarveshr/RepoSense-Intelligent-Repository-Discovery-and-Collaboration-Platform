@@ -13,7 +13,7 @@ class FakeTokenService:
 
 
 @pytest.mark.asyncio
-async def test_single_participant_leave_auto_ends_meeting(async_session):
+async def test_single_participant_leave_auto_ends_meeting(async_session, zero_empty_grace):
     service = MeetingService(async_session)
 
     created = await service.create_meeting(
@@ -80,7 +80,7 @@ async def test_two_participants_one_leaves_meeting_stays_active(async_session):
 
 
 @pytest.mark.asyncio
-async def test_last_participant_leave_auto_ends_meeting(async_session):
+async def test_last_participant_leave_auto_ends_meeting(async_session, zero_empty_grace):
     service = MeetingService(async_session)
 
     created = await service.create_meeting(
@@ -156,7 +156,7 @@ async def test_host_leaves_guest_remains_meeting_stays_active(async_session):
 
 
 @pytest.mark.asyncio
-async def test_auto_ended_meeting_cannot_be_joined(async_session):
+async def test_auto_ended_meeting_cannot_be_joined(async_session, zero_empty_grace):
     service = MeetingService(async_session)
 
     created = await service.create_meeting(
@@ -187,7 +187,7 @@ async def test_auto_ended_meeting_cannot_be_joined(async_session):
 
 
 @pytest.mark.asyncio
-async def test_leave_is_idempotent(async_session):
+async def test_leave_is_idempotent(async_session, zero_empty_grace):
     service = MeetingService(async_session)
 
     created = await service.create_meeting(

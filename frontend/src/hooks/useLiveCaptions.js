@@ -5,6 +5,7 @@ import {
 } from '../utils/speechRecognition.js';
 
 const MAX_VISIBLE_LINES = 5;
+const RESTART_DELAY_MS = 300;
 
 function trimLines(lines) {
   return lines.slice(-MAX_VISIBLE_LINES);
@@ -20,8 +21,10 @@ export function useLiveCaptions({ enabled, onFinalCaption }) {
   const [supported] = useState(() => isSpeechRecognitionSupported());
   const [error, setError] = useState(null);
   const recognitionRef = useRef(null);
+  const enabledRef = useRef(enabled);
   const onFinalCaptionRef = useRef(onFinalCaption);
   onFinalCaptionRef.current = onFinalCaption;
+  enabledRef.current = enabled;
 
   const stopRecognition = useCallback(() => {
     const recognition = recognitionRef.current;
@@ -64,6 +67,18 @@ export function useLiveCaptions({ enabled, onFinalCaption }) {
     },
     [addCaptionLine],
   );
+
+  const scheduleRestart = useCallback((recognition) => {
+    window.setTimeout(() => {
+      if (recognitionRef.current !== recognition || !enabledRef.current) return;
+      try {
+        recognition.start();
+        setError(null);
+      } catch {
+        setError('Speech recognition paused. Toggle captions to retry.');
+      }
+    }, RESTART_DELAY_MS);
+  }, []);
 
   useEffect(() => {
     if (!enabled) {
@@ -108,21 +123,28 @@ export function useLiveCaptions({ enabled, onFinalCaption }) {
     };
 
     recognition.onerror = (event) => {
+      if (!enabledRef.current || recognitionRef.current !== recognition) return;
+
       if (event.error === 'not-allowed') {
         setError('Microphone permission is required for live captions.');
-      } else if (event.error !== 'aborted' && event.error !== 'no-speech') {
-        setError('Speech recognition stopped unexpectedly. Toggle captions to retry.');
+        return;
       }
+
+      if (event.error === 'aborted' || event.error === 'no-speech') {
+        return;
+      }
+
+      if (event.error === 'network' || event.error === 'service-not-allowed') {
+        scheduleRestart(recognition);
+        return;
+      }
+
+      setError('Speech recognition paused. Toggle captions to retry.');
     };
 
     recognition.onend = () => {
-      if (recognitionRef.current === recognition && enabled) {
-        try {
-          recognition.start();
-        } catch {
-          // Ignore restart races during cleanup.
-        }
-      }
+      if (recognitionRef.current !== recognition || !enabledRef.current) return;
+      scheduleRestart(recognition);
     };
 
     try {
@@ -134,7 +156,7 @@ export function useLiveCaptions({ enabled, onFinalCaption }) {
     return () => {
       stopRecognition();
     };
-  }, [addCaptionLine, enabled, stopRecognition, supported]);
+  }, [addCaptionLine, enabled, scheduleRestart, stopRecognition, supported]);
 
   useEffect(
     () => () => {

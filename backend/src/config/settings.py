@@ -63,6 +63,9 @@ class Settings(BaseSettings):
     # GitHub diagnostics — off by default
     github_diagnostics: bool = False
 
+    # Meetings — grace period before auto-ending empty meetings (seconds)
+    empty_meeting_grace_seconds: int = 30
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def parse_cors_origins(cls, value):

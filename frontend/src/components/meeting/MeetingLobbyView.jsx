@@ -1,12 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { CameraIcon, CameraOffIcon, MicIcon, MicOffIcon } from './MeetingIcons';
 import { useMeetLayout } from '../../layouts/meetLayoutContext.js';
-
-function avatarGradient(name) {
-  const hash = (name || '?').split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const hues = ['from-indigo-600 to-blue-600', 'from-violet-600 to-purple-600', 'from-blue-600 to-cyan-600'];
-  return hues[hash % hues.length];
-}
+import { meetAvatarGradient, meetTheme } from './meetTheme.js';
 
 export default function MeetingLobbyView({
   media,
@@ -71,11 +66,21 @@ export default function MeetingLobbyView({
           ? '1 person in the meeting'
           : `${activeParticipantCount} people in the meeting`;
 
+  const labelClass = standalone
+    ? `block text-xs font-bold uppercase tracking-wider ${meetTheme.textSecondary} mb-2`
+    : 'block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2';
+  const fieldClass = standalone
+    ? `w-full px-4 py-3 rounded-xl text-sm font-medium ${meetTheme.input}`
+    : 'w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-medium text-sm focus:ring-2 focus:ring-indigo-500 outline-none';
+  const selectClass = standalone
+    ? `w-full px-3 py-2.5 rounded-xl text-sm disabled:opacity-50 ${meetTheme.input}`
+    : 'w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 outline-none disabled:opacity-50';
+
   return (
     <div
       className={
         standalone
-          ? 'min-h-full h-full bg-gray-950'
+          ? 'min-h-full h-full bg-[#0B0D10]'
           : '-mx-4 sm:-mx-6 lg:-mx-8 -my-12 min-h-[calc(100vh-4rem)] bg-gray-50 dark:bg-gray-950'
       }
     >
@@ -83,7 +88,7 @@ export default function MeetingLobbyView({
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 items-start">
           {/* Preview column */}
           <div className="space-y-5">
-            <div className="relative aspect-video bg-gray-950 rounded-3xl border border-gray-800 overflow-hidden shadow-2xl">
+            <div className="relative aspect-video bg-[#101318] rounded-3xl border border-[#2B3038] overflow-hidden shadow-lg">
               {permissionError ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
                   <div className="w-14 h-14 rounded-2xl bg-red-500/20 text-red-400 flex items-center justify-center mb-4">
@@ -92,13 +97,13 @@ export default function MeetingLobbyView({
                   <p className="text-red-400 font-semibold text-sm max-w-md">{permissionError}</p>
                 </div>
               ) : !isVideoEnabled || !localStream ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 to-gray-950">
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-[#101318] to-[#0B0D10]">
                   <div
-                    className={`w-28 h-28 rounded-full bg-gradient-to-br ${avatarGradient(name)} text-white font-bold text-4xl flex items-center justify-center border-4 border-white/10 shadow-2xl`}
+                    className={`w-28 h-28 rounded-full bg-gradient-to-br ${meetAvatarGradient(name)} text-white font-bold text-4xl flex items-center justify-center border-4 border-white/10 shadow-2xl`}
                   >
                     {initial}
                   </div>
-                  <p className="mt-4 text-gray-400 text-sm font-medium">Camera is off</p>
+                  <p className="mt-4 text-[#9CA3AF] text-sm font-medium">Camera is off</p>
                 </div>
               ) : null}
 
@@ -126,10 +131,10 @@ export default function MeetingLobbyView({
                 onClick={toggleAudio}
                 disabled={!!permissionError}
                 aria-label={isAudioEnabled ? 'Turn microphone off' : 'Turn microphone on'}
-                className={`p-4 rounded-full transition-all disabled:opacity-40 ${
+                className={`p-4 rounded-full transition-all disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-white/20 ${
                   isAudioEnabled
-                    ? 'bg-gray-800 text-white hover:bg-gray-700'
-                    : 'bg-red-500 text-white hover:bg-red-600'
+                    ? meetTheme.btnNeutral
+                    : meetTheme.btnMuted
                 }`}
               >
                 {isAudioEnabled ? <MicIcon /> : <MicOffIcon />}
@@ -140,10 +145,10 @@ export default function MeetingLobbyView({
                 onClick={toggleVideo}
                 disabled={!!permissionError}
                 aria-label={isVideoEnabled ? 'Turn camera off' : 'Turn camera on'}
-                className={`p-4 rounded-full transition-all disabled:opacity-40 ${
+                className={`p-4 rounded-full transition-all disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-white/20 ${
                   isVideoEnabled
-                    ? 'bg-gray-800 text-white hover:bg-gray-700'
-                    : 'bg-red-500 text-white hover:bg-red-600'
+                    ? meetTheme.btnNeutral
+                    : meetTheme.btnMuted
                 }`}
               >
                 {isVideoEnabled ? <CameraIcon /> : <CameraOffIcon />}
@@ -152,16 +157,44 @@ export default function MeetingLobbyView({
           </div>
 
           {/* Join panel */}
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 lg:p-8 shadow-xl space-y-5 lg:sticky lg:top-24">
+          <div
+            className={`rounded-3xl p-6 lg:p-8 shadow-xl space-y-5 lg:sticky lg:top-24 ${
+              standalone
+                ? `${meetTheme.card}`
+                : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800'
+            }`}
+          >
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-indigo-500 mb-1">Ready to join?</p>
-              <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white">
+              <p
+                className={`text-xs font-bold uppercase tracking-wider mb-1 ${
+                  standalone ? meetTheme.textSecondary : 'text-indigo-500'
+                }`}
+              >
+                Ready to join?
+              </p>
+              <h1
+                className={`text-2xl font-extrabold ${
+                  standalone ? meetTheme.textPrimary : 'text-gray-900 dark:text-white'
+                }`}
+              >
                 {meetingTitle || 'RepoSense Meeting'}
               </h1>
               {meetingCode && (
-                <p className="text-sm text-gray-500 dark:text-gray-400 font-mono mt-1">{meetingCode}</p>
+                <p
+                  className={`text-sm font-mono mt-1 ${
+                    standalone ? meetTheme.textSecondary : 'text-gray-500 dark:text-gray-400'
+                  }`}
+                >
+                  {meetingCode}
+                </p>
               )}
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{presenceHint}</p>
+              <p
+                className={`text-sm mt-2 ${
+                  standalone ? meetTheme.textSecondary : 'text-gray-500 dark:text-gray-400'
+                }`}
+              >
+                {presenceHint}
+              </p>
             </div>
 
             {joinError && (
@@ -171,14 +204,14 @@ export default function MeetingLobbyView({
             )}
 
             {joining && (
-              <div className="flex items-center gap-3 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl text-indigo-700 dark:text-indigo-300 text-sm font-semibold">
-                <span className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+              <div className="flex items-center gap-3 p-4 bg-[#1C2128]/60 border border-[#2B3038] rounded-2xl text-[#9CA3AF] text-sm font-semibold">
+                <span className="w-5 h-5 border-2 border-[#9CA3AF] border-t-transparent rounded-full animate-spin" />
                 Joining meeting…
               </div>
             )}
 
             <div>
-              <label htmlFor="display-name" className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+              <label htmlFor="display-name" className={labelClass}>
                 Your name
               </label>
               <input
@@ -187,13 +220,13 @@ export default function MeetingLobbyView({
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="Enter your name"
-                className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-medium text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                className={fieldClass}
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label htmlFor="camera-select" className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+                <label htmlFor="camera-select" className={labelClass}>
                   Camera
                 </label>
                 <select
@@ -201,7 +234,7 @@ export default function MeetingLobbyView({
                   value={selectedCameraId}
                   onChange={(e) => setSelectedCameraId(e.target.value)}
                   disabled={!!permissionError || devices.cameras.length === 0}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 outline-none disabled:opacity-50"
+                  className={selectClass}
                 >
                   {devices.cameras.length === 0 ? (
                     <option value="">No cameras</option>
@@ -215,7 +248,7 @@ export default function MeetingLobbyView({
                 </select>
               </div>
               <div>
-                <label htmlFor="mic-select" className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+                <label htmlFor="mic-select" className={labelClass}>
                   Microphone
                 </label>
                 <select
@@ -223,7 +256,7 @@ export default function MeetingLobbyView({
                   value={selectedMicId}
                   onChange={(e) => setSelectedMicId(e.target.value)}
                   disabled={!!permissionError || devices.microphones.length === 0}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 outline-none disabled:opacity-50"
+                  className={selectClass}
                 >
                   {devices.microphones.length === 0 ? (
                     <option value="">No microphones</option>
@@ -240,7 +273,7 @@ export default function MeetingLobbyView({
 
             {showPasscode && (
               <div>
-                <label htmlFor="meeting-passcode" className="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+                <label htmlFor="meeting-passcode" className={labelClass}>
                   Passcode (if required)
                 </label>
                 <input
@@ -249,7 +282,7 @@ export default function MeetingLobbyView({
                   value={passcode}
                   onChange={(e) => setPasscode(e.target.value)}
                   placeholder="Enter passcode"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className={fieldClass}
                 />
               </div>
             )}
@@ -258,7 +291,11 @@ export default function MeetingLobbyView({
               type="button"
               onClick={handleJoin}
               disabled={!!permissionError || joining}
-              className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold rounded-2xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className={`w-full py-4 font-extrabold rounded-2xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-white/20 ${
+                standalone
+                  ? meetTheme.primaryAction
+                  : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white'
+              }`}
             >
               {joining ? (
                 <>

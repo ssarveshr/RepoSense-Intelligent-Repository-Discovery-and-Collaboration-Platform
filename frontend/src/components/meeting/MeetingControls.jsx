@@ -14,21 +14,30 @@ import {
   ScreenShareIcon,
 } from './MeetingIcons';
 import ReactionPicker from './ReactionPicker';
+import { meetTheme } from './meetTheme.js';
 
-function ControlButton({ active, danger, onClick, disabled, ariaLabel, children, className = '' }) {
+function ControlButton({
+  active,
+  muted,
+  shareActive,
+  onClick,
+  disabled,
+  ariaLabel,
+  children,
+  className = '',
+}) {
+  let stateClass = meetTheme.btnNeutral;
+  if (muted) stateClass = meetTheme.btnMuted;
+  else if (shareActive) stateClass = meetTheme.btnShareActive;
+  else if (active) stateClass = meetTheme.btnActive;
+
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
       aria-label={ariaLabel}
-      className={`p-3.5 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
-        danger
-          ? 'bg-red-500 text-white hover:bg-red-600'
-          : active
-            ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-            : 'bg-gray-800 text-white hover:bg-gray-700'
-      } ${className}`}
+      className={`p-3.5 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed ${stateClass} ${className}`}
     >
       {children}
     </button>
@@ -78,10 +87,12 @@ export default function MeetingControls({
 
   return (
     <div className="absolute bottom-0 inset-x-0 z-30 flex justify-center pb-4 sm:pb-6 px-4 pointer-events-none">
-      <div className="pointer-events-auto flex flex-wrap items-center justify-center gap-2 sm:gap-3 bg-gray-900/95 backdrop-blur-xl border border-gray-700/80 rounded-full px-3 sm:px-5 py-2.5 shadow-2xl">
+      <div
+        className={`pointer-events-auto flex flex-wrap items-center justify-center gap-2 sm:gap-3 px-3 sm:px-5 py-2.5 ${meetTheme.controlBar}`}
+      >
         <ControlButton
           onClick={onToggleAudio}
-          danger={!isAudioEnabled}
+          muted={!isAudioEnabled}
           ariaLabel={isAudioEnabled ? 'Turn microphone off' : 'Turn microphone on'}
         >
           {isAudioEnabled ? <MicIcon /> : <MicOffIcon />}
@@ -89,7 +100,7 @@ export default function MeetingControls({
 
         <ControlButton
           onClick={onToggleVideo}
-          danger={!isVideoEnabled}
+          muted={!isVideoEnabled}
           ariaLabel={isVideoEnabled ? 'Turn camera off' : 'Turn camera on'}
         >
           {isVideoEnabled ? <CameraIcon /> : <CameraOffIcon />}
@@ -98,7 +109,7 @@ export default function MeetingControls({
         {!compact && (
           <ControlButton
             onClick={onToggleScreenShare}
-            active={isScreenSharing}
+            shareActive={isScreenSharing}
             ariaLabel={isScreenSharing ? 'Stop screen sharing' : 'Share screen'}
           >
             <ScreenShareIcon />
@@ -159,14 +170,13 @@ export default function MeetingControls({
         </ControlButton>
 
         <div className="relative" ref={moreRef}>
-          <ControlButton
-            onClick={() => setShowMore((v) => !v)}
-            ariaLabel="More options"
-          >
+          <ControlButton onClick={() => setShowMore((v) => !v)} ariaLabel="More options">
             <MoreIcon />
           </ControlButton>
           {showMore && (
-            <div className="absolute bottom-full mb-2 right-0 w-48 bg-gray-800 border border-gray-700 rounded-xl shadow-xl py-1 text-sm">
+            <div
+              className={`absolute bottom-full mb-2 right-0 w-48 ${meetTheme.bgPanel} ${meetTheme.borderSubtle} border rounded-xl shadow-xl py-1 text-sm`}
+            >
               {compact && (
                 <button
                   type="button"
@@ -174,7 +184,7 @@ export default function MeetingControls({
                     onToggleScreenShare?.();
                     setShowMore(false);
                   }}
-                  className="w-full px-4 py-2.5 text-left text-white hover:bg-gray-700 flex items-center gap-2"
+                  className="w-full px-4 py-2.5 text-left text-[#F5F7FA] hover:bg-[#242A33] flex items-center gap-2"
                 >
                   <ScreenShareIcon className="w-4 h-4" />
                   {isScreenSharing ? 'Stop sharing' : 'Share screen'}
@@ -188,12 +198,12 @@ export default function MeetingControls({
                     setShowMore(false);
                   }}
                   disabled={ending}
-                  className="w-full px-4 py-2.5 text-left text-red-300 hover:bg-gray-700 disabled:opacity-50"
+                  className="w-full px-4 py-2.5 text-left text-red-300 hover:bg-[#242A33] disabled:opacity-50"
                 >
                   End meeting for everyone
                 </button>
               )}
-              <p className="px-4 py-2 text-gray-400 text-xs">RepoSense Meeting</p>
+              <p className={`px-4 py-2 ${meetTheme.textMuted} text-xs`}>RepoSense Meeting</p>
             </div>
           )}
         </div>
@@ -204,7 +214,7 @@ export default function MeetingControls({
             onClick={onRequestEndMeeting}
             disabled={ending || leaving}
             aria-label="End meeting for everyone"
-            className="px-4 py-3 bg-red-900/80 hover:bg-red-800 text-red-100 font-bold rounded-full text-sm border border-red-700/80 transition-colors disabled:opacity-50"
+            className={`px-4 py-3 font-bold rounded-full text-sm transition-colors disabled:opacity-50 ${meetTheme.btnEndMeeting}`}
           >
             {ending ? 'Ending…' : 'End meeting'}
           </button>
@@ -215,7 +225,7 @@ export default function MeetingControls({
           onClick={onLeave}
           disabled={leaving || ending}
           aria-label="Leave meeting"
-          className="ml-1 sm:ml-2 px-5 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-full text-sm transition-colors disabled:opacity-50"
+          className={`ml-1 sm:ml-2 px-5 py-3 font-bold rounded-full text-sm transition-colors disabled:opacity-50 ${meetTheme.btnDestructive}`}
         >
           {leaving ? 'Leaving…' : 'Leave'}
         </button>

@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import asyncio
 
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,17 +12,41 @@ from src.api.routes.github import router as github_router
 from src.api.routes.meetings import router as meetings_router
 from src.api.routes.profile import router as profile_router
 from src.config.settings import settings
-from src.db import init_db
+from src.db import init_db, async_session_factory
+from src.services.meeting_service import MeetingService
 from src.services.search_service import engine
 from src.services.summarizer_service import RepoSummarizer
 from src.services.agent_service import agent_service
 from src.integrations.github import GitHubAnalyzer
 
 
+async def _empty_meeting_cleanup_loop() -> None:
+    while True:
+        await asyncio.sleep(15)
+        try:
+            async with async_session_factory() as session:
+                service = MeetingService(session)
+                await service.cleanup_empty_meetings()
+                await session.commit()
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            # Best-effort background cleanup; do not crash the API process.
+            pass
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
-    yield
+    cleanup_task = asyncio.create_task(_empty_meeting_cleanup_loop())
+    try:
+        yield
+    finally:
+        cleanup_task.cancel()
+        try:
+            await cleanup_task
+        except asyncio.CancelledError:
+            pass
 
 
 app = FastAPI(

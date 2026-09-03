@@ -17,7 +17,7 @@ import {
   parseGithubRepoUrl,
   useMeetingRepositoryContext,
 } from '../hooks/useMeetingRepositoryContext.js';
-import { openMeetingTabPlaceholder, navigateMeetingTab } from '../utils/openMeetingTab.js';
+import { openMeetingTabPlaceholder, launchMeetingInNewTab, launchMeetingTabAfterResolve } from '../utils/openMeetingTab.js';
 
 const VideoCameraIcon = ({ className = 'w-6 h-6' }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -202,8 +202,11 @@ export default function CollaborationStudio() {
 
     if (githubOAuthResult === 'success') {
       setGithubOAuthNotice('GitHub connected successfully.');
-      reloadGitHubConnection();
-      reloadRepositories();
+      reloadGitHubConnection().then((connection) => {
+        if (connection?.connected) {
+          reloadRepositories();
+        }
+      });
     } else {
       setGithubOAuthNotice('GitHub connection failed. Please try again.');
     }
@@ -632,10 +635,10 @@ export default function CollaborationStudio() {
       setErrorMessage('Enter a meeting ID or short code.');
       return;
     }
+    const tab = openMeetingTabPlaceholder();
     setJoiningMeeting(true);
     try {
-      const meeting = await resolveMeeting(id);
-      openMeetingInNewTab(meeting.id);
+      await launchMeetingTabAfterResolve(tab, resolveMeeting(id));
     } catch (err) {
       setErrorMessage(normalizeErrorMessage(err.message || 'Meeting not found.'));
     } finally {
@@ -752,15 +755,9 @@ export default function CollaborationStudio() {
     setShowAddCollabModal(false);
   };
 
-  const openMeetingInNewTab = (meetingId) => {
-    if (!meetingId) return;
-    const tab = openMeetingTabPlaceholder();
-    navigateMeetingTab(tab, meetingId);
-  };
-
   const enterMeeting = () => {
     if (createdMeeting?.id) {
-      openMeetingInNewTab(createdMeeting.id);
+      launchMeetingInNewTab(createdMeeting.id);
     }
   };
 
@@ -1443,12 +1440,13 @@ export default function CollaborationStudio() {
                   <p className="text-xs text-gray-500 mt-1">{participantCount} participant{participantCount === 1 ? '' : 's'}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <Link
-                    to={`/meetings/${meeting.id}`}
+                  <button
+                    type="button"
+                    onClick={() => launchMeetingInNewTab(meeting.id)}
                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl"
                   >
                     Join
-                  </Link>
+                  </button>
                   {isHost && (
                     <button
                       type="button"

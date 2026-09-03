@@ -26,14 +26,14 @@ export default function CaptionOverlay({ lines, interimText, error, visible }) {
             key={line.id}
             className="rounded-xl bg-black/75 backdrop-blur-sm border border-white/10 px-3 py-2 text-white text-sm sm:text-base leading-snug break-words"
           >
-            <span className="font-semibold text-indigo-300 mr-2">{line.sender}:</span>
+            <span className="font-semibold text-[#9AA3AF] mr-2">{line.sender}:</span>
             <span>{line.text}</span>
           </div>
         ))}
 
         {interimText && (
           <div className="rounded-xl bg-black/60 backdrop-blur-sm border border-white/5 px-3 py-2 text-gray-300 text-sm italic break-words">
-            <span className="font-semibold text-indigo-200/80 mr-2">You:</span>
+            <span className="font-semibold text-[#9AA3AF] mr-2">You:</span>
             <span>{interimText}</span>
           </div>
         )}

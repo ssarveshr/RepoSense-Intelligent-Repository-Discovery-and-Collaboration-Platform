@@ -10,14 +10,25 @@ import {
   SendIcon,
 } from './MeetingIcons';
 import { useMeetLayout } from '../../layouts/meetLayoutContext.js';
+import { meetTheme } from './meetTheme.js';
 
-export default function MeetingChat({ sessionRef, displayName, open, onClose, isMobile = false }) {
+export default function MeetingChat({
+  sessionRef,
+  displayName,
+  open,
+  onClose,
+  isMobile = false,
+  connected = false,
+}) {
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState('');
+  const [sendError, setSendError] = useState(null);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
+    if (!connected) return undefined;
+
     const session = sessionRef.current;
     if (!session) return undefined;
 
@@ -26,7 +37,7 @@ export default function MeetingChat({ sessionRef, displayName, open, onClose, is
     });
 
     return unsubscribe;
-  }, [sessionRef]);
+  }, [connected, sessionRef]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -40,9 +51,17 @@ export default function MeetingChat({ sessionRef, displayName, open, onClose, is
 
   const handleSend = async (event) => {
     event.preventDefault();
-    if (!draft.trim() || !sessionRef.current) return;
-    await sessionRef.current.sendChatMessage(draft, displayName);
-    setDraft('');
+    const text = draft.trim();
+    if (!text || !sessionRef.current) return;
+
+    setSendError(null);
+    try {
+      await sessionRef.current.sendChatMessage(text, displayName);
+      setDraft('');
+    } catch (error) {
+      console.error('Failed to send chat message:', error);
+      setSendError('Unable to send message. Check your connection and try again.');
+    }
   };
 
   const handleKeyDown = (event) => {
@@ -60,7 +79,7 @@ export default function MeetingChat({ sessionRef, displayName, open, onClose, is
 
   const panel = (
     <div
-      className={`flex flex-col bg-gray-900 border-gray-800 overflow-hidden ${
+      className={`flex flex-col ${meetTheme.bgPanel} ${meetTheme.borderSubtle} overflow-hidden ${
         isMobile
           ? mobilePanelClass
           : 'w-[340px] shrink-0 border-l h-full'
@@ -68,13 +87,15 @@ export default function MeetingChat({ sessionRef, displayName, open, onClose, is
       role="dialog"
       aria-label="In-call messages"
     >
-      <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between bg-gray-900/95 backdrop-blur-md">
-        <h2 className="text-white text-sm font-bold">In-call messages</h2>
+      <div
+        className={`px-4 py-3 border-b ${meetTheme.borderSubtle} flex items-center justify-between ${meetTheme.bgPanelHeader} backdrop-blur-md`}
+      >
+        <h2 className={`${meetTheme.textPrimary} text-sm font-bold`}>In-call messages</h2>
         <button
           type="button"
           onClick={onClose}
           aria-label="Close messages"
-          className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+          className={`p-2 rounded-lg ${meetTheme.textSecondary} hover:text-white hover:bg-[#242A33] transition-colors focus:outline-none focus:ring-2 focus:ring-white/20`}
         >
           <CloseIcon className="w-5 h-5" />
         </button>
@@ -83,21 +104,21 @@ export default function MeetingChat({ sessionRef, displayName, open, onClose, is
       <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-12 px-4">
-            <ChatIcon className="w-10 h-10 text-gray-600 mb-3" />
-            <p className="text-gray-400 text-sm font-medium">No messages yet</p>
-            <p className="text-gray-500 text-xs mt-1">Send a message to everyone in this meeting</p>
+            <ChatIcon className="w-10 h-10 text-[#4B5563] mb-3" />
+            <p className={`${meetTheme.textSecondary} text-sm font-medium`}>No messages yet</p>
+            <p className={`${meetTheme.textMuted} text-xs mt-1`}>Send a message to everyone in this meeting</p>
           </div>
         ) : (
           messages.map((message) => (
             <div key={message.id} className={`flex flex-col ${message.isLocal ? 'items-end' : 'items-start'}`}>
-              <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1 px-1">
+              <div className="text-[10px] uppercase tracking-wider text-[#737373] mb-1 px-1">
                 {message.sender} · {message.time}
               </div>
               <div
                 className={`px-3.5 py-2.5 rounded-2xl max-w-[90%] text-sm leading-relaxed ${
                   message.isLocal
-                    ? 'bg-indigo-600 text-white rounded-br-md'
-                    : 'bg-gray-800 text-gray-100 rounded-bl-md'
+                    ? `${meetTheme.messageLocal} rounded-br-md`
+                    : `${meetTheme.messageRemote} rounded-bl-md`
                 }`}
               >
                 {message.text}
@@ -108,7 +129,16 @@ export default function MeetingChat({ sessionRef, displayName, open, onClose, is
         <div ref={bottomRef} />
       </div>
 
-      <form onSubmit={handleSend} className="p-3 border-t border-gray-800 flex gap-2 bg-gray-900/95">
+      <form
+        onSubmit={handleSend}
+        className={`p-3 border-t ${meetTheme.borderSubtle} flex flex-col gap-2 ${meetTheme.bgPanelHeader}`}
+      >
+        {sendError && (
+          <p className="text-red-400 text-xs px-1" role="alert">
+            {sendError}
+          </p>
+        )}
+        <div className="flex gap-2">
         <textarea
           ref={inputRef}
           value={draft}
@@ -117,16 +147,17 @@ export default function MeetingChat({ sessionRef, displayName, open, onClose, is
           placeholder="Send a message…"
           rows={1}
           aria-label="Message input"
-          className="flex-1 px-3 py-2.5 rounded-xl bg-gray-800 border border-gray-700 text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500 resize-none min-h-[42px] max-h-24"
+          className={`flex-1 px-3 py-2.5 rounded-xl text-sm resize-none min-h-[42px] max-h-24 ${meetTheme.input}`}
         />
         <button
           type="submit"
           disabled={!draft.trim()}
           aria-label="Send message"
-          className="p-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white rounded-xl transition-colors shrink-0 self-end"
+          className={`p-2.5 rounded-xl transition-colors shrink-0 self-end ${meetTheme.sendBtn}`}
         >
           <SendIcon className="w-5 h-5" />
         </button>
+        </div>
       </form>
     </div>
   );

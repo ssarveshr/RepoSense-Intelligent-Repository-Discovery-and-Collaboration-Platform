@@ -39,6 +39,7 @@ vi.mock('../../services/livekitClient', () => {
       this.onHandState = vi.fn(() => () => {});
       this.onCaption = vi.fn(() => () => {});
       this.sendCaption = vi.fn().mockResolvedValue(undefined);
+      this.publishLocalStream = vi.fn().mockResolvedValue(undefined);
     }
   }
 
@@ -265,7 +266,7 @@ describe('MeetingStage leave flow', () => {
     expect(screen.queryByRole('button', { name: 'End meeting for everyone' })).not.toBeInTheDocument();
   });
 
-  it('runs cleanup on unmount', async () => {
+  it('disconnects LiveKit on unmount without stopping local media', async () => {
     const stopLocalMedia = vi.fn();
     const { unmount } = render(
       <MeetLayoutContext.Provider value={{ standalone: true }}>
@@ -299,7 +300,7 @@ describe('MeetingStage leave flow', () => {
 
     await waitFor(() => {
       expect(mockDisconnect).toHaveBeenCalled();
-      expect(stopLocalMedia).toHaveBeenCalled();
+      expect(stopLocalMedia).not.toHaveBeenCalled();
     });
   });
 });

@@ -56,3 +56,28 @@ def log_github_api_denied(payload: dict) -> None:
     if not github_diagnostics_enabled():
         return
     _emit_diagnostic({"denial_source": "GITHUB API DENIED", **payload})
+
+
+def log_github_repositories_request(
+    *,
+    clerk_user_id: str,
+    outcome: str,
+    repository_count: int | None = None,
+    github_status: int | None = None,
+    github_code: str | None = None,
+    error_type: str | None = None,
+) -> None:
+    """Safe repositories-route diagnostics (never logs tokens or Authorization headers)."""
+    if not github_diagnostics_enabled():
+        return
+    _emit_diagnostic(
+        {
+            "route": "GET /api/github/repositories",
+            "clerk_user": clerk_user_id,
+            "outcome": outcome,
+            "repository_count": repository_count,
+            "github_status": github_status,
+            "github_code": github_code,
+            "error_type": error_type,
+        }
+    )

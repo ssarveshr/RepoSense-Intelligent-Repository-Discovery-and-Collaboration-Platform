@@ -6,6 +6,7 @@ import {
   listGitHubRepositories,
   startGitHubOAuth,
 } from '../services/githubApi.js';
+import { GitHubRequestError } from '../utils/githubError.js';
 import { useProfileAuth } from '../providers/profileAuthContext.js';
 
 export function useGitHubConnection() {
@@ -48,10 +49,15 @@ export function useGitHubConnection() {
     setReposLoading(true);
     setReposError(null);
     try {
-      const data = await listGitHubRepositories(undefined, { page: 1, perPage: 30 });
+      const data = await listGitHubRepositories({ page: 1, perPage: 30 });
       setRepositories(Array.isArray(data.repositories) ? data.repositories : []);
     } catch (loadError) {
       if (loadError?.name === 'AuthenticationRequiredError') {
+        return;
+      }
+      if (loadError instanceof GitHubRequestError && loadError.code === 'GITHUB_NOT_CONNECTED') {
+        setRepositories([]);
+        setReposError(loadError.message);
         return;
       }
       setRepositories([]);

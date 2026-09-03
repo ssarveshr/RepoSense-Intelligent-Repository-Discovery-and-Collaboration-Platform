@@ -10,7 +10,7 @@ export default function StandaloneMeetLayout() {
 
   return (
     <MeetLayoutContext.Provider value={{ standalone: true }}>
-      <div className="meet-root h-[100dvh] w-full overflow-hidden bg-gray-950 text-gray-100">
+      <div className="meet-root h-[100dvh] w-full overflow-hidden bg-[#0B0D10] text-[#F3F4F6]">
         <Outlet />
       </div>
     </MeetLayoutContext.Provider>
