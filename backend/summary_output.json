@@ -1,0 +1,423 @@
+{
+  "what_it_does": "This project is a web application that provides a platform for students, faculty, and organizers to register for events, manage their accounts, and interact with each other. It includes features for user authentication, event management, and file uploads.",
+  "project_type": "Social Networking Platform",
+  "confidence": "High",
+  "confidence_reason": "The code uses Express.js for server-side routing, React for the frontend, and MongoDB for database management. It includes features for user registration, login, event creation, and file uploads.",
+  "core_features": [
+    "User Authentication",
+    "Event Management",
+    "File Uploads"
+  ],
+  "core_workflow": [
+    "User registers for an account",
+    "User logs in",
+    "User creates an event",
+    "User uploads an image for the event"
+  ],
+  "key_components": [
+    "server.js: Server-side logic",
+    "User.js: User model",
+    "events.js: Event model",
+    "PublicRouter.js: Public routes",
+    "uploadrouter.js: File upload routes"
+  ],
+  "difficulty": "Intermediate",
+  "best_for": "Developers interested in building a social networking platform, web developers, and students interested in event management.",
+  "project_file_analysis": [
+    {
+      "file": "package.json",
+      "lines": 8,
+      "role": "Node.js Package Manifest & Dependencies",
+      "insights": "8 lines of code"
+    },
+    {
+      "file": ".gitignore",
+      "lines": 2,
+      "role": "Code Module / Script",
+      "insights": "2 lines of code"
+    },
+    {
+      "file": "backend/server.js",
+      "lines": 56,
+      "role": "Code Module / Script",
+      "insights": "Exports: `__dirname, __filename, app`"
+    },
+    {
+      "file": "backend/serverRoutes/Deleteaccount.js",
+      "lines": 27,
+      "role": "API Routing & Request Controller Module",
+      "insights": "27 lines of code"
+    },
+    {
+      "file": "backend/serverRoutes/Public/PublicRouter.js",
+      "lines": 55,
+      "role": "API Routing & Request Controller Module",
+      "insights": "55 lines of code"
+    },
+    {
+      "file": "backend/serverRoutes/Public/upload.js",
+      "lines": 78,
+      "role": "API Routing & Request Controller Module",
+      "insights": "78 lines of code"
+    },
+    {
+      "file": "backend/serverRoutes/commonlogin.js",
+      "lines": 48,
+      "role": "API Routing & Request Controller Module",
+      "insights": "1 route handlers"
+    },
+    {
+      "file": "backend/serverRoutes/commonsignup.js",
+      "lines": 76,
+      "role": "API Routing & Request Controller Module",
+      "insights": "76 lines of code"
+    },
+    {
+      "file": "backend/serverRoutes/facultyrouter.js",
+      "lines": 119,
+      "role": "API Routing & Request Controller Module",
+      "insights": "3 route handlers"
+    },
+    {
+      "file": "backend/serverRoutes/organiserRouter.js",
+      "lines": 130,
+      "role": "API Routing & Request Controller Module",
+      "insights": "3 route handlers"
+    },
+    {
+      "file": "backend/serverRoutes/studentRouter.js",
+      "lines": 210,
+      "role": "API Routing & Request Controller Module",
+      "insights": "5 route handlers"
+    },
+    {
+      "file": "backend/models/User.js",
+      "lines": 51,
+      "role": "Data Model & Database Schema Definition",
+      "insights": "51 lines of code"
+    },
+    {
+      "file": "backend/models/events.js",
+      "lines": 43,
+      "role": "Data Model & Database Schema Definition",
+      "insights": "43 lines of code"
+    },
+    {
+      "file": "frontend/DBMS frontend/eslint.config.js",
+      "lines": 33,
+      "role": "Data Model & Database Schema Definition",
+      "insights": "33 lines of code"
+    },
+    {
+      "file": "frontend/DBMS frontend/index.html",
+      "lines": 19,
+      "role": "Data Model & Database Schema Definition",
+      "insights": "19 lines of code"
+    },
+    {
+      "file": "frontend/DBMS frontend/package.json",
+      "lines": 46,
+      "role": "Node.js Package Manifest & Dependencies",
+      "insights": "Npm scripts: `dev, build, lint, preview`"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/App.css",
+      "lines": 0,
+      "role": "Data Model & Database Schema Definition",
+      "insights": "0 lines of code"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/App.jsx",
+      "lines": 58,
+      "role": "User Interface Component View",
+      "insights": "58 lines of code"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/About.jsx",
+      "lines": 328,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useEffect, useState`"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/About.module.css",
+      "lines": 772,
+      "role": "User Interface Component View",
+      "insights": "772 lines of code"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/CreateEvent.jsx",
+      "lines": 205,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState`"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/CreateEvent.module.css",
+      "lines": 119,
+      "role": "User Interface Component View",
+      "insights": "119 lines of code"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/DashBoard.jsx",
+      "lines": 30,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/EventDetails.jsx",
+      "lines": 60,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/EventDetails.module.css",
+      "lines": 52,
+      "role": "User Interface Component View",
+      "insights": "52 lines of code"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/Events.jsx",
+      "lines": 342,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useEffect, useState`"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/Events.module.css",
+      "lines": 791,
+      "role": "User Interface Component View",
+      "insights": "791 lines of code"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/FacultyDashboard.jsx",
+      "lines": 313,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/FacultyDashboard.module.css",
+      "lines": 334,
+      "role": "User Interface Component View",
+      "insights": "334 lines of code"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/HomePage.jsx",
+      "lines": 376,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useEffect, useState`"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/HomePage.module.css",
+      "lines": 524,
+      "role": "User Interface Component View",
+      "insights": "524 lines of code"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/LoginFaculty.jsx",
+      "lines": 173,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState`"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/LoginFaculty.module.css",
+      "lines": 411,
+      "role": "User Interface Component View",
+      "insights": "411 lines of code"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/LoginOrganiser.jsx",
+      "lines": 175,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState`"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/LoginOrganiser.module.css",
+      "lines": 409,
+      "role": "User Interface Component View",
+      "insights": "409 lines of code"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/LoginPage.jsx",
+      "lines": 163,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState`"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/LoginPage.module.css",
+      "lines": 409,
+      "role": "User Interface Component View",
+      "insights": "409 lines of code"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/OrganizerDashboard.jsx",
+      "lines": 248,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/OrganizerDashboard.module.css",
+      "lines": 454,
+      "role": "User Interface Component View",
+      "insights": "454 lines of code"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/RegisterEvent.jsx",
+      "lines": 192,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/RegisterEvent.module.css",
+      "lines": 312,
+      "role": "User Interface Component View",
+      "insights": "312 lines of code"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/SignUpFaculty.jsx",
+      "lines": 143,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState`"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/SignUpFaculty.module.css",
+      "lines": 410,
+      "role": "User Interface Component View",
+      "insights": "410 lines of code"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/SignUpPage.jsx",
+      "lines": 153,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState`"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/SignUpPage.module.css",
+      "lines": 440,
+      "role": "User Interface Component View",
+      "insights": "440 lines of code"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/Spinner.jsx",
+      "lines": 9,
+      "role": "User Interface Component View",
+      "insights": "9 lines of code"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/footer/Footer.jsx",
+      "lines": 54,
+      "role": "User Interface Component View",
+      "insights": "54 lines of code"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/footer/Footer.module.css",
+      "lines": 143,
+      "role": "User Interface Component View",
+      "insights": "143 lines of code"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/global.css",
+      "lines": 5,
+      "role": "User Interface Component View",
+      "insights": "5 lines of code"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/navbar/Calendar.jsx",
+      "lines": 329,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useEffect, useState`"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/navbar/Calendar.module.css",
+      "lines": 496,
+      "role": "User Interface Component View",
+      "insights": "496 lines of code"
+    },
+    {
+      "file": "frontend/DBMS frontend/src/components/navbar/NavBar.jsx",
+      "lines": 232,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useEffect, useState`"
+    }
+  ],
+  "technical_details": {
+    "tech_stack": [
+      "Express.js",
+      "React",
+      "Node.js"
+    ],
+    "dependencies": [
+      "bcrypt: ^5.1.1",
+      "bcryptjs: ^3.0.2",
+      "chalk: ^5.4.1",
+      "react-toastify: ^11.0.5"
+    ],
+    "api_endpoints": [
+      {
+        "method": "POST",
+        "path": "/login",
+        "source_file": "backend/serverRoutes/commonlogin.js"
+      },
+      {
+        "method": "GET",
+        "path": "/",
+        "source_file": "backend/serverRoutes/facultyrouter.js"
+      },
+      {
+        "method": "PUT",
+        "path": "/approve-event",
+        "source_file": "backend/serverRoutes/facultyrouter.js"
+      },
+      {
+        "method": "DELETE",
+        "path": "/deny-event",
+        "source_file": "backend/serverRoutes/facultyrouter.js"
+      },
+      {
+        "method": "GET",
+        "path": "/current",
+        "source_file": "backend/serverRoutes/organiserRouter.js"
+      },
+      {
+        "method": "POST",
+        "path": "/create-events",
+        "source_file": "backend/serverRoutes/organiserRouter.js"
+      },
+      {
+        "method": "GET",
+        "path": "/registerstudents",
+        "source_file": "backend/serverRoutes/organiserRouter.js"
+      },
+      {
+        "method": "GET",
+        "path": "/current",
+        "source_file": "backend/serverRoutes/studentRouter.js"
+      },
+      {
+        "method": "POST",
+        "path": "/register-event",
+        "source_file": "backend/serverRoutes/studentRouter.js"
+      },
+      {
+        "method": "GET",
+        "path": "/my-events",
+        "source_file": "backend/serverRoutes/studentRouter.js"
+      },
+      {
+        "method": "DELETE",
+        "path": "/cancel-registration/:eventId",
+        "source_file": "backend/serverRoutes/studentRouter.js"
+      },
+      {
+        "method": "PUT",
+        "path": "/update-profile",
+        "source_file": "backend/serverRoutes/studentRouter.js"
+      }
+    ],
+    "env_vars": [
+      "MONGODB_URI",
+      "NODE_ENV"
+    ],
+    "architecture": "Full-stack decoupled architecture featuring dedicated frontend and backend services. Inspected 50 key application source code files to verify structure."
+  },
+  "how_to_run": "1. Clone repository.\n2. Run `npm install`.\n3. Run `npm run dev` or `npm start`.",
+  "contributing_guide": "Contribution workflow cannot be inferred reliably from source code alone.",
+  "license": "Not specified"
+}

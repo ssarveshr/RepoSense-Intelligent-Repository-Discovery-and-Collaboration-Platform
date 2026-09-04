@@ -4,11 +4,9 @@ import re
 import os
 
 class RepoSummarizer:
-    def __init__(self, ollama_url=None, output_file="summary_output.json", ollama_raw_output_file="ollama_output.txt"):
+    def __init__(self, ollama_url=None):
         self.ollama_url = ollama_url or os.getenv("OLLAMA_URL", "http://127.0.0.1:11434")
         self.model = os.getenv("OLLAMA_MODEL", "qwen2.5-coder:3b")
-        self.output_file = output_file
-        self.ollama_raw_output_file = ollama_raw_output_file
     
     def generate_summary(self, analysis_data):
         """
@@ -37,11 +35,6 @@ class RepoSummarizer:
             if response.status_code == 200:
                 result = response.json()
                 response_text = result.get('response', '').strip()
-
-                # Save the COMPLETE raw output produced by Ollama.
-                # Do this BEFORE parsing/extracting/merging anything.
-                self.save_ollama_output(response_text)
-
                 parsed_llm = None
                 try:
                     parsed_llm = json.loads(response_text)
@@ -49,42 +42,14 @@ class RepoSummarizer:
                     parsed_llm = self._extract_json(response_text)
 
                 if isinstance(parsed_llm, dict) and parsed_llm.get('what_it_does') and parsed_llm.get('what_it_does') != 'Analysis complete.':
-                    summary = self._merge_deterministic_analysis(parsed_llm, analysis_data)
-                    self.save_output(summary)
-                    return summary
+                    return self._merge_deterministic_analysis(parsed_llm, analysis_data)
         except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
             print(f"[INFO] Ollama LLM unavailable ({type(e).__name__}). Performing deep repository content analysis.")
         except Exception as e:
             print(f"[WARN] Error invoking Ollama: {str(e)}. Falling back to content analysis.")
 
         # Perform intelligent repo content analysis based on actual codebase contents
-        summary = self._generate_intelligent_summary(analysis_data)
-        self.save_output(summary)
-        return summary
-
-    def save_ollama_output(self, response_text, output_file=None):
-        """Save Ollama's raw response exactly as returned by the API."""
-        output_path = output_file or self.ollama_raw_output_file
-        output_dir = os.path.dirname(os.path.abspath(output_path))
-        os.makedirs(output_dir, exist_ok=True)
-
-        with open(output_path, "w", encoding="utf-8") as f:
-            f.write(response_text)
-
-        print(f"[INFO] Complete Ollama output saved to: {output_path}")
-        return output_path
-
-    def save_output(self, summary, output_file=None):
-        """Save the generated summary to a JSON file."""
-        output_path = output_file or self.output_file
-        output_dir = os.path.dirname(os.path.abspath(output_path))
-        os.makedirs(output_dir, exist_ok=True)
-
-        with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(summary, f, indent=2, ensure_ascii=False)
-
-        print(f"[INFO] Summary saved to: {output_path}")
-        return output_path
+        return self._generate_intelligent_summary(analysis_data)
 
     def _generate_intelligent_summary(self, analysis_data):
         """
@@ -696,7 +661,6 @@ Do not include any text outside the JSON.
         tech_stack = analysis_data.get("tech_stack", []) or ["Software Development"]
         dependencies = analysis_data.get("dependencies", [])
 
-        # Deterministic project file analysis
         result["project_file_analysis"] = self._extract_project_file_analysis(
             key_source_files, config_files
         )
@@ -706,7 +670,7 @@ Do not include any text outside the JSON.
         technical["dependencies"] = dependencies[:12] if dependencies else ["Core package modules"]
         technical["api_endpoints"] = self._extract_api_endpoints(key_source_files)
         technical["env_vars"] = self._extract_env_vars(key_source_files, config_files)
-        
+
         if not technical.get("architecture") or technical["architecture"] == "Standard layout.":
             technical["architecture"] = self._analyze_architecture(
                 file_tree, config_files, tech_stack, key_source_files
@@ -738,11 +702,9 @@ Do not include any text outside the JSON.
         if not text:
             return {}
 
-        # 1. Strip markdown fences if present
         cleaned_text = re.sub(r'^```(?:json)?\s*', '', text.strip(), flags=re.MULTILINE)
         cleaned_text = re.sub(r'\s*```$', '', cleaned_text.strip(), flags=re.MULTILINE)
 
-        # 2. Try standard json parsing on the cleanest slice
         try:
             start = cleaned_text.find('{')
             end = cleaned_text.rfind('}') + 1
@@ -751,7 +713,6 @@ Do not include any text outside the JSON.
         except Exception:
             pass
 
-        # 3. Robust regex-based partial field extraction in case of truncation
         partial_data = {}
 
         what_match = re.search(r'"what_it_does"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"', text)
