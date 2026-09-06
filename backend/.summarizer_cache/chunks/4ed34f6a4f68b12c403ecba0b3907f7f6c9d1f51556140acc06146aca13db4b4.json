@@ -1,0 +1,22 @@
+{
+  "file": "frontend/DBMS frontend/src/components/RegisterEvent.jsx",
+  "chunk": 1,
+  "summary": "This component handles the registration of students for events. It validates user input, sends a registration request to the server, and displays success or error messages using React Toastify.",
+  "components": [
+    "RegisterEvent",
+    "handleSubmit",
+    "useEffect",
+    "useState",
+    "axios",
+    "jwtDecode",
+    "toast"
+  ],
+  "evidence": [
+    "handleSubmit function handles form submission and sends a POST request to the server",
+    "useEffect hook fetches the user's email and token from session storage",
+    "useState hook manages component state for form inputs and submission status",
+    "axios is used to make HTTP requests to the server",
+    "jwtDecode is used to decode the JWT token",
+    "toast is used to display success or error messages to the user"
+  ]
+}

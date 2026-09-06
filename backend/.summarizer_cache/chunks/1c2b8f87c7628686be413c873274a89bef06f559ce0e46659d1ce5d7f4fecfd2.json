@@ -1,0 +1,18 @@
+{
+  "file": "frontend/DBMS frontend/src/components/HomePage.jsx",
+  "chunk": 2,
+  "summary": "Manages auto-scrolling of upcoming events carousel and handles user interactions.",
+  "components": [
+    "autoScroll",
+    "calculateActiveDotIndex",
+    "handleMouseEnter",
+    "handleMouseLeave",
+    "handleTouchStart",
+    "handleTouchEnd"
+  ],
+  "evidence": [
+    "autoScroll function using setInterval",
+    "calculateActiveDotIndex function to determine active dot index",
+    "event listeners for mouse and touch interactions"
+  ]
+}

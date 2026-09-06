@@ -1,0 +1,25 @@
+{
+  "file": "backend/serverRoutes/commonsignup.js",
+  "chunk": 1,
+  "summary": "Handles user sign-up requests, validates input, hashes passwords, and creates user accounts with role-specific data.",
+  "components": [
+    "commonsignup",
+    "ValidateStudentData",
+    "bcryptjs",
+    "jsonwebtoken",
+    "User",
+    "JWT_SECRET",
+    "nodemailer",
+    "getRandomLengthNumber"
+  ],
+  "evidence": [
+    "commonsignup.post('/signup', async (req, res) => {...})",
+    "const { errors, isValid } = ValidateStudentData(req.body)",
+    "const Exist_user = await User.findOne({ email: email })",
+    "const userData = { email, password: await bcrypt.hash(password, 10), role }",
+    "if (role === 'student') { userData.studentInfo = RoleData; }",
+    "const NewUser = await User.create(userData)",
+    "const Token = jwt.sign(PayLoad, JWT_SECRET, { expiresIn: '1h' })",
+    "return res.status(201).send({ success: true, message: 'Sign up successful', Token: 'Bearer ' + Token })"
+  ]
+}

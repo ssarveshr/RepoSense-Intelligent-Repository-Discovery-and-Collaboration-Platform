@@ -1,0 +1,18 @@
+{
+  "file": "frontend/DBMS frontend/src/components/HomePage.jsx",
+  "chunk": 3,
+  "summary": "Displays upcoming events with a carousel and allows navigation between them.",
+  "components": [
+    "UpcomingEventsSection",
+    "CarouselContainer",
+    "EventCard",
+    "CarouselControls",
+    "CarouselDots"
+  ],
+  "evidence": [
+    "Displays upcoming events with a carousel",
+    "Allows navigation between events using carousel controls",
+    "Displays event details when clicking on the 'View Details' button",
+    "Uses a carousel to display events"
+  ]
+}

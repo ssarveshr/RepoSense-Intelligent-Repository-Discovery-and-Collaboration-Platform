@@ -1,0 +1,11 @@
+{
+  "file": "frontend/DBMS frontend/src/components/OrganizerDashboard.jsx",
+  "chunk": 3,
+  "summary": "This component renders the dashboard for organizers, displaying information about upcoming events and managing their schedules.",
+  "components": [
+    "OrganizerDashboard"
+  ],
+  "evidence": [
+    "The component is exported as the default export, indicating it is the main component of the dashboard."
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "file": "frontend/DBMS frontend/src/components/EventDetails.jsx",
+  "chunk": 1,
+  "summary": "Displays detailed information about an event, including its title, description, location, date, and registered students. It fetches this data from an API endpoint and displays it in a user-friendly format.",
+  "components": [
+    "EventDetails",
+    "useEffect",
+    "useState",
+    "axios",
+    "useParams"
+  ],
+  "evidence": [
+    "fetchEventDetails function",
+    "useEffect hook",
+    "useState hook",
+    "axios.get method",
+    "useParams hook"
+  ]
+}

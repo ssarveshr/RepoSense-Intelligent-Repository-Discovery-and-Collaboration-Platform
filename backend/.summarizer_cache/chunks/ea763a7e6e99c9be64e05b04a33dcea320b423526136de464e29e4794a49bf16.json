@@ -1,0 +1,20 @@
+{
+  "file": "frontend/DBMS frontend/src/components/SignUpPage.jsx",
+  "chunk": 1,
+  "summary": "A React component for user registration that handles form submission to a backend API.",
+  "components": [
+    "SignupPage",
+    "useState",
+    "useNavigate",
+    "axios",
+    "Spinner",
+    "toast"
+  ],
+  "evidence": [
+    "Form fields for name, email, password, and user type",
+    "Validation of password and confirmation password",
+    "API call to '/api/signup' endpoint",
+    "Loading spinner and success/error toast notifications",
+    "Navigation to login page after successful registration"
+  ]
+}

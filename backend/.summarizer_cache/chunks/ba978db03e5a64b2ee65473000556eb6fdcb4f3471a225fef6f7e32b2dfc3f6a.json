@@ -1,0 +1,17 @@
+{
+  "file": "frontend/DBMS frontend/src/components/OrganizerDashboard.jsx",
+  "chunk": 2,
+  "summary": "Displays the organizer's dashboard with their events, including a list of events they have created and a button to add new events.",
+  "components": [
+    "OrganizerDashboard",
+    "fetchOrganizer",
+    "fetchEvents",
+    "handleAddEvent",
+    "handleEventClick"
+  ],
+  "evidence": [
+    "Displays the organizer's name and email",
+    "Lists the organizer's events with details such as title, date, location, and number of registrations",
+    "Includes a button to add new events"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "file": "frontend/DBMS frontend/src/components/navbar/NavBar.jsx",
+  "chunk": 1,
+  "summary": "A React component that manages the navigation bar for a web application, including user authentication, role-based navigation, and scroll effects.",
+  "components": [
+    "NavBar",
+    "useNavigate",
+    "useLocation",
+    "jwtDecode",
+    "updateAuthState",
+    "handleNavigation",
+    "isActive",
+    "toggleMenu",
+    "renderRoleTab"
+  ],
+  "evidence": [
+    "useEffect hooks for state updates and event listeners",
+    "jwtDecode for token decoding",
+    "role-based navigation logic",
+    "scroll effect handling",
+    "mobile menu functionality"
+  ]
+}

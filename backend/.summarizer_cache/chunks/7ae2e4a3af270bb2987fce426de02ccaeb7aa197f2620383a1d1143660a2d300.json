@@ -1,0 +1,15 @@
+{
+  "file": "frontend/DBMS frontend/src/components/SignUpPage.jsx",
+  "chunk": 2,
+  "summary": "This component renders a sign-up form with fields for username, email, password, and confirm password, along with a sign-up button.",
+  "components": [
+    "SignupPage",
+    "input",
+    "button"
+  ],
+  "evidence": [
+    "<input type='password'>",
+    "onChange={(e) => setPassword(e.target.value)}",
+    "HandlerFunction"
+  ]
+}

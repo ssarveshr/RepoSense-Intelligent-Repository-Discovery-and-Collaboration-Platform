@@ -1,0 +1,13 @@
+{
+  "file": "backend/models/events.js",
+  "chunk": 1,
+  "summary": "This code defines a Mongoose schema and model for events, including fields for organizer name, title, description, date, location, ongoing status, faculty name, image, and registered students.",
+  "components": [
+    "EventSchema",
+    "Event"
+  ],
+  "evidence": [
+    "The use of `mongoose.Schema` to define the structure of the events collection, including fields like `organiserName`, `title`, `description`, `date`, `location`, `is_ongoing`, `facultyName`, `image`, and `registeredStudents`.",
+    "The creation of a Mongoose model named `Event` based on the `EventSchema`."
+  ]
+}

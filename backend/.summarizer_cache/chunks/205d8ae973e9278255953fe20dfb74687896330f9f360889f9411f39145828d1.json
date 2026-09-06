@@ -1,0 +1,24 @@
+{
+  "file": "frontend/DBMS frontend/src/components/SignUpFaculty.module.css",
+  "chunk": 1,
+  "summary": "Applies a gradient background to the login page, adds a glowing effect, and styles various components including input fields, labels, and buttons.",
+  "components": [
+    "loginPage",
+    "black",
+    "loginPageChild",
+    "student",
+    "unionIcon",
+    "unionIcon1",
+    "unionIcon2",
+    "loginBox",
+    "inputField",
+    "label",
+    "loginButton"
+  ],
+  "evidence": [
+    "background gradient",
+    "glowing effect",
+    "positioning and sizing of components",
+    "styling of input fields, labels, and buttons"
+  ]
+}

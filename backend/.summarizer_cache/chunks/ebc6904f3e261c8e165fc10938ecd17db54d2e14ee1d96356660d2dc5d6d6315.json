@@ -1,0 +1,15 @@
+{
+  "file": "frontend/DBMS frontend/src/components/footer/Footer.jsx",
+  "chunk": 1,
+  "summary": "A React component that renders a footer for the application, containing sections for EvoCamp, Quick Links, Contact Us, and a Newsletter form.",
+  "components": [
+    "Footer",
+    "FooterContent",
+    "footerSection",
+    "socialIcons",
+    "newsletterForm"
+  ],
+  "evidence": [
+    "The component renders a footer with sections for different types of information and a newsletter form."
+  ]
+}

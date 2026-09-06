@@ -1,0 +1,24 @@
+{
+  "file": "frontend/DBMS frontend/src/components/LoginOrganiser.module.css",
+  "chunk": 1,
+  "summary": "This CSS file styles various components of a login page, including input fields, labels, and background elements.",
+  "components": [
+    "inputField",
+    "label",
+    "black",
+    "loginPageChild",
+    "student",
+    "unionIcon",
+    "unionIcon1",
+    "unionIcon2",
+    "loginBox"
+  ],
+  "evidence": [
+    ".inputField styles the input fields with a light transparent background, blue border, and glow effect on focus.",
+    ".black styles the background of the entire page with a white box-shadow and rounded corners.",
+    ".loginPageChild styles the login page child component with a blue background and rounded corners.",
+    ".student styles the student image with a border-radius and fixed position.",
+    ".unionIcon, .unionIcon1, .unionIcon2 style the union icons with fixed positions and sizes.",
+    ".loginBox styles the login box component with a white background and rounded corners."
+  ]
+}

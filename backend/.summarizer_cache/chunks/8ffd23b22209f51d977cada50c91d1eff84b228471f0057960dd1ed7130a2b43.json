@@ -1,0 +1,11 @@
+{
+  "file": "frontend/DBMS frontend/src/components/Spinner.jsx",
+  "chunk": 1,
+  "summary": "A simple React component that renders a spinning animation using CSS animations.",
+  "components": [
+    "Spinner"
+  ],
+  "evidence": [
+    "<div className='animate-ping w-16 h-16 m-8 rounded-full bg-sky-blue-600'></div>"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "file": "frontend/DBMS frontend/src/components/navbar/Calendar.module.css",
+  "chunk": 1,
+  "summary": "This CSS file styles a calendar component with various elements such as the container, header, controls, and grid for displaying dates and events.",
+  "components": [
+    "calendarContainer",
+    "calendarHeader",
+    "headerTitle",
+    "calendarIcon",
+    "calendarHeader h1",
+    "calendarControls",
+    "todayButton",
+    "monthNavigation",
+    "currentMonth",
+    "navButton",
+    "calendarLayout",
+    "calendarGrid",
+    "weekdays",
+    "days",
+    "day",
+    "emptyDay",
+    "dayNumber",
+    "today .dayNumber",
+    "hasEvents",
+    "selectedDay",
+    "eventIndicator",
+    "eventsPanel",
+    "eventsPanelHeader",
+    "selectedDateHeading",
+    "addEventButton"
+  ],
+  "evidence": [
+    "The CSS file contains styles for various elements of the calendar component, including containers, headers, controls, and grid elements."
+  ]
+}

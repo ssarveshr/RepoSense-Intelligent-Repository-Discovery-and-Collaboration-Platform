@@ -1,0 +1,17 @@
+{
+  "file": "frontend/DBMS frontend/src/components/SignUpFaculty.module.css",
+  "chunk": 2,
+  "summary": "This CSS file styles the SignUpFaculty component, including hover effects, animations, and responsive design for different screen sizes.",
+  "components": [
+    "box-shadow",
+    "transition",
+    "animation",
+    "media queries"
+  ],
+  "evidence": [
+    "box-shadow: 0 4px 15px rgba(124, 58, 237, 0.5);",
+    "transition: all 0.3s ease;",
+    "animation: pulse 2s infinite;",
+    "@media (max-width: 768px) { ... }"
+  ]
+}

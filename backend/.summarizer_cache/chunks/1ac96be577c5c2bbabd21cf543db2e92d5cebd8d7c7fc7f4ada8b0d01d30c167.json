@@ -1,0 +1,31 @@
+{
+  "file": "frontend/DBMS frontend/src/App.jsx",
+  "chunk": 1,
+  "summary": "This React application manages user authentication and navigation through various components, including login, signup, dashboard, and event management.",
+  "components": [
+    "App",
+    "NavBar",
+    "Home",
+    "LoginPage",
+    "SignupPage",
+    "DashBoard",
+    "LoginFaculty",
+    "LoginOrganiser",
+    "SignUpFaculty",
+    "About",
+    "Event",
+    "StudentNavbar",
+    "Calendar",
+    "CreateEvent",
+    "OrganizerDashboard",
+    "FacultyDashboard",
+    "StudentDashboard",
+    "EventDetails"
+  ],
+  "evidence": [
+    "The code imports and uses various components from different directories",
+    "It defines routes for different pages using React Router",
+    "It handles navigation between pages using the `useRef` hook to scroll to the footer",
+    "It provides a structured layout with a navigation bar and footer"
+  ]
+}

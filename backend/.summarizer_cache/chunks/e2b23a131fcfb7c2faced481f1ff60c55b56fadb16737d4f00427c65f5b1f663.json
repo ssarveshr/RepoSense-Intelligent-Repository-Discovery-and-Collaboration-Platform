@@ -1,0 +1,19 @@
+{
+  "file": "frontend/DBMS frontend/src/components/Events.jsx",
+  "chunk": 3,
+  "summary": "Displays event details or a list of all campus events, allowing users to filter and search for events.",
+  "components": [
+    "Events",
+    "EventDetails",
+    "EventFilters",
+    "SearchBox",
+    "EventCard",
+    "Pagination"
+  ],
+  "evidence": [
+    "Displays event details if a specific event ID is provided",
+    "Lists all events with their titles, dates, times, locations, and brief descriptions",
+    "Includes a search box for filtering events by title or description",
+    "Supports pagination for navigating through multiple pages of events"
+  ]
+}

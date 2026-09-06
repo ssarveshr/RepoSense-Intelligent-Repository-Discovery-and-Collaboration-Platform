@@ -1,0 +1,29 @@
+{
+  "file": "frontend/DBMS frontend/src/components/About.module.css",
+  "chunk": 2,
+  "summary": "This CSS file styles various components used in the About section of the application, including stat items, team cards, and timeline sections.",
+  "components": [
+    "statItem",
+    "teamSection",
+    "teamGrid",
+    "teamCard",
+    "cardInner",
+    "cardFront",
+    "cardBack",
+    "photoContainer",
+    "memberPhoto",
+    "frontInfo",
+    "cardBack",
+    "memberDetail",
+    "skillsContainer",
+    "skillBadge",
+    "contactLinks",
+    "timelineSection"
+  ],
+  "evidence": [
+    "use of flexbox for layout",
+    "use of grid for responsive design",
+    "use of transitions for animations",
+    "use of color and gradient effects for visual appeal"
+  ]
+}

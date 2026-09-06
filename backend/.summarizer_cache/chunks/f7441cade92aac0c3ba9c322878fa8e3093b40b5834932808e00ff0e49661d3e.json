@@ -1,0 +1,17 @@
+{
+  "file": "frontend/DBMS frontend/src/components/About.module.css",
+  "chunk": 4,
+  "summary": "This CSS file styles the footer section of the About page, including links, copyright information, and social media icons.",
+  "components": [
+    "footerLinks",
+    "copyright",
+    "socialLinks"
+  ],
+  "evidence": [
+    "The footerLinks class styles list items with margin-bottom",
+    "The footerLinks a class styles links with color, text-decoration, and hover effects",
+    "The copyright class styles the copyright text with center alignment, margin, padding, and border",
+    "The socialLinks class styles a flex container with gap and margin",
+    "The socialLinks a class styles social media icons with color, background, size, border-radius, and hover effects"
+  ]
+}

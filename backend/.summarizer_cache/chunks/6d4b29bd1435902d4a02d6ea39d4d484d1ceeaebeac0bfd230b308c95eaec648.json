@@ -1,0 +1,27 @@
+{
+  "file": "frontend/DBMS frontend/src/components/HomePage.jsx",
+  "chunk": 1,
+  "summary": "This component fetches events from an API, displays them on the homepage, and provides navigation links and a carousel for event listings.",
+  "components": [
+    "useState",
+    "useEffect",
+    "useRef",
+    "Link",
+    "useNavigate",
+    "axios",
+    "formatDateTime",
+    "handleScroll",
+    "pauseAutoScroll",
+    "resumeAutoScroll"
+  ],
+  "evidence": [
+    "axios.get",
+    "setEvents",
+    "handleContactScroll",
+    "navigate",
+    "formatDateTime",
+    "handleScroll",
+    "pauseAutoScroll",
+    "resumeAutoScroll"
+  ]
+}

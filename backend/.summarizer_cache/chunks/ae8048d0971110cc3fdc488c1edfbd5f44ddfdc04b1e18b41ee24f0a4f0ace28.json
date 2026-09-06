@@ -1,0 +1,18 @@
+{
+  "file": "frontend/DBMS frontend/src/components/OrganizerDashboard.jsx",
+  "chunk": 1,
+  "summary": "This component displays the dashboard for an event organizer, showing organization details, current event details, and a list of registered students. It also includes a button to add a new event.",
+  "components": [
+    "OrganizerDashboard",
+    "useNavigate",
+    "useParams",
+    "axios",
+    "jwtDecode"
+  ],
+  "evidence": [
+    "The component uses React hooks like useEffect and useState to manage state and fetch data from the backend.",
+    "It uses axios to make HTTP requests to the backend API to retrieve organization and student information.",
+    "The component displays the organization's name, contact, and email, as well as the total number of registered students.",
+    "It includes a button to navigate to the event creation page."
+  ]
+}

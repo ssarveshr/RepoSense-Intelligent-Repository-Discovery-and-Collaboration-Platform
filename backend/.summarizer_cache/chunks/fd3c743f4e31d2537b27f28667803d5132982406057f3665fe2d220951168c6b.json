@@ -1,0 +1,21 @@
+{
+  "file": "backend/serverRoutes/studentRouter.js",
+  "chunk": 2,
+  "summary": "This code handles student registration cancellation and profile update requests. It uses JWT authentication and role checks to ensure only authenticated and authorized students can access these endpoints.",
+  "components": [
+    "studentRouter",
+    "Event",
+    "User",
+    "passport.authenticate",
+    "checkRole",
+    "req.params.eventId",
+    "req.body.name",
+    "req.body.usn",
+    "req.body.email",
+    "req.body.image"
+  ],
+  "evidence": [
+    "studentRouter.put('/update-profile')",
+    "studentRouter.delete('/cancel-registration/:eventId')"
+  ]
+}

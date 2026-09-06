@@ -1,0 +1,12 @@
+{
+  "file": "frontend/DBMS frontend/src/components/SignUpFaculty.jsx",
+  "chunk": 2,
+  "summary": "This component renders a sign-up form for faculty members, including fields for username, email, password, and a sign-up button.",
+  "components": [
+    "SignUpFaculty"
+  ],
+  "evidence": [
+    "<input> element for password input",
+    "button for sign-up action"
+  ]
+}

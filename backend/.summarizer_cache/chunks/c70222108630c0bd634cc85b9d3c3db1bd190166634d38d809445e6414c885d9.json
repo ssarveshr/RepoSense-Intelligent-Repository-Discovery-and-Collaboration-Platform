@@ -1,0 +1,18 @@
+{
+  "file": "frontend/DBMS frontend/src/components/SignUpFaculty.module.css",
+  "chunk": 3,
+  "summary": "This CSS file styles the SignUpFaculty component, defining layout, typography, and interactive elements for a faculty sign-up form.",
+  "components": [
+    ".formGroup",
+    ".label",
+    ".inputField",
+    ".login"
+  ],
+  "evidence": [
+    "padding-left: 70px",
+    "font-size: 105px",
+    "width: 280.85px",
+    "border-color: #8a16ea",
+    "box-shadow: 0 0 10px rgb(138, 22, 234)"
+  ]
+}

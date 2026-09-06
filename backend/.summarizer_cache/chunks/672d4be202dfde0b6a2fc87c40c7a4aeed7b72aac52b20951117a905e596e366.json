@@ -1,0 +1,23 @@
+{
+  "file": "frontend/DBMS frontend/src/components/LoginOrganiser.jsx",
+  "chunk": 1,
+  "summary": "This component handles user login for an organiser portal. It uses React hooks to manage state for email, password, and user type. It sends a POST request to the server to authenticate the user and sets the session storage with the token if the login is successful. It also handles role-based navigation based on the user type.",
+  "components": [
+    "useState",
+    "useNavigate",
+    "useParams",
+    "axios",
+    "jwtDecode",
+    "toast",
+    "Spinner",
+    "select"
+  ],
+  "evidence": [
+    "HandlerFunction",
+    "axios.post",
+    "jwtDecode",
+    "sessionStorage.setItem",
+    "toast.error",
+    "Nav"
+  ]
+}

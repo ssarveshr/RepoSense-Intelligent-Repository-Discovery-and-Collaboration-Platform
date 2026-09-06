@@ -1,423 +1,380 @@
 {
-  "what_it_does": "This project is a web application that provides a platform for students, faculty, and organizers to register for events, manage their accounts, and interact with each other. It includes features for user authentication, event management, and file uploads.",
-  "project_type": "Social Networking Platform",
+  "what_it_does": "This project is a real estate platform that uses blockchain technology to record rent transactions and manage disputes. It includes features for owner and tenant management, dispute resolution, and AI-powered contract review.",
+  "project_type": "Real Estate Platform",
   "confidence": "High",
-  "confidence_reason": "The code uses Express.js for server-side routing, React for the frontend, and MongoDB for database management. It includes features for user registration, login, event creation, and file uploads.",
+  "confidence_reason": "The code evidence shows the presence of features like dispute resolution, AI-powered contract review, and blockchain integration.",
   "core_features": [
-    "User Authentication",
-    "Event Management",
-    "File Uploads"
+    "Blockchain-based rent transaction recording",
+    "AI-powered contract review",
+    "Dispute resolution",
+    "Owner and tenant management"
   ],
   "core_workflow": [
-    "User registers for an account",
-    "User logs in",
-    "User creates an event",
-    "User uploads an image for the event"
+    "Users can create and manage properties",
+    "Owners can review and sign lease agreements",
+    "Tenants can dispute rent payments or lease terms"
   ],
   "key_components": [
-    "server.js: Server-side logic",
-    "User.js: User model",
-    "events.js: Event model",
-    "PublicRouter.js: Public routes",
-    "uploadrouter.js: File upload routes"
+    "app/owner/(tabs)/disputes.tsx: Dispute management",
+    "app/owner/(tabs)/profile.tsx: Owner profile management",
+    "app/owner/(tabs)/home.tsx: Owner dashboard",
+    "backend/routes/payment.js: Payment processing and blockchain integration"
   ],
   "difficulty": "Intermediate",
-  "best_for": "Developers interested in building a social networking platform, web developers, and students interested in event management.",
+  "best_for": "Real estate developers, property managers, and tenants",
   "project_file_analysis": [
     {
       "file": "package.json",
-      "lines": 8,
+      "lines": 65,
       "role": "Node.js Package Manifest & Dependencies",
-      "insights": "8 lines of code"
+      "insights": "Npm scripts: `start, reset-project, android, ios, web, lint`"
+    },
+    {
+      "file": ".env.example",
+      "lines": 3,
+      "role": "Code Module / Script",
+      "insights": "3 lines of code"
     },
     {
       "file": ".gitignore",
-      "lines": 2,
-      "role": "Code Module / Script",
-      "insights": "2 lines of code"
-    },
-    {
-      "file": "backend/server.js",
-      "lines": 56,
-      "role": "Code Module / Script",
-      "insights": "Exports: `__dirname, __filename, app`"
-    },
-    {
-      "file": "backend/serverRoutes/Deleteaccount.js",
-      "lines": 27,
-      "role": "API Routing & Request Controller Module",
-      "insights": "27 lines of code"
-    },
-    {
-      "file": "backend/serverRoutes/Public/PublicRouter.js",
-      "lines": 55,
-      "role": "API Routing & Request Controller Module",
-      "insights": "55 lines of code"
-    },
-    {
-      "file": "backend/serverRoutes/Public/upload.js",
-      "lines": 78,
-      "role": "API Routing & Request Controller Module",
-      "insights": "78 lines of code"
-    },
-    {
-      "file": "backend/serverRoutes/commonlogin.js",
-      "lines": 48,
-      "role": "API Routing & Request Controller Module",
-      "insights": "1 route handlers"
-    },
-    {
-      "file": "backend/serverRoutes/commonsignup.js",
-      "lines": 76,
-      "role": "API Routing & Request Controller Module",
-      "insights": "76 lines of code"
-    },
-    {
-      "file": "backend/serverRoutes/facultyrouter.js",
-      "lines": 119,
-      "role": "API Routing & Request Controller Module",
-      "insights": "3 route handlers"
-    },
-    {
-      "file": "backend/serverRoutes/organiserRouter.js",
-      "lines": 130,
-      "role": "API Routing & Request Controller Module",
-      "insights": "3 route handlers"
-    },
-    {
-      "file": "backend/serverRoutes/studentRouter.js",
-      "lines": 210,
-      "role": "API Routing & Request Controller Module",
-      "insights": "5 route handlers"
-    },
-    {
-      "file": "backend/models/User.js",
-      "lines": 51,
-      "role": "Data Model & Database Schema Definition",
-      "insights": "51 lines of code"
-    },
-    {
-      "file": "backend/models/events.js",
       "lines": 43,
-      "role": "Data Model & Database Schema Definition",
+      "role": "Code Module / Script",
       "insights": "43 lines of code"
     },
     {
-      "file": "frontend/DBMS frontend/eslint.config.js",
-      "lines": 33,
-      "role": "Data Model & Database Schema Definition",
-      "insights": "33 lines of code"
+      "file": "backend/server.js",
+      "lines": 22,
+      "role": "Code Module / Script",
+      "insights": "Exports: `PORT, app, cors, express, paymentRoutes`"
     },
     {
-      "file": "frontend/DBMS frontend/index.html",
-      "lines": 19,
-      "role": "Data Model & Database Schema Definition",
-      "insights": "19 lines of code"
+      "file": "backend/routes/payment.js",
+      "lines": 138,
+      "role": "API Routing & Request Controller Module",
+      "insights": "2 route handlers"
     },
     {
-      "file": "frontend/DBMS frontend/package.json",
-      "lines": 46,
+      "file": "blockchain/artifacts/contracts/TransactionRegistry.sol/TransactionRegistry.dbg.json",
+      "lines": 4,
+      "role": "Data Model & Database Schema Definition",
+      "insights": "4 lines of code"
+    },
+    {
+      "file": "app/owner/dispute-review.tsx",
+      "lines": 456,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "app/review-agreement.tsx",
+      "lines": 419,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "app/credit-score.tsx",
+      "lines": 323,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useEffect`"
+    },
+    {
+      "file": "services/aiService.ts",
+      "lines": 168,
+      "role": "Business Logic & Utility Helper Module",
+      "insights": "Functions: `API_KEY, prompt, chat, resolveDisputeWithEvidence, translateText`"
+    },
+    {
+      "file": ".vscode/extensions.json",
+      "lines": 1,
+      "role": "Code Module / Script",
+      "insights": "1 lines of code"
+    },
+    {
+      "file": ".vscode/settings.json",
+      "lines": 8,
+      "role": "Code Module / Script",
+      "insights": "8 lines of code"
+    },
+    {
+      "file": "app.json",
+      "lines": 45,
+      "role": "Code Module / Script",
+      "insights": "45 lines of code"
+    },
+    {
+      "file": "backend/package.json",
+      "lines": 18,
       "role": "Node.js Package Manifest & Dependencies",
-      "insights": "Npm scripts: `dev, build, lint, preview`"
+      "insights": "Npm scripts: `start, dev`"
     },
     {
-      "file": "frontend/DBMS frontend/src/App.css",
-      "lines": 0,
-      "role": "Data Model & Database Schema Definition",
-      "insights": "0 lines of code"
+      "file": "blockchain/artifacts/build-info/0d5b589ffcc6ec0b3c201c1c11ad4019.json",
+      "lines": 1,
+      "role": "Code Module / Script",
+      "insights": "Exports: `recordTransaction`"
     },
     {
-      "file": "frontend/DBMS frontend/src/App.jsx",
-      "lines": 58,
+      "file": "blockchain/artifacts/contracts/TransactionRegistry.sol/TransactionRegistry.json",
+      "lines": 146,
+      "role": "Code Module / Script",
+      "insights": "146 lines of code"
+    },
+    {
+      "file": "blockchain/cache/solidity-files-cache.json",
+      "lines": 41,
+      "role": "Code Module / Script",
+      "insights": "41 lines of code"
+    },
+    {
+      "file": "blockchain/package.json",
+      "lines": 13,
+      "role": "Node.js Package Manifest & Dependencies",
+      "insights": "Npm scripts: `compile, deploy`"
+    },
+    {
+      "file": "tsconfig.json",
+      "lines": 17,
+      "role": "Code Module / Script",
+      "insights": "17 lines of code"
+    },
+    {
+      "file": ".env",
+      "lines": 9,
+      "role": "Code Module / Script",
+      "insights": "9 lines of code"
+    },
+    {
+      "file": "README.md",
+      "lines": 1,
+      "role": "Code Module / Script",
+      "insights": "1 lines of code"
+    },
+    {
+      "file": "app/(tabs)/_layout.tsx",
+      "lines": 66,
       "role": "User Interface Component View",
-      "insights": "58 lines of code"
+      "insights": "66 lines of code"
     },
     {
-      "file": "frontend/DBMS frontend/src/components/About.jsx",
-      "lines": 328,
+      "file": "app/(tabs)/disputes.tsx",
+      "lines": 320,
       "role": "User Interface Component View",
-      "insights": "React state hooks: `useEffect, useState`"
+      "insights": "React state hooks: `useState, useEffect`"
     },
     {
-      "file": "frontend/DBMS frontend/src/components/About.module.css",
-      "lines": 772,
+      "file": "app/(tabs)/home.tsx",
+      "lines": 530,
       "role": "User Interface Component View",
-      "insights": "772 lines of code"
+      "insights": "React state hooks: `useState, useEffect`"
     },
     {
-      "file": "frontend/DBMS frontend/src/components/CreateEvent.jsx",
+      "file": "app/(tabs)/profile.tsx",
+      "lines": 353,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "app/(tabs)/transactions.tsx",
+      "lines": 259,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useEffect`"
+    },
+    {
+      "file": "app/_layout.tsx",
+      "lines": 33,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useEffect`"
+    },
+    {
+      "file": "app/ai-processing.tsx",
+      "lines": 318,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "app/chat.tsx",
+      "lines": 383,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "app/dispute-verdict.tsx",
+      "lines": 412,
+      "role": "User Interface Component View",
+      "insights": "412 lines of code"
+    },
+    {
+      "file": "app/index.tsx",
+      "lines": 302,
+      "role": "Frontend Root Component / Application Shell",
+      "insights": "Components rendered: `Image, StatusBar, TouchableOpacity, SafeAreaView, View`"
+    },
+    {
+      "file": "app/join-property.tsx",
+      "lines": 233,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState`"
+    },
+    {
+      "file": "app/login.tsx",
+      "lines": 379,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState`"
+    },
+    {
+      "file": "app/my-agreements.tsx",
+      "lines": 440,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState`"
+    },
+    {
+      "file": "app/notification-settings.tsx",
+      "lines": 220,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState`"
+    },
+    {
+      "file": "app/offline-payment.tsx",
       "lines": 205,
       "role": "User Interface Component View",
       "insights": "React state hooks: `useState`"
     },
     {
-      "file": "frontend/DBMS frontend/src/components/CreateEvent.module.css",
-      "lines": 119,
-      "role": "User Interface Component View",
-      "insights": "119 lines of code"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/DashBoard.jsx",
-      "lines": 30,
-      "role": "User Interface Component View",
-      "insights": "React state hooks: `useState, useEffect`"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/EventDetails.jsx",
-      "lines": 60,
-      "role": "User Interface Component View",
-      "insights": "React state hooks: `useState, useEffect`"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/EventDetails.module.css",
-      "lines": 52,
-      "role": "User Interface Component View",
-      "insights": "52 lines of code"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/Events.jsx",
-      "lines": 342,
-      "role": "User Interface Component View",
-      "insights": "React state hooks: `useEffect, useState`"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/Events.module.css",
-      "lines": 791,
-      "role": "User Interface Component View",
-      "insights": "791 lines of code"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/FacultyDashboard.jsx",
-      "lines": 313,
-      "role": "User Interface Component View",
-      "insights": "React state hooks: `useState, useEffect`"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/FacultyDashboard.module.css",
-      "lines": 334,
-      "role": "User Interface Component View",
-      "insights": "334 lines of code"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/HomePage.jsx",
-      "lines": 376,
-      "role": "User Interface Component View",
-      "insights": "React state hooks: `useEffect, useState`"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/HomePage.module.css",
-      "lines": 524,
-      "role": "User Interface Component View",
-      "insights": "524 lines of code"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/LoginFaculty.jsx",
-      "lines": 173,
+      "file": "app/online-payment.tsx",
+      "lines": 323,
       "role": "User Interface Component View",
       "insights": "React state hooks: `useState`"
     },
     {
-      "file": "frontend/DBMS frontend/src/components/LoginFaculty.module.css",
-      "lines": 411,
+      "file": "app/owner/(tabs)/_layout.tsx",
+      "lines": 57,
       "role": "User Interface Component View",
-      "insights": "411 lines of code"
+      "insights": "57 lines of code"
     },
     {
-      "file": "frontend/DBMS frontend/src/components/LoginOrganiser.jsx",
-      "lines": 175,
+      "file": "app/owner/(tabs)/agreements.tsx",
+      "lines": 277,
+      "role": "User Interface Component View",
+      "insights": "277 lines of code"
+    },
+    {
+      "file": "app/owner/(tabs)/home.tsx",
+      "lines": 526,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "app/owner/(tabs)/profile.tsx",
+      "lines": 337,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "app/owner/add-property.tsx",
+      "lines": 479,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "app/owner/agreement-customization.tsx",
+      "lines": 502,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "app/owner/home.tsx",
+      "lines": 492,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "app/owner/manage/(tabs)/_layout.tsx",
+      "lines": 65,
+      "role": "User Interface Component View",
+      "insights": "65 lines of code"
+    },
+    {
+      "file": "app/owner/manage/(tabs)/agreement.tsx",
+      "lines": 306,
       "role": "User Interface Component View",
       "insights": "React state hooks: `useState`"
     },
     {
-      "file": "frontend/DBMS frontend/src/components/LoginOrganiser.module.css",
-      "lines": 409,
+      "file": "app/owner/manage/(tabs)/disputes.tsx",
+      "lines": 234,
       "role": "User Interface Component View",
-      "insights": "409 lines of code"
+      "insights": "React state hooks: `useState, useEffect`"
     },
     {
-      "file": "frontend/DBMS frontend/src/components/LoginPage.jsx",
-      "lines": 163,
-      "role": "User Interface Component View",
-      "insights": "React state hooks: `useState`"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/LoginPage.module.css",
-      "lines": 409,
-      "role": "User Interface Component View",
-      "insights": "409 lines of code"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/OrganizerDashboard.jsx",
+      "file": "app/owner/manage/(tabs)/finance.tsx",
       "lines": 248,
       "role": "User Interface Component View",
-      "insights": "React state hooks: `useState, useEffect`"
+      "insights": "248 lines of code"
     },
     {
-      "file": "frontend/DBMS frontend/src/components/OrganizerDashboard.module.css",
-      "lines": 454,
+      "file": "app/owner/manage/(tabs)/home.tsx",
+      "lines": 423,
       "role": "User Interface Component View",
-      "insights": "454 lines of code"
+      "insights": "423 lines of code"
     },
     {
-      "file": "frontend/DBMS frontend/src/components/RegisterEvent.jsx",
-      "lines": 192,
+      "file": "app/owner/property-details.tsx",
+      "lines": 478,
       "role": "User Interface Component View",
-      "insights": "React state hooks: `useState, useEffect`"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/RegisterEvent.module.css",
-      "lines": 312,
-      "role": "User Interface Component View",
-      "insights": "312 lines of code"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/SignUpFaculty.jsx",
-      "lines": 143,
-      "role": "User Interface Component View",
-      "insights": "React state hooks: `useState`"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/SignUpFaculty.module.css",
-      "lines": 410,
-      "role": "User Interface Component View",
-      "insights": "410 lines of code"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/SignUpPage.jsx",
-      "lines": 153,
-      "role": "User Interface Component View",
-      "insights": "React state hooks: `useState`"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/SignUpPage.module.css",
-      "lines": 440,
-      "role": "User Interface Component View",
-      "insights": "440 lines of code"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/Spinner.jsx",
-      "lines": 9,
-      "role": "User Interface Component View",
-      "insights": "9 lines of code"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/footer/Footer.jsx",
-      "lines": 54,
-      "role": "User Interface Component View",
-      "insights": "54 lines of code"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/footer/Footer.module.css",
-      "lines": 143,
-      "role": "User Interface Component View",
-      "insights": "143 lines of code"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/global.css",
-      "lines": 5,
-      "role": "User Interface Component View",
-      "insights": "5 lines of code"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/navbar/Calendar.jsx",
-      "lines": 329,
-      "role": "User Interface Component View",
-      "insights": "React state hooks: `useEffect, useState`"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/navbar/Calendar.module.css",
-      "lines": 496,
-      "role": "User Interface Component View",
-      "insights": "496 lines of code"
-    },
-    {
-      "file": "frontend/DBMS frontend/src/components/navbar/NavBar.jsx",
-      "lines": 232,
-      "role": "User Interface Component View",
-      "insights": "React state hooks: `useEffect, useState`"
+      "insights": "478 lines of code"
     }
   ],
   "technical_details": {
     "tech_stack": [
-      "Express.js",
       "React",
-      "Node.js"
+      "Node.js",
+      "Express.js"
     ],
     "dependencies": [
-      "bcrypt: ^5.1.1",
-      "bcryptjs: ^3.0.2",
-      "chalk: ^5.4.1",
-      "react-toastify: ^11.0.5"
+      "@expo/vector-icons: ^15.0.3",
+      "@google/generative-ai: ^0.24.1",
+      "@react-native-async-storage/async-storage: 2.2.0",
+      "@react-navigation/bottom-tabs: ^7.4.0",
+      "@react-navigation/elements: ^2.6.3",
+      "@react-navigation/native: ^7.2.2",
+      "@react-navigation/native-stack: ^7.14.10",
+      "@supabase/supabase-js: ^2.101.1",
+      "axios: ^1.14.0",
+      "base64-arraybuffer: ^1.0.2",
+      "expo: ~54.0.33",
+      "expo-constants: ~18.0.13"
     ],
     "api_endpoints": [
       {
-        "method": "POST",
-        "path": "/login",
-        "source_file": "backend/serverRoutes/commonlogin.js"
-      },
-      {
         "method": "GET",
-        "path": "/",
-        "source_file": "backend/serverRoutes/facultyrouter.js"
-      },
-      {
-        "method": "PUT",
-        "path": "/approve-event",
-        "source_file": "backend/serverRoutes/facultyrouter.js"
-      },
-      {
-        "method": "DELETE",
-        "path": "/deny-event",
-        "source_file": "backend/serverRoutes/facultyrouter.js"
-      },
-      {
-        "method": "GET",
-        "path": "/current",
-        "source_file": "backend/serverRoutes/organiserRouter.js"
+        "path": "/health",
+        "source_file": "backend/server.js"
       },
       {
         "method": "POST",
-        "path": "/create-events",
-        "source_file": "backend/serverRoutes/organiserRouter.js"
-      },
-      {
-        "method": "GET",
-        "path": "/registerstudents",
-        "source_file": "backend/serverRoutes/organiserRouter.js"
-      },
-      {
-        "method": "GET",
-        "path": "/current",
-        "source_file": "backend/serverRoutes/studentRouter.js"
+        "path": "/create-order",
+        "source_file": "backend/routes/payment.js"
       },
       {
         "method": "POST",
-        "path": "/register-event",
-        "source_file": "backend/serverRoutes/studentRouter.js"
-      },
-      {
-        "method": "GET",
-        "path": "/my-events",
-        "source_file": "backend/serverRoutes/studentRouter.js"
-      },
-      {
-        "method": "DELETE",
-        "path": "/cancel-registration/:eventId",
-        "source_file": "backend/serverRoutes/studentRouter.js"
-      },
-      {
-        "method": "PUT",
-        "path": "/update-profile",
-        "source_file": "backend/serverRoutes/studentRouter.js"
+        "path": "/verify-payment",
+        "source_file": "backend/routes/payment.js"
       }
     ],
     "env_vars": [
-      "MONGODB_URI",
-      "NODE_ENV"
+      "PORT",
+      "SEPOLIA_RPC_URL",
+      "SUPABASE_URL",
+      "APP_WALLET_PRIVATE_KEY",
+      "SUPABASE_SERVICE_ROLE_KEY",
+      "RAZORPAY_KEY_ID",
+      "RAZORPAY_KEY_SECRET",
+      "EXPO_PUBLIC_GEMINI_API_KEY",
+      "APP_SMART_CONTRACT_ADDRESS"
     ],
     "architecture": "Full-stack decoupled architecture featuring dedicated frontend and backend services. Inspected 50 key application source code files to verify structure."
   },
-  "how_to_run": "1. Clone repository.\n2. Run `npm install`.\n3. Run `npm run dev` or `npm start`.",
+  "how_to_run": "1. Run `npm install` to install dependencies.\n2. Run `npm start` to run the application.",
   "contributing_guide": "Contribution workflow cannot be inferred reliably from source code alone.",
   "license": "Not specified"
 }

@@ -1,0 +1,30 @@
+{
+  "file": "frontend/DBMS frontend/src/components/HomePage.module.css",
+  "chunk": 1,
+  "summary": "This CSS file styles the homepage of a DBMS frontend application, defining various components and their styles including colors, layout, and animations.",
+  "components": [
+    "container",
+    "mainContent",
+    "sectionTitle",
+    "viewAllLink",
+    "ongoingEventSection",
+    "ongoingEvent",
+    "eventImage",
+    "liveTag",
+    "eventInfo",
+    "eventDescription",
+    "eventDetails",
+    "joinBtn",
+    "upcomingEventsSection",
+    "carouselContainer",
+    "upcomingEventsContainer"
+  ],
+  "evidence": [
+    "use of flexbox for layout",
+    "definition of colors using variables",
+    "use of pseudo-elements for styling",
+    "definition of hover effects",
+    "use of media queries for responsiveness",
+    "definition of scroll behavior"
+  ]
+}

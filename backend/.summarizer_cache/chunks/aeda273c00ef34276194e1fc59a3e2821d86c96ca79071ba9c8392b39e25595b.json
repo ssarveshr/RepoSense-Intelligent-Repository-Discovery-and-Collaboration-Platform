@@ -1,0 +1,19 @@
+{
+  "file": "frontend/DBMS frontend/src/components/LoginFaculty.jsx",
+  "chunk": 2,
+  "summary": "This component renders a login form for faculty members, allowing them to select their role, enter their email and unique ID, and submit the form to log in.",
+  "components": [
+    "LoginForm",
+    "RoleSelect",
+    "EmailInput",
+    "UIDInput",
+    "PasswordInput",
+    "ForgotPasswordLink",
+    "LoginButton"
+  ],
+  "evidence": [
+    "The component renders a form with a role select dropdown, email input, UID input, password input, and login button.",
+    "The form includes placeholders for email and UID, and onChange handlers are provided for each input field to update the state.",
+    "The login button triggers a HandlerFunction when clicked."
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "file": "frontend/DBMS frontend/src/components/LoginPage.module.css",
+  "chunk": 2,
+  "summary": "This CSS file styles the login page components, including the login form, welcome text, and login button.",
+  "components": [
+    "loginPageItem",
+    "login",
+    "enterYourAccount",
+    "loginEnterYourContainer",
+    "welcomeTo1",
+    "studentPortal",
+    "welcomeToStudentContainer",
+    "loginButton"
+  ],
+  "evidence": [
+    "positioning, styling, and animations for various components"
+  ]
+}

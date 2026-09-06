@@ -1,0 +1,25 @@
+{
+  "file": "frontend/DBMS frontend/src/components/LoginFaculty.module.css",
+  "chunk": 1,
+  "summary": "Styles for input fields, body, and login page components.",
+  "components": [
+    "inputField",
+    "black",
+    "loginPageChild",
+    "student",
+    "unionIcon",
+    "unionIcon1",
+    "unionIcon2",
+    "loginBox"
+  ],
+  "evidence": [
+    "`.inputField` styles for input fields with a light transparent background, blue border, and glow effect on focus.",
+    "`.black` styles for a centered, semi-transparent box with a white background.",
+    "`.loginPageChild` styles for a centered, semi-transparent box with a blue background.",
+    "`.student` styles for an image positioned in the login page.",
+    "`.unionIcon` styles for an image positioned at the top left.",
+    "`.unionIcon1` styles for an image positioned at the right side.",
+    "`.unionIcon2` styles for an image positioned at the bottom.",
+    "`.loginBox` styles for a box positioned on the right side of the login page."
+  ]
+}

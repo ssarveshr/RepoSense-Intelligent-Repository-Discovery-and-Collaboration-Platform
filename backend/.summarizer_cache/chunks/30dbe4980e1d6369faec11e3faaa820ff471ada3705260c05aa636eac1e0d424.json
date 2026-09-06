@@ -1,0 +1,15 @@
+{
+  "file": "frontend/DBMS frontend/src/components/LoginFaculty.module.css",
+  "chunk": 3,
+  "summary": "This CSS file styles the login page for faculty members, setting its background, adding a gradient blur, and animating light effects.",
+  "components": [
+    "loginPage",
+    "backgroundGlow",
+    "floatLights"
+  ],
+  "evidence": [
+    "background: linear-gradient(135deg, rgba(124, 58, 237, 0.4), rgba(255, 255, 255, 0.2));",
+    "animation: backgroundGlow 10s ease infinite;",
+    "content: ''; animation: floatLights 20s linear infinite;"
+  ]
+}

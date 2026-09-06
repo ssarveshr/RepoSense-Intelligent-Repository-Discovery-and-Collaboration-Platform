@@ -1,0 +1,13 @@
+{
+  "file": "backend/models/User.js",
+  "chunk": 1,
+  "summary": "Defines a Mongoose schema for a User model with fields for email, password, role, image, and specific information for each role (student, organizer, faculty).",
+  "components": [
+    "UserSchema",
+    "User"
+  ],
+  "evidence": [
+    "UserSchema definition with fields for email, password, role, and image",
+    "User model creation using the UserSchema"
+  ]
+}

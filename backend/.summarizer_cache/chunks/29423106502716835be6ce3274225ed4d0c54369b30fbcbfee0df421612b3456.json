@@ -1,0 +1,16 @@
+{
+  "file": "frontend/DBMS frontend/src/components/LoginOrganiser.jsx",
+  "chunk": 2,
+  "summary": "This component renders a login form for an organiser, allowing users to select their role, enter their email and UID, and submit the form to log in.",
+  "components": [
+    "LoginOrganiser",
+    "select",
+    "input",
+    "button"
+  ],
+  "evidence": [
+    "<select> element for role selection",
+    "input fields for email and UID",
+    "button for login submission"
+  ]
+}

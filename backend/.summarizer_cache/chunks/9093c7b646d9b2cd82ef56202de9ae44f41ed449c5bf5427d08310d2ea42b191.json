@@ -1,0 +1,15 @@
+{
+  "file": "frontend/DBMS frontend/src/components/About.jsx",
+  "chunk": 2,
+  "summary": "This code uses Intersection Observer to animate hero section, project overview section, and team cards on scroll. It also handles contact page navigation.",
+  "components": [
+    "IntersectionObserver",
+    "handleContactScroll",
+    "teamMembers"
+  ],
+  "evidence": [
+    "IntersectionObserver is used to animate sections and cards",
+    "handleContactScroll handles navigation to contact page",
+    "teamMembers is used to render team card components"
+  ]
+}

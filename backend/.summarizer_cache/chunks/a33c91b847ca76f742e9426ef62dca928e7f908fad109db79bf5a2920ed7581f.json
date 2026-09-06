@@ -1,0 +1,17 @@
+{
+  "file": "frontend/DBMS frontend/src/components/LoginPage.module.css",
+  "chunk": 3,
+  "summary": "Applies a gradient background with a blur effect to the login page, adds a radial gradient overlay with floating lights, and animates the background and lights.",
+  "components": [
+    "loginPage",
+    "backgroundGlow",
+    "floatLights"
+  ],
+  "evidence": [
+    "background: linear-gradient(135deg, rgba(124, 58, 237, 0.4), rgba(255, 255, 255, 0.2));",
+    "backdrop-filter: blur(10px);",
+    "box-shadow: inset 0 0 20px rgba(124, 58, 237, 0.2);",
+    "@keyframes backgroundGlow",
+    "@keyframes floatLights"
+  ]
+}

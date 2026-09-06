@@ -1,0 +1,18 @@
+{
+  "file": "frontend/DBMS frontend/src/components/SignUpFaculty.jsx",
+  "chunk": 1,
+  "summary": "This component handles the sign-up process for faculty members, including input fields for name, email, UID, and password, and a submit button to register the user. It uses React hooks for state management and Axios to send a POST request to the backend API for registration.",
+  "components": [
+    "SignupPage",
+    "HandlerFunction",
+    "axios",
+    "Spinner"
+  ],
+  "evidence": [
+    "useState",
+    "useNavigate",
+    "axios.post",
+    "toast.success",
+    "toast.error"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "file": "frontend/DBMS frontend/src/components/About.jsx",
+  "chunk": 3,
+  "summary": "Displays a list of team members with their photos, names, roles, contributions, academic details, skills, and contact links. Also includes a development timeline section.",
+  "components": [
+    "About",
+    "TeamMember",
+    "TimelineItem"
+  ],
+  "evidence": [
+    "Displays team member information using props",
+    "Includes a timeline with project milestones"
+  ]
+}

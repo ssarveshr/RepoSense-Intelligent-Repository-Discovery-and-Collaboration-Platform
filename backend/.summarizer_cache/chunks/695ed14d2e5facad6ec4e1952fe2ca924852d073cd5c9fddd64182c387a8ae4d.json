@@ -1,0 +1,27 @@
+{
+  "file": "frontend/DBMS frontend/src/components/navbar/Calendar.jsx",
+  "chunk": 1,
+  "summary": "This component displays a calendar and allows users to view events for a selected date.",
+  "components": [
+    "Calendar",
+    "useNavigate",
+    "useState",
+    "useEffect",
+    "axios",
+    "CalendarIcon",
+    "ChevronLeft",
+    "ChevronRight",
+    "Clock",
+    "MapPin",
+    "Plus"
+  ],
+  "evidence": [
+    "The component uses React hooks to manage state and side effects.",
+    "It fetches events from an API endpoint and displays them in a calendar format.",
+    "Users can navigate to the calendar component using the `useNavigate` hook.",
+    "The component uses the `axios` library to make HTTP requests to the API.",
+    "The calendar is generated dynamically based on the current month and year.",
+    "Users can select a day to view events for that day.",
+    "The component displays icons for navigation, clock, map pin, and plus sign."
+  ]
+}

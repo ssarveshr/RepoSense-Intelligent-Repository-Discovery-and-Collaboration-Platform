@@ -1,0 +1,38 @@
+{
+  "file": "frontend/DBMS frontend/src/components/FacultyDashboard.module.css",
+  "chunk": 1,
+  "summary": "This CSS file styles the FacultyDashboard component, defining various styles for different elements such as the dashboard wrapper, header, title, subtitle, and events container.",
+  "components": [
+    "dashboardWrapper",
+    "dashboardHeader",
+    "dashboardTitle",
+    "dashboardSubtitle",
+    "controlsContainer",
+    "searchContainer",
+    "searchInput",
+    "filterContainer",
+    "filterSelect",
+    "refreshButton",
+    "errorAlert",
+    "loadingContainer",
+    "loadingSpinner",
+    "eventsContainer",
+    "noEvents",
+    "emptyIcon",
+    "card",
+    "cardHeader",
+    "cardTitle",
+    "cardBadge",
+    "pendingBadge",
+    "approvedBadge",
+    "deniedBadge",
+    "cardContent",
+    "cardInfo",
+    "infoRow",
+    "infoLabel",
+    "infoValue"
+  ],
+  "evidence": [
+    "The CSS file contains styles for various elements such as the dashboard wrapper, header, title, subtitle, and events container, with properties like max-width, margin, padding, font-family, and color."
+  ]
+}

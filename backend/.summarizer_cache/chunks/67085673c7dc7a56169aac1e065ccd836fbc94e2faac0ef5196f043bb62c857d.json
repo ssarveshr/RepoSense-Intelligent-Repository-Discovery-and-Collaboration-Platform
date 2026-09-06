@@ -1,0 +1,11 @@
+{
+  "file": "frontend/DBMS frontend/src/components/HomePage.jsx",
+  "chunk": 4,
+  "summary": "This component renders the homepage of the application, displaying a welcome message and a list of available databases.",
+  "components": [
+    "HomePage"
+  ],
+  "evidence": [
+    "<div> element containing the welcome message and list of databases"
+  ]
+}

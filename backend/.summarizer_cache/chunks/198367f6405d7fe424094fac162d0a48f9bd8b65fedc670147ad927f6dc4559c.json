@@ -1,0 +1,28 @@
+{
+  "file": "frontend/DBMS frontend/src/components/navbar/NavBar.jsx",
+  "chunk": 2,
+  "summary": "This component renders a navigation bar with links to different pages and buttons for authentication based on the user's login status.",
+  "components": [
+    "NavBar",
+    "ul",
+    "li",
+    "button",
+    "isActive",
+    "handleNavigation",
+    "renderRoleTab",
+    "userRole",
+    "sessionStorage",
+    "setUserRole",
+    "setPayload",
+    "navigate"
+  ],
+  "evidence": [
+    "The component renders a navigation bar with links to Home, Events, Calendar, About, and Contact pages.",
+    "The navigation links are conditionally rendered based on the user's login status.",
+    "The component conditionally renders login and signup buttons based on the user's login status.",
+    "The component uses the isActive function to highlight the active link based on the current URL.",
+    "The component uses the handleNavigation function to handle navigation to different pages.",
+    "The component uses the renderRoleTab function to dynamically render a role tab.",
+    "The component uses the userRole, sessionStorage, setUserRole, setPayload, and navigate variables to manage authentication state."
+  ]
+}
