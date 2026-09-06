@@ -1,0 +1,16 @@
+{
+  "file": "frontend/DBMS frontend/src/components/FacultyDashboard.jsx",
+  "chunk": 1,
+  "summary": "Displays a dashboard for faculty members to manage events, allowing them to approve or deny events based on their status.",
+  "components": [
+    "FacultyDashboard",
+    "fetchEvents",
+    "handleApprove",
+    "handleDeny"
+  ],
+  "evidence": [
+    "fetchEvents function makes a GET request to the backend API to retrieve events for the faculty member",
+    "handleApprove and handleDeny functions make PUT and DELETE requests to the backend API to update the status of events",
+    "useEffect hooks are used to fetch events and process them based on filters and search queries"
+  ]
+}

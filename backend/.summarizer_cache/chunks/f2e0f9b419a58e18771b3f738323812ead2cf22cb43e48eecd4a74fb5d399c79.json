@@ -1,0 +1,19 @@
+{
+  "file": "frontend/DBMS frontend/src/components/CreateEvent.jsx",
+  "chunk": 2,
+  "summary": "This component renders a form for creating an event with fields for location, description, faculty co-ordinator, and an event image. It includes input fields for each field, a text area for the description, and a file input for the event image. The form also includes a submit button that changes its text based on whether the event is being created or submitted.",
+  "components": [
+    "CreateEvent",
+    "formGroup",
+    "label",
+    "input",
+    "textarea",
+    "file",
+    "button"
+  ],
+  "evidence": [
+    "The component renders a form with input fields for location, description, faculty co-ordinator, and an event image.",
+    "The form includes a submit button that changes its text based on whether the event is being created or submitted.",
+    "The component includes a file input for the event image, which displays the selected image name if an image is uploaded."
+  ]
+}

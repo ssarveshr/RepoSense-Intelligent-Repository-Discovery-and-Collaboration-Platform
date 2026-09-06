@@ -1,0 +1,14 @@
+{
+  "file": "frontend/DBMS frontend/src/components/OrganizerDashboard.module.css",
+  "chunk": 2,
+  "summary": "This CSS file defines styles for various components used in the OrganizerDashboard component of the frontend of a DBMS application. It includes styles for the dashboard container, header, event cards, and event content.",
+  "components": [
+    "dashboardContainer",
+    "header",
+    "eventCard",
+    "eventContent"
+  ],
+  "evidence": [
+    "The file contains CSS rules for styling elements such as background colors, padding, border-radius, box-shadow, and font sizes, which are used to visually enhance the appearance of the components."
+  ]
+}

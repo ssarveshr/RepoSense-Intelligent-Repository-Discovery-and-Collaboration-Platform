@@ -1,0 +1,23 @@
+{
+  "file": "frontend/DBMS frontend/src/components/Events.jsx",
+  "chunk": 1,
+  "summary": "Displays a list of events and allows users to search for them. Provides navigation to event details and registration.",
+  "components": [
+    "useState",
+    "useEffect",
+    "useParams",
+    "useNavigate",
+    "axios",
+    "toast"
+  ],
+  "evidence": [
+    "The component uses `useState` to manage state for search, events, token, current student, registration status, and loading state.",
+    "It uses `useEffect` to fetch events and current student data when the component mounts.",
+    "The component uses `useParams` to get the event ID from the URL.",
+    "It uses `useNavigate` to navigate to different routes.",
+    "The component uses `axios` to make API requests to fetch data.",
+    "It uses `toast` to display notifications.",
+    "The component handles search functionality by filtering events based on the search term.",
+    "The component provides navigation to event details and registration."
+  ]
+}

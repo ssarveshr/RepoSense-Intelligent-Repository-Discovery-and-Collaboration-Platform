@@ -1,0 +1,15 @@
+{
+  "file": "frontend/DBMS frontend/src/components/RegisterEvent.module.css",
+  "chunk": 2,
+  "summary": "This CSS file styles the submit button for the RegisterEvent component, including hover, active, and disabled states, as well as animations and responsive design for different screen sizes.",
+  "components": [
+    "submitButton",
+    "formCard",
+    "dashboardContainer"
+  ],
+  "evidence": [
+    "The submit button has hover, active, and disabled states with different background colors, transformations, and box shadows.",
+    "The formCard has animations for fadeIn and responsive design for different screen sizes.",
+    "The dashboardContainer has responsive padding for different screen sizes."
+  ]
+}

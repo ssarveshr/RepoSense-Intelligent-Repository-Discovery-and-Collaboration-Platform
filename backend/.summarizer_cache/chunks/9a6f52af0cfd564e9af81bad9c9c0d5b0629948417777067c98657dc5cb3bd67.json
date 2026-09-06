@@ -1,0 +1,39 @@
+{
+  "file": "frontend/DBMS frontend/src/components/navbar/Calendar.jsx",
+  "chunk": 2,
+  "summary": "This component renders a calendar interface for viewing and navigating events. It displays the current month, allows navigation to previous and next months, and handles day clicks to view event details or create new events.",
+  "components": [
+    "CalendarIcon",
+    "ChevronLeft",
+    "ChevronRight",
+    "CalendarContainer",
+    "calendarHeader",
+    "headerTitle",
+    "calendarControls",
+    "todayButton",
+    "monthNavigation",
+    "navButton",
+    "currentMonth",
+    "calendarLayout",
+    "calendarGrid",
+    "weekdays",
+    "days",
+    "day",
+    "emptyDay",
+    "hasEvents",
+    "selectedDay",
+    "today",
+    "dayNumber"
+  ],
+  "evidence": [
+    "goToPreviousMonth",
+    "goToNextMonth",
+    "goToToday",
+    "handleDayClick",
+    "handleViewEventDetails",
+    "handleCreateEvent",
+    "generateCalendarDays",
+    "formatDate",
+    "getCategoryColorClass"
+  ]
+}

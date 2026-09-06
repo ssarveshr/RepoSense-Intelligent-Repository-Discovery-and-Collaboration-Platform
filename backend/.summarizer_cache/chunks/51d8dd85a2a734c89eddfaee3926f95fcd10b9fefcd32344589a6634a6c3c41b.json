@@ -1,0 +1,26 @@
+{
+  "file": "frontend/DBMS frontend/src/components/navbar/Calendar.jsx",
+  "chunk": 3,
+  "summary": "Displays a calendar with events, loading state, and error handling.",
+  "components": [
+    "Calendar",
+    "EventIndicator",
+    "LoadingState",
+    "ErrorState",
+    "EventsPanel",
+    "EventsPanelHeader",
+    "EventsList",
+    "EventCard",
+    "EmptyState",
+    "NoEventsMessage",
+    "CreateEventButton"
+  ],
+  "evidence": [
+    "Displays a calendar with events using the `hasEvents` function and event indicators.",
+    "Handles loading state with a spinner and loading message.",
+    "Handles error state with an error message and retry button.",
+    "Displays events for the selected date in a list with time, title, and location.",
+    "Shows an empty state with an icon and message when no events are scheduled for the selected date.",
+    "Provides buttons to create a new event and select a date."
+  ]
+}

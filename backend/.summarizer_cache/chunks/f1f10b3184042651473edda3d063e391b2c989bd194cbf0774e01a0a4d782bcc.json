@@ -1,0 +1,11 @@
+{
+  "file": "frontend/DBMS frontend/src/components/LoginFaculty.module.css",
+  "chunk": 2,
+  "summary": "This CSS file styles various components of a login page for faculty members, including positioning, colors, fonts, and animations.",
+  "components": [
+    "loginButton"
+  ],
+  "evidence": [
+    "The `.loginButton` class contains properties like `position`, `width`, `height`, `padding`, `margin`, `font-size`, `font-weight`, `color`, `background`, `border`, `border-radius`, `box-shadow`, and `transition` for styling the login button."
+  ]
+}

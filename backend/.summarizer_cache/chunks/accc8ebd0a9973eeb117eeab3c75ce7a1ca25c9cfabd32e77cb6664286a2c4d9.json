@@ -1,0 +1,19 @@
+{
+  "file": "frontend/DBMS frontend/src/components/FacultyDashboard.jsx",
+  "chunk": 3,
+  "summary": "Displays a list of events for a faculty member, showing details such as organizer, faculty, date, location, and approval status. Provides buttons to approve or deny events.",
+  "components": [
+    "FacultyDashboard",
+    "EventCard",
+    "ApproveButton",
+    "DenyButton",
+    "StatusInfo",
+    "StatusIcon"
+  ],
+  "evidence": [
+    "Displays a list of events for a faculty member",
+    "Shows details such as organizer, faculty, date, location, and approval status",
+    "Provides buttons to approve or deny events",
+    "Uses conditional rendering to display approval status"
+  ]
+}

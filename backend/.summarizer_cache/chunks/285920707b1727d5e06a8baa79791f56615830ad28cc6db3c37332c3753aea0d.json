@@ -1,0 +1,32 @@
+{
+  "file": "frontend/DBMS frontend/src/components/HomePage.module.css",
+  "chunk": 2,
+  "summary": "Styling for web components and layout adjustments for responsiveness.",
+  "components": [
+    "upcomingEventsContainer",
+    "carouselControls",
+    "carouselButton",
+    "carouselDots",
+    "eventCard",
+    "cardImage",
+    "cardContent",
+    "eventDate",
+    "eventLocation",
+    "detailsBtn",
+    "highlightBadge"
+  ],
+  "evidence": [
+    ".upcomingEventsContainer::-webkit-scrollbar",
+    ".carouselControls",
+    ".carouselButton",
+    ".carouselDots",
+    ".eventCard",
+    ".cardImage img",
+    ".eventContent",
+    ".eventDate",
+    ".eventLocation",
+    ".detailsBtn",
+    ".highlightBadge",
+    "@media (max-width: 1024px)"
+  ]
+}

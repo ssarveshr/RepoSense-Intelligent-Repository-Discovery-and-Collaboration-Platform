@@ -1,0 +1,14 @@
+{
+  "file": "frontend/DBMS frontend/src/components/RegisterEvent.jsx",
+  "chunk": 2,
+  "summary": "This component renders a form for registering an event, including a dropdown for selecting a branch and a submit button.",
+  "components": [
+    "RegisterEvent component",
+    "select element",
+    "input element",
+    "button element"
+  ],
+  "evidence": [
+    "The component renders a form with a select element for the branch and an input element for the event name."
+  ]
+}

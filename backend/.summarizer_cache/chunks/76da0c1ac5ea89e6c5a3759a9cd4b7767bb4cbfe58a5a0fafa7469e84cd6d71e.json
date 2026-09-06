@@ -1,0 +1,41 @@
+{
+  "file": "frontend/DBMS frontend/src/components/CreateEvent.module.css",
+  "chunk": 1,
+  "summary": "This CSS file styles the CreateEvent component of the frontend, defining the layout, colors, and styles for the dashboard, header, event creation section, form, buttons, and tasks section.",
+  "components": [
+    "dashboardContainer",
+    "header",
+    "eventCreationSection",
+    "createEventForm",
+    "formGroup",
+    "label",
+    "input[type='text']",
+    "textarea",
+    "createEventButton",
+    "tasksSection",
+    "tasksSection h3",
+    "taskList",
+    "taskItem",
+    "taskItem input[type='checkbox']",
+    "taskItem label"
+  ],
+  "evidence": [
+    "background-color",
+    "padding",
+    "font-size",
+    "color",
+    "margin",
+    "border-radius",
+    "box-shadow",
+    "display",
+    "flex",
+    "grid",
+    "gap",
+    "min-height",
+    "resize",
+    "accent-color",
+    "text-decoration",
+    "checked",
+    "hover"
+  ]
+}

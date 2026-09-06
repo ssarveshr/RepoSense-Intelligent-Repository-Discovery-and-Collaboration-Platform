@@ -1,0 +1,35 @@
+{
+  "file": "frontend/DBMS frontend/src/components/FacultyDashboard.jsx",
+  "chunk": 2,
+  "summary": "Displays a dashboard for faculty members to manage and approve event requests. It includes search functionality, filtering options, and real-time updates.",
+  "components": [
+    "FacultyDashboard",
+    "setProcessedEvents",
+    "formatDate",
+    "searchQuery",
+    "filterStatus",
+    "fetchEvents",
+    "error",
+    "loading",
+    "processedEvents",
+    "events",
+    "event",
+    "status",
+    "isPending",
+    "isApproved",
+    "isDenied",
+    "card",
+    "cardHeader",
+    "cardTitle",
+    "cardBadge"
+  ],
+  "evidence": [
+    "<div className={styles.dashboardWrapper}>",
+    "<div className={styles.controlsContainer}>",
+    "<select className={styles.filterSelect}>",
+    "<button className={styles.refreshButton}>",
+    "<div className={styles.eventsContainer}>",
+    "<div className={styles.card}>",
+    "<span className={`${styles.cardBadge} ${isPending ? styles.pendingBadge : isApproved ? styles.approvedBadge : styles.deniedBadge}`}>"
+  ]
+}

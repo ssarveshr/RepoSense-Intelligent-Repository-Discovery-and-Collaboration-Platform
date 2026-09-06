@@ -1,0 +1,17 @@
+{
+  "file": "backend/serverRoutes/Public/PublicRouter.js",
+  "chunk": 1,
+  "summary": "This code defines a public router for the backend server, providing endpoints to fetch all events and a specific event by ID.",
+  "components": [
+    "Public Router",
+    "Event Model",
+    "GET /events",
+    "GET /events/:id"
+  ],
+  "evidence": [
+    "Event.find()",
+    "Event.findById()",
+    "res.status(200).json()",
+    "res.status(404).json()"
+  ]
+}

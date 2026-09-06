@@ -1,0 +1,18 @@
+{
+  "file": "frontend/DBMS frontend/index.html",
+  "chunk": 1,
+  "summary": "This is the HTML file for the frontend of the Events Management application. It includes the necessary meta tags, links to stylesheets and fonts, and a script tag to load the main application script.",
+  "components": [
+    "<head>",
+    "<body>",
+    "<div id='root'>",
+    "<script type='module' src='/src/main.jsx'></script>"
+  ],
+  "evidence": [
+    "<meta charset='UTF-8' />",
+    "<link rel='stylesheet' href='/src/components/FigmaComponent.css'>",
+    "<link href='https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap' rel='stylesheet'>",
+    "<link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap' rel='stylesheet'>",
+    "<script type='module' src='/src/main.jsx'></script>"
+  ]
+}

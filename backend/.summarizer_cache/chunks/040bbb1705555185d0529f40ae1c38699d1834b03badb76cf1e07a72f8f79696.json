@@ -1,0 +1,20 @@
+{
+  "file": "frontend/DBMS frontend/src/components/Events.module.css",
+  "chunk": 3,
+  "summary": "This CSS file styles various components of the Events page, including event cards, newsletter forms, footers, and responsive layouts for different screen sizes.",
+  "components": [
+    "eventsGrid",
+    "footerContent",
+    "eventDetailInfo",
+    "registerCard",
+    "hamburger",
+    "navLinks",
+    "navOpen",
+    "visually-hidden",
+    "fadeIn",
+    "eventCard"
+  ],
+  "evidence": [
+    "padding, border, border-radius, background-color, color, cursor, transition, display, flex-direction, grid-template-columns, gap, max-width, font-size, height, margin, margin-bottom, padding-top, box-shadow, z-index, transform, opacity, visibility, animation, outline, display: none, @keyframes, print styles"
+  ]
+}

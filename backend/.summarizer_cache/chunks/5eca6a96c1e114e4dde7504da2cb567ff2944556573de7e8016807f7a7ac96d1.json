@@ -1,0 +1,23 @@
+{
+  "file": "frontend/DBMS frontend/src/components/SignUpPage.module.css",
+  "chunk": 2,
+  "summary": "This CSS file styles the SignUpPage component, including transitions, hover effects, and responsive design for various elements.",
+  "components": [
+    "transition",
+    "hover effect",
+    "responsive design"
+  ],
+  "evidence": [
+    "transition: all 0.3s ease;",
+    ".loginButton::before",
+    "@keyframes pulse",
+    ".welcomeToStudentContainer",
+    ".loginEnterYourContainer",
+    ".loginLink",
+    ".loginLink span",
+    ".forgotPassword",
+    ".inputField",
+    ".formGroup",
+    ".label"
+  ]
+}

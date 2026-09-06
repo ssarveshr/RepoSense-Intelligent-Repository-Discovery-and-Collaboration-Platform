@@ -1,0 +1,11 @@
+{
+  "file": "frontend/DBMS frontend/src/components/navbar/Calendar.module.css",
+  "chunk": 3,
+  "summary": "This CSS module defines styles for a calendar component in the frontend of a DBMS application. It includes styles for the calendar's empty state, setting the font size of the empty state icon to 2.5rem.",
+  "components": [
+    "emptyStateIcon"
+  ],
+  "evidence": [
+    ".emptyStateIcon { font-size: 2.5rem; }"
+  ]
+}

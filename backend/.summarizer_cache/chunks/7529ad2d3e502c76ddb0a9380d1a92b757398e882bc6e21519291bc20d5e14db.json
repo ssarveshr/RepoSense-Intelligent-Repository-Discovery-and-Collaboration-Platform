@@ -1,0 +1,19 @@
+{
+  "file": "frontend/DBMS frontend/src/components/DashBoard.jsx",
+  "chunk": 1,
+  "summary": "This component fetches user authentication and displays the user's dashboard.",
+  "components": [
+    "DashBoard",
+    "UserAuthentication",
+    "axios",
+    "useEffect",
+    "useState"
+  ],
+  "evidence": [
+    "axios.get",
+    "sessionStorage.getItem",
+    "setisview",
+    "setUser",
+    "console.log"
+  ]
+}

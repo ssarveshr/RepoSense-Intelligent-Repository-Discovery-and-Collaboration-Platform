@@ -1,0 +1,19 @@
+{
+  "file": "frontend/DBMS frontend/src/components/CreateEvent.jsx",
+  "chunk": 1,
+  "summary": "This component allows users to create new events by providing details such as title, location, description, faculty, and an optional image. It handles form submission, image upload, and navigation to the organizer dashboard upon successful creation.",
+  "components": [
+    "CreateEvent",
+    "useState",
+    "axios",
+    "toast",
+    "useNavigate"
+  ],
+  "evidence": [
+    "handleSubmit function",
+    "imageFile state",
+    "axios.post requests",
+    "toast notifications",
+    "useNavigate hook"
+  ]
+}

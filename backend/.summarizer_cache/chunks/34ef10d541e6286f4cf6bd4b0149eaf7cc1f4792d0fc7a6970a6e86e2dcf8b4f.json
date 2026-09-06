@@ -1,0 +1,18 @@
+{
+  "file": "frontend/DBMS frontend/src/components/EventDetails.module.css",
+  "chunk": 1,
+  "summary": "This CSS file styles the layout and appearance of the EventDetails component in the frontend of a DBMS application. It defines styles for the container, headings, paragraphs, and student list, including responsive design for smaller screens.",
+  "components": [
+    "detailsContainer",
+    "studentList"
+  ],
+  "evidence": [
+    ".detailsContainer styles the main container with padding, max-width, margin, background-color, border-radius, and box-shadow.",
+    ".detailsContainer h1 and h2 styles the headings with font sizes and margins.",
+    ".detailsContainer p styles the paragraphs with font sizes and margins.",
+    ".studentList styles the list with no bullet points, padding, margin, font size, and color.",
+    ".studentList li styles the list items with padding, background color, border-radius, margin, font size, and color.",
+    ".studentList li:hover styles the list items on hover with a different background color.",
+    "@media (max-width: 768px) styles the container for smaller screens with reduced padding and width."
+  ]
+}

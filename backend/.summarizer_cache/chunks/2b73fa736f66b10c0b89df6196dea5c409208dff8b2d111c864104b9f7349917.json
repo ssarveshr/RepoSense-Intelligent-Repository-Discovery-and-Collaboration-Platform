@@ -1,0 +1,19 @@
+{
+  "file": "frontend/DBMS frontend/package.json",
+  "chunk": 1,
+  "summary": "This package.json file defines the dependencies and scripts for a React frontend application using Vite, including libraries for styling, routing, and authentication.",
+  "components": [
+    "vite",
+    "react",
+    "react-dom",
+    "react-router-dom",
+    "axios",
+    "jwt-decode",
+    "date-fns",
+    "react-toastify",
+    "styled-components"
+  ],
+  "evidence": [
+    ""
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "file": "frontend/DBMS frontend/eslint.config.js",
+  "chunk": 1,
+  "summary": "This ESLint configuration file sets up rules for JavaScript and JSX files in the frontend of a DBMS application, including React hooks and React refresh.",
+  "components": [
+    "eslint.configs.recommended.rules",
+    "reactHooks.configs.recommended.rules",
+    "react-refresh/only-export-components"
+  ],
+  "evidence": [
+    "The file imports ESLint rules for JavaScript and JSX files.",
+    "It specifies the files to be linted and their language options, including ECMAScript version and JSX support.",
+    "It configures ESLint to use the recommended rules from the `eslint-config-js` and `eslint-plugin-react-hooks` packages.",
+    "It includes custom rules, such as `no-unused-vars` and `react-refresh/only-export-components`, to enforce specific coding standards.",
+    "The `react-refresh/only-export-components` rule is set to warn, allowing constant exports."
+  ]
+}

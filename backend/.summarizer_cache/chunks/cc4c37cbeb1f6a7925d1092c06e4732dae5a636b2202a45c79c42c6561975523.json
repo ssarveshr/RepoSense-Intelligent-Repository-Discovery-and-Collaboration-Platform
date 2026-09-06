@@ -1,0 +1,25 @@
+{
+  "file": "backend/serverRoutes/facultyrouter.js",
+  "chunk": 1,
+  "summary": "This code defines routes for a faculty user to manage events, including fetching unapproved events, approving events, and denying events.",
+  "components": [
+    "Facultyrouter",
+    "get",
+    "put",
+    "delete",
+    "passport.authenticate",
+    "checkRole",
+    "Event",
+    "User"
+  ],
+  "evidence": [
+    "Facultyrouter.get('/', ...)",
+    "Facultyrouter.put('/approve-event', ...)",
+    "Facultyrouter.delete('/deny-event', ...)",
+    "passport.authenticate('jwt', { session: false })",
+    "checkRole('faculty')",
+    "Event.find({ facultyName: Faculty_name })",
+    "Event.findOne({ organiserName, title, facultyName })",
+    "Event.findOneAndDelete({ organiserName, title, facultyName })"
+  ]
+}

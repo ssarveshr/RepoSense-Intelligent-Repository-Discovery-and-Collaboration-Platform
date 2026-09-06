@@ -1,0 +1,23 @@
+{
+  "file": "frontend/DBMS frontend/src/components/SignUpPage.module.css",
+  "chunk": 1,
+  "summary": "Defines styles for a sign-up page component, including background, animations, and layout elements.",
+  "components": [
+    "loginPage",
+    "black",
+    "loginPageChild",
+    "student",
+    "unionIcon",
+    "unionIcon1",
+    "unionIcon2",
+    "loginBox",
+    "inputField",
+    "inputField1",
+    "inputField:focus",
+    "label",
+    "loginButton"
+  ],
+  "evidence": [
+    "background properties, animations, positioning, and styling of various elements"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "file": "backend/serverRoutes/commonlogin.js",
+  "chunk": 1,
+  "summary": "This code defines a route for user login, which checks user credentials against a database and returns a JWT token if successful.",
+  "components": [
+    "CommonLoginRouter",
+    "User",
+    "bcryptjs",
+    "GeneratBearerToken"
+  ],
+  "evidence": [
+    "User.findOne",
+    "bcrypt.compare",
+    "GeneratBearerToken",
+    "res.status",
+    "res.json"
+  ]
+}

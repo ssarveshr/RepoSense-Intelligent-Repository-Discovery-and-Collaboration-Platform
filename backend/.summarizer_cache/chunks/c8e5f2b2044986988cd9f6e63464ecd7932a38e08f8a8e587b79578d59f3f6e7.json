@@ -1,0 +1,17 @@
+{
+  "file": "frontend/DBMS frontend/src/components/Events.jsx",
+  "chunk": 2,
+  "summary": "This component displays detailed information about a selected event, including its title, date, time, location, organizer, and contact information. It also provides buttons to register for the event, save it to the calendar, and share it on social media.",
+  "components": [
+    "handleReturnToAllEvents",
+    "handleRegisterRedirect",
+    "formatDate",
+    "formatTime"
+  ],
+  "evidence": [
+    "The component uses the `navigate` function to redirect to the registration page with the selected event's title.",
+    "The `formatDate` and `formatTime` functions convert ISO date strings to human-readable formats.",
+    "The component displays event details in a structured format using HTML elements and CSS classes.",
+    "The component includes buttons for registration, saving to the calendar, and sharing the event."
+  ]
+}

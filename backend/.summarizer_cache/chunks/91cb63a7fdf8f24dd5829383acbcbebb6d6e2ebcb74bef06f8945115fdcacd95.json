@@ -1,0 +1,19 @@
+{
+  "file": "frontend/DBMS frontend/src/components/LoginOrganiser.module.css",
+  "chunk": 2,
+  "summary": "This CSS file styles various components of the login page, including the login form, welcome text, and login button.",
+  "components": [
+    "loginPageItem",
+    "login",
+    "enterYourAccount",
+    "loginEnterYourContainer",
+    "welcomeTo1",
+    "studentPortal",
+    "welcomeToStudentContainer",
+    "loginButton"
+  ],
+  "evidence": [
+    "The CSS rules define styles for elements like .loginPageItem, .login, .enterYourAccount, .loginEnterYourContainer, .welcomeTo1, .studentPortal, .welcomeToStudentContainer, and .loginButton",
+    "The styles include positioning, colors, fonts, and animations for these elements"
+  ]
+}

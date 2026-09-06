@@ -1,0 +1,25 @@
+{
+  "file": "frontend/DBMS frontend/src/components/About.module.css",
+  "chunk": 3,
+  "summary": "Styles for the About section of the application, including timeline, timeline items, content, and animations.",
+  "components": [
+    "timelineSection",
+    "timeline",
+    "timelineItem",
+    "timelineContent",
+    "animatedSection",
+    "footer"
+  ],
+  "evidence": [
+    ".timelineSection.visible { opacity: 1; transform: translateY(0); }",
+    ".timeline { max-width: 800px; margin: 0 auto; position: relative; }",
+    ".timeline::before { content: ''; position: absolute; width: 4px; background: linear-gradient(to bottom, #5a2ca0, #ff6bb3); }",
+    ".timelineItem { padding: 10px 40px; position: relative; width: 50%; box-sizing: border-box; }",
+    ".timelineItem:nth-child(odd) { left: 0; }",
+    ".timelineItem:nth-child(even) { left: 50%; }",
+    ".timelineItem::after { content: ''; position: absolute; width: 20px; height: 20px; right: -10px; background-color: #ffffff; border: 4px solid #5a2ca0; }",
+    ".timelineContent { padding: 20px 30px; background-color: white; position: relative; border-radius: 6px; box-shadow: 0 4px 10px rgba(90, 44, 160, 0.1); border-top: 3px solid #ff6bb3; }",
+    ".footer { background-color: #5a2ca0; color: white; padding: 3rem 2rem; }",
+    ".footerContent { display: flex; max-width: 1200px; margin: 0 auto; justify-content: space-between; flex-wrap: wrap; gap: 2rem; }"
+  ]
+}

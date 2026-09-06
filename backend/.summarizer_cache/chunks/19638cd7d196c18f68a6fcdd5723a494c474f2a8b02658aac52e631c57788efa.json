@@ -1,0 +1,16 @@
+{
+  "file": "frontend/DBMS frontend/src/components/HomePage.module.css",
+  "chunk": 3,
+  "summary": "This CSS file styles the homepage components of a database management system frontend, including event cards, carousel controls, and navigation elements.",
+  "components": [
+    "eventCard",
+    "carouselControls",
+    "navbar",
+    "footerContent"
+  ],
+  "evidence": [
+    "flexbox properties used for layout",
+    "media queries for responsive design",
+    "specific CSS properties applied to various elements"
+  ]
+}

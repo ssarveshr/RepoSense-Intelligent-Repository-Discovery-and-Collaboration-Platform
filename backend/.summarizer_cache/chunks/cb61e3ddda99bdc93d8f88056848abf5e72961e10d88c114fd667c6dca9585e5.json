@@ -1,0 +1,13 @@
+{
+  "file": "frontend/DBMS frontend/src/components/About.jsx",
+  "chunk": 4,
+  "summary": "Displays the timeline of the product's development, including beta launch and public release dates.",
+  "components": [
+    "timelineItem",
+    "timelineContent",
+    "date"
+  ],
+  "evidence": [
+    "Displays a timeline with two items: 'Beta Launch' and 'Public Release', each with a date and a description."
+  ]
+}

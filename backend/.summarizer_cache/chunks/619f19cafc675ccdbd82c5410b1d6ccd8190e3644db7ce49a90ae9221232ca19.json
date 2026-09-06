@@ -1,0 +1,38 @@
+{
+  "file": "frontend/DBMS frontend/src/components/OrganizerDashboard.module.css",
+  "chunk": 1,
+  "summary": "This CSS file defines styles for an organizer dashboard component, including layout, colors, and typography.",
+  "components": [
+    "dashboardContainer",
+    "header",
+    "orgInfo",
+    "mainContent",
+    "eventSection",
+    "facultySection",
+    "registrationSection",
+    "eventCards",
+    "eventCard",
+    "eventImage",
+    "placeholderImage",
+    "eventCard h3",
+    "eventCard p",
+    "registrationSection",
+    "studentList",
+    "studentCard",
+    "studentCard h4",
+    "studentCard p",
+    "addButton",
+    "facultySection",
+    "facultyGrid",
+    "facultyCard",
+    "facultyAvatar",
+    "facultyCard h3",
+    "facultyCard p",
+    "actionButton",
+    "sectionHeader",
+    "sectionHeader h2"
+  ],
+  "evidence": [
+    "CSS classes and properties used to style various elements of the dashboard, such as background colors, padding, font sizes, and hover effects."
+  ]
+}

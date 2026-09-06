@@ -1,0 +1,31 @@
+{
+  "file": "frontend/DBMS frontend/src/components/RegisterEvent.module.css",
+  "chunk": 1,
+  "summary": "Defines styles for a registration form component in a React application, including base styles, global styles, container styles, header styles, form styles, input styles, select styles, label styles, suggestion styles, and submit button styles.",
+  "components": [
+    "base styles",
+    "global styles",
+    "dashboardContainer",
+    "header",
+    "registrationSection",
+    "formCard",
+    "registerForm",
+    "formGroup",
+    "formRow",
+    "formInput",
+    "formSelect",
+    "label",
+    "suggestionContainer",
+    "suggestionsList",
+    "suggestionItem",
+    "submitButton"
+  ],
+  "evidence": [
+    "use of CSS variables for color and spacing",
+    "use of flexbox and grid for layout",
+    "use of pseudo-classes for hover effects",
+    "use of placeholder styles",
+    "use of absolute positioning for suggestions list",
+    "use of transition effects for form inputs and buttons"
+  ]
+}

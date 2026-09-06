@@ -1,0 +1,19 @@
+{
+  "file": "frontend/DBMS frontend/src/components/About.jsx",
+  "chunk": 1,
+  "summary": "Displays information about the team and project, including team members' details and project features and tech stack.",
+  "components": [
+    "About",
+    "Navbar",
+    "Footer",
+    "useNavigate",
+    "useState",
+    "useEffect",
+    "useRef"
+  ],
+  "evidence": [
+    "Team members' data is preloaded and displayed",
+    "Project info is displayed",
+    "Performance optimization is implemented to delay animations until the component is mounted"
+  ]
+}

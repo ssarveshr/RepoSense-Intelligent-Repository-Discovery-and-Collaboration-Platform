@@ -1,0 +1,23 @@
+{
+  "file": "frontend/DBMS frontend/src/components/LoginPage.jsx",
+  "chunk": 1,
+  "summary": "This component handles user login for a database management system frontend. It uses React hooks to manage state for email, password, loading status, and user type. It sends a POST request to the server with the user's credentials and handles the response to set a session token and navigate to the home page if successful, or display an error message if the credentials are invalid.",
+  "components": [
+    "LoginPage",
+    "useState",
+    "useNavigate",
+    "useParams",
+    "axios",
+    "jwtDecode",
+    "toast"
+  ],
+  "evidence": [
+    "HandlerFunction",
+    "axios.post",
+    "jwtDecode",
+    "toast.success",
+    "toast.warning",
+    "toast.error",
+    "navigate"
+  ]
+}

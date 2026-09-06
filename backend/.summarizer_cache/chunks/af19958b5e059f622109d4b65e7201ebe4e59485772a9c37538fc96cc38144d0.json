@@ -1,0 +1,16 @@
+{
+  "file": "frontend/DBMS frontend/src/components/LoginFaculty.jsx",
+  "chunk": 1,
+  "summary": "This component handles the login process for faculty users, including input fields for email and password, a dropdown for selecting user type, and a login button. It uses Axios to send a POST request to the server for authentication and handles the response to set a session token and redirect the user to the appropriate dashboard or signup page based on their role.",
+  "components": [
+    "LoginPage",
+    "HandlerFunction",
+    "useNavigate",
+    "axios",
+    "jwtDecode"
+  ],
+  "evidence": [
+    "The component uses Axios to send a POST request to the server for authentication",
+    "The component handles the response to set a session token and redirect the user to the appropriate dashboard or signup page based on their role"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "file": "backend/serverRoutes/organiserRouter.js",
+  "chunk": 1,
+  "summary": "This code defines routes for managing events and user data for organizers in a backend application. It uses Express, Passport, and Mongoose to handle authentication and data validation.",
+  "components": [
+    "OrganizerRouter",
+    "get('/current')",
+    "post('/create-events')",
+    "get('/registerstudents')",
+    "passport.authenticate('jwt', { session: false })",
+    "checkRole('organizer')",
+    "User.findOne",
+    "Event.create",
+    "Event.findOne"
+  ],
+  "evidence": [
+    "OrganizerRouter is an instance of express.Router",
+    "The routes are defined using the get and post methods",
+    "Passport and checkRole middleware are used for authentication and role checking",
+    "User and Event models are used to interact with the database",
+    "Data validation is performed using EventcreateValidation",
+    "Error handling is implemented using try-catch blocks and status codes"
+  ]
+}

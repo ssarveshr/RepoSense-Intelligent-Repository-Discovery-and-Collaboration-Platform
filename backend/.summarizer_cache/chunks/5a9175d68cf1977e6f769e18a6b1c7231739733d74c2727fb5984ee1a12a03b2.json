@@ -1,0 +1,18 @@
+{
+  "file": "frontend/DBMS frontend/src/components/FacultyDashboard.module.css",
+  "chunk": 2,
+  "summary": "This CSS file styles the FacultyDashboard component, including button groups, approval and denial buttons, status information, and responsive design adjustments.",
+  "components": [
+    "buttonGroup",
+    "approveButton",
+    "denyButton",
+    "statusInfo",
+    "statusIcon",
+    "statusText"
+  ],
+  "evidence": [
+    "flexbox layout for button groups and approval/denial buttons",
+    "hover effects for buttons",
+    "responsive design adjustments for smaller screens"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "what_it_does": "This project is a real estate platform that uses blockchain technology to record rent transactions and manage disputes. It includes features for owner and tenant management, dispute resolution, and AI-powered contract review.",
+  "project_type": "Real Estate Platform",
+  "confidence": "High",
+  "confidence_reason": "The code evidence shows the presence of features like dispute resolution, AI-powered contract review, and blockchain integration.",
+  "core_features": [
+    "Blockchain-based rent transaction recording",
+    "AI-powered contract review",
+    "Dispute resolution",
+    "Owner and tenant management"
+  ],
+  "core_workflow": [
+    "Users can create and manage properties",
+    "Owners can review and sign lease agreements",
+    "Tenants can dispute rent payments or lease terms"
+  ],
+  "key_components": [
+    "app/owner/(tabs)/disputes.tsx: Dispute management",
+    "app/owner/(tabs)/profile.tsx: Owner profile management",
+    "app/owner/(tabs)/home.tsx: Owner dashboard",
+    "backend/routes/payment.js: Payment processing and blockchain integration"
+  ],
+  "difficulty": "Intermediate",
+  "best_for": "Real estate developers, property managers, and tenants"
+}

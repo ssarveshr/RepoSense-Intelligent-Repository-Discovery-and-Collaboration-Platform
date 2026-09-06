@@ -1,0 +1,15 @@
+{
+  "file": "frontend/DBMS frontend/src/components/global.css",
+  "chunk": 1,
+  "summary": "Imports Google Fonts for Roboto and Inter, sets default body margin and line height.",
+  "components": [
+    "@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap')",
+    "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap')",
+    "body"
+  ],
+  "evidence": [
+    "@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap')",
+    "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap')",
+    "body { margin: 0; line-height: normal; }"
+  ]
+}

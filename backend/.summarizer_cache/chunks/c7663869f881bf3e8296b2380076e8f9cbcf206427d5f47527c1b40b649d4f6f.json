@@ -1,0 +1,33 @@
+{
+  "file": "frontend/DBMS frontend/src/components/Events.module.css",
+  "chunk": 1,
+  "summary": "This CSS file styles the layout and components of the Events page in the frontend of a DBMS application. It includes styles for the main container, navigation bar, main content, event filters, events grid, event cards, and individual event components.",
+  "components": [
+    "container",
+    "navbar",
+    "mainContent",
+    "allEventsSection",
+    "sectionHeader",
+    "eventFilters",
+    "filterDropdown",
+    "searchBox",
+    "searchBtn",
+    "eventsGrid",
+    "eventCard",
+    "cardImage",
+    "cardContent",
+    "liveTag",
+    "eventDate",
+    "eventTime",
+    "eventLocation",
+    "eventBrief",
+    "detailsBtn"
+  ],
+  "evidence": [
+    "flexbox and grid layouts",
+    "hover effects",
+    "transition animations",
+    "color and font styling",
+    "responsive design"
+  ]
+}

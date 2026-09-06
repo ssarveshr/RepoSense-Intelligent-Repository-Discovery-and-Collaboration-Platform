@@ -1,0 +1,380 @@
+{
+  "what_it_does": "This project is a real estate platform that uses blockchain technology to record rent transactions and manage disputes. It includes features for owner and tenant management, dispute resolution, and AI-powered contract review.",
+  "project_type": "Real Estate Platform",
+  "confidence": "High",
+  "confidence_reason": "The code evidence shows the presence of features like dispute resolution, AI-powered contract review, and blockchain integration.",
+  "core_features": [
+    "Blockchain-based rent transaction recording",
+    "AI-powered contract review",
+    "Dispute resolution",
+    "Owner and tenant management"
+  ],
+  "core_workflow": [
+    "Users can create and manage properties",
+    "Owners can review and sign lease agreements",
+    "Tenants can dispute rent payments or lease terms"
+  ],
+  "key_components": [
+    "app/owner/(tabs)/disputes.tsx: Dispute management",
+    "app/owner/(tabs)/profile.tsx: Owner profile management",
+    "app/owner/(tabs)/home.tsx: Owner dashboard",
+    "backend/routes/payment.js: Payment processing and blockchain integration"
+  ],
+  "difficulty": "Intermediate",
+  "best_for": "Real estate developers, property managers, and tenants",
+  "project_file_analysis": [
+    {
+      "file": "package.json",
+      "lines": 65,
+      "role": "Node.js Package Manifest & Dependencies",
+      "insights": "Npm scripts: `start, reset-project, android, ios, web, lint`"
+    },
+    {
+      "file": ".env.example",
+      "lines": 3,
+      "role": "Code Module / Script",
+      "insights": "3 lines of code"
+    },
+    {
+      "file": ".gitignore",
+      "lines": 43,
+      "role": "Code Module / Script",
+      "insights": "43 lines of code"
+    },
+    {
+      "file": "backend/server.js",
+      "lines": 22,
+      "role": "Code Module / Script",
+      "insights": "Exports: `PORT, app, cors, express, paymentRoutes`"
+    },
+    {
+      "file": "backend/routes/payment.js",
+      "lines": 138,
+      "role": "API Routing & Request Controller Module",
+      "insights": "2 route handlers"
+    },
+    {
+      "file": "blockchain/artifacts/contracts/TransactionRegistry.sol/TransactionRegistry.dbg.json",
+      "lines": 4,
+      "role": "Data Model & Database Schema Definition",
+      "insights": "4 lines of code"
+    },
+    {
+      "file": "app/owner/dispute-review.tsx",
+      "lines": 456,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "app/review-agreement.tsx",
+      "lines": 419,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "app/credit-score.tsx",
+      "lines": 323,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useEffect`"
+    },
+    {
+      "file": "services/aiService.ts",
+      "lines": 168,
+      "role": "Business Logic & Utility Helper Module",
+      "insights": "Functions: `API_KEY, prompt, chat, resolveDisputeWithEvidence, translateText`"
+    },
+    {
+      "file": ".vscode/extensions.json",
+      "lines": 1,
+      "role": "Code Module / Script",
+      "insights": "1 lines of code"
+    },
+    {
+      "file": ".vscode/settings.json",
+      "lines": 8,
+      "role": "Code Module / Script",
+      "insights": "8 lines of code"
+    },
+    {
+      "file": "app.json",
+      "lines": 45,
+      "role": "Code Module / Script",
+      "insights": "45 lines of code"
+    },
+    {
+      "file": "backend/package.json",
+      "lines": 18,
+      "role": "Node.js Package Manifest & Dependencies",
+      "insights": "Npm scripts: `start, dev`"
+    },
+    {
+      "file": "blockchain/artifacts/build-info/0d5b589ffcc6ec0b3c201c1c11ad4019.json",
+      "lines": 1,
+      "role": "Code Module / Script",
+      "insights": "Exports: `recordTransaction`"
+    },
+    {
+      "file": "blockchain/artifacts/contracts/TransactionRegistry.sol/TransactionRegistry.json",
+      "lines": 146,
+      "role": "Code Module / Script",
+      "insights": "146 lines of code"
+    },
+    {
+      "file": "blockchain/cache/solidity-files-cache.json",
+      "lines": 41,
+      "role": "Code Module / Script",
+      "insights": "41 lines of code"
+    },
+    {
+      "file": "blockchain/package.json",
+      "lines": 13,
+      "role": "Node.js Package Manifest & Dependencies",
+      "insights": "Npm scripts: `compile, deploy`"
+    },
+    {
+      "file": "tsconfig.json",
+      "lines": 17,
+      "role": "Code Module / Script",
+      "insights": "17 lines of code"
+    },
+    {
+      "file": ".env",
+      "lines": 9,
+      "role": "Code Module / Script",
+      "insights": "9 lines of code"
+    },
+    {
+      "file": "README.md",
+      "lines": 1,
+      "role": "Code Module / Script",
+      "insights": "1 lines of code"
+    },
+    {
+      "file": "app/(tabs)/_layout.tsx",
+      "lines": 66,
+      "role": "User Interface Component View",
+      "insights": "66 lines of code"
+    },
+    {
+      "file": "app/(tabs)/disputes.tsx",
+      "lines": 320,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "app/(tabs)/home.tsx",
+      "lines": 530,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "app/(tabs)/profile.tsx",
+      "lines": 353,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "app/(tabs)/transactions.tsx",
+      "lines": 259,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useEffect`"
+    },
+    {
+      "file": "app/_layout.tsx",
+      "lines": 33,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useEffect`"
+    },
+    {
+      "file": "app/ai-processing.tsx",
+      "lines": 318,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "app/chat.tsx",
+      "lines": 383,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "app/dispute-verdict.tsx",
+      "lines": 412,
+      "role": "User Interface Component View",
+      "insights": "412 lines of code"
+    },
+    {
+      "file": "app/index.tsx",
+      "lines": 302,
+      "role": "Frontend Root Component / Application Shell",
+      "insights": "Components rendered: `Image, StatusBar, TouchableOpacity, SafeAreaView, View`"
+    },
+    {
+      "file": "app/join-property.tsx",
+      "lines": 233,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState`"
+    },
+    {
+      "file": "app/login.tsx",
+      "lines": 379,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState`"
+    },
+    {
+      "file": "app/my-agreements.tsx",
+      "lines": 440,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState`"
+    },
+    {
+      "file": "app/notification-settings.tsx",
+      "lines": 220,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState`"
+    },
+    {
+      "file": "app/offline-payment.tsx",
+      "lines": 205,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState`"
+    },
+    {
+      "file": "app/online-payment.tsx",
+      "lines": 323,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState`"
+    },
+    {
+      "file": "app/owner/(tabs)/_layout.tsx",
+      "lines": 57,
+      "role": "User Interface Component View",
+      "insights": "57 lines of code"
+    },
+    {
+      "file": "app/owner/(tabs)/agreements.tsx",
+      "lines": 277,
+      "role": "User Interface Component View",
+      "insights": "277 lines of code"
+    },
+    {
+      "file": "app/owner/(tabs)/home.tsx",
+      "lines": 526,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "app/owner/(tabs)/profile.tsx",
+      "lines": 337,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "app/owner/add-property.tsx",
+      "lines": 479,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "app/owner/agreement-customization.tsx",
+      "lines": 502,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "app/owner/home.tsx",
+      "lines": 492,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "app/owner/manage/(tabs)/_layout.tsx",
+      "lines": 65,
+      "role": "User Interface Component View",
+      "insights": "65 lines of code"
+    },
+    {
+      "file": "app/owner/manage/(tabs)/agreement.tsx",
+      "lines": 306,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState`"
+    },
+    {
+      "file": "app/owner/manage/(tabs)/disputes.tsx",
+      "lines": 234,
+      "role": "User Interface Component View",
+      "insights": "React state hooks: `useState, useEffect`"
+    },
+    {
+      "file": "app/owner/manage/(tabs)/finance.tsx",
+      "lines": 248,
+      "role": "User Interface Component View",
+      "insights": "248 lines of code"
+    },
+    {
+      "file": "app/owner/manage/(tabs)/home.tsx",
+      "lines": 423,
+      "role": "User Interface Component View",
+      "insights": "423 lines of code"
+    },
+    {
+      "file": "app/owner/property-details.tsx",
+      "lines": 478,
+      "role": "User Interface Component View",
+      "insights": "478 lines of code"
+    }
+  ],
+  "technical_details": {
+    "tech_stack": [
+      "React",
+      "Node.js",
+      "Express.js"
+    ],
+    "dependencies": [
+      "@expo/vector-icons: ^15.0.3",
+      "@google/generative-ai: ^0.24.1",
+      "@react-native-async-storage/async-storage: 2.2.0",
+      "@react-navigation/bottom-tabs: ^7.4.0",
+      "@react-navigation/elements: ^2.6.3",
+      "@react-navigation/native: ^7.2.2",
+      "@react-navigation/native-stack: ^7.14.10",
+      "@supabase/supabase-js: ^2.101.1",
+      "axios: ^1.14.0",
+      "base64-arraybuffer: ^1.0.2",
+      "expo: ~54.0.33",
+      "expo-constants: ~18.0.13"
+    ],
+    "api_endpoints": [
+      {
+        "method": "GET",
+        "path": "/health",
+        "source_file": "backend/server.js"
+      },
+      {
+        "method": "POST",
+        "path": "/create-order",
+        "source_file": "backend/routes/payment.js"
+      },
+      {
+        "method": "POST",
+        "path": "/verify-payment",
+        "source_file": "backend/routes/payment.js"
+      }
+    ],
+    "env_vars": [
+      "PORT",
+      "SEPOLIA_RPC_URL",
+      "SUPABASE_URL",
+      "APP_WALLET_PRIVATE_KEY",
+      "SUPABASE_SERVICE_ROLE_KEY",
+      "RAZORPAY_KEY_ID",
+      "RAZORPAY_KEY_SECRET",
+      "EXPO_PUBLIC_GEMINI_API_KEY",
+      "APP_SMART_CONTRACT_ADDRESS"
+    ],
+    "architecture": "Full-stack decoupled architecture featuring dedicated frontend and backend services. Inspected 50 key application source code files to verify structure."
+  },
+  "how_to_run": "1. Run `npm install` to install dependencies.\n2. Run `npm start` to run the application.",
+  "contributing_guide": "Contribution workflow cannot be inferred reliably from source code alone.",
+  "license": "Not specified"
+}

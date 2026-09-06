@@ -1,0 +1,17 @@
+{
+  "file": "backend/serverRoutes/Deleteaccount.js",
+  "chunk": 1,
+  "summary": "This code defines a route to delete a user account using JWT authentication.",
+  "components": [
+    "DeleteAccount",
+    "User",
+    "passport.authenticate"
+  ],
+  "evidence": [
+    "The route is defined as '/delectacc' and uses the DELETE method.",
+    "It requires JWT authentication with 'session: false' to access the route.",
+    "The route deletes the user account based on the provided email.",
+    "It logs a success message and returns a JSON response with a success message.",
+    "If an error occurs, it logs the error and returns a JSON response with the error."
+  ]
+}
