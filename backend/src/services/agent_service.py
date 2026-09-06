@@ -10,9 +10,54 @@ import re
 from src.integrations.github import GitHubAnalyzer
 
 class CodeAgentService:
-    def __init__(self, ollama_url="http://localhost:11434"):
-        self.ollama_url = ollama_url
-        self.model = "llama3:8b"
+    def __init__(self, ollama_url=None):
+        self.ollama_url = ollama_url or os.getenv("OLLAMA_URL", "http://localhost:11434")
+        self.timeout = int(os.getenv("OLLAMA_TIMEOUT", "120"))
+        self.model = os.getenv("OLLAMA_MODEL") or self._detect_ollama_model()
+
+    def _detect_ollama_model(self) -> str:
+        """Dynamically fetches installed models from local Ollama instance."""
+        try:
+            res = requests.get(f"{self.ollama_url}/api/tags", timeout=5)
+            if res.status_code == 200:
+                models = res.json().get("models", [])
+                if models:
+                    for m in models:
+                        name = m.get("name", "")
+                        if any(k in name.lower() for k in ["coder", "llama", "qwen", "deepseek", "code"]):
+                            print(f"[INFO] CodeAgentService detected Ollama model: {name}")
+                            return name
+                    selected = models[0].get("name", "qwen2.5-coder:7b")
+                    print(f"[INFO] CodeAgentService selected default Ollama model: {selected}")
+                    return selected
+        except Exception as e:
+            print(f"[WARN] Could not query Ollama /api/tags: {e}")
+        return "qwen2.5-coder:7b"
+
+    def _parse_json_response(self, text: str) -> dict:
+        """Safely parses JSON output from LLM responses, stripping code fences if present."""
+        if not text:
+            return {}
+        text_str = text.strip()
+        if text_str.startswith("```"):
+            lines = text_str.split("\n")
+            if lines[0].startswith("```"):
+                lines = lines[1:]
+            if lines and lines[-1].startswith("```"):
+                lines = lines[:-1]
+            text_str = "\n".join(lines).strip()
+        
+        try:
+            return json.loads(text_str)
+        except Exception:
+            start = text_str.find('{')
+            end = text_str.rfind('}')
+            if start != -1 and end != -1 and end > start:
+                try:
+                    return json.loads(text_str[start:end+1])
+                except Exception:
+                    pass
+        return {}
 
     def run_code(self, code: str, language: str = "python") -> dict:
         """
@@ -143,28 +188,32 @@ class CodeAgentService:
 
     def modify_code(self, code: str, prompt: str, action: str = "refactor", language: str = "python") -> dict:
         """
-        Processes code modification requests (refactor, fix, optimize, custom prompt).
+        Processes code modification requests (refactor, fix, optimize, custom prompt) using Ollama model.
         Generates modified code, line diff, explanation, and suggestions.
         """
-        # Try Ollama LLM if available
+        active_model = self.model or self._detect_ollama_model()
+
+        # Try Ollama LLM
         try:
-            system_prompt = f"""You are RepoSense AI Coding Agent. Your task is to optimize, refactor, or fix the EXACT code provided by the user.
+            system_prompt = f"""You are RepoSense AI Code Optimization Agent. Your task is to generate an OPTIMIZED and IMPROVED version of the EXACT code snippet provided by the user.
 
 CRITICAL INSTRUCTIONS:
-1. Preserve the user's specific problem intent, function names, and variable names (e.g. if the user gives Two Sum, optimize Two Sum; if the user gives Longest Consecutive, optimize Longest Consecutive).
-2. Do NOT change the user's code into a completely different problem domain (do NOT substitute Two Sum with Find Duplicates or Array Max).
-3. If requested to optimize, reduce time/space complexity (e.g. O(N^2) -> O(N)) using optimal data structures (Hash Set, Hash Map, Two Pointers) for the user's specific code.
-4. If the code is already optimal, clean up formatting and add type annotations/docstrings.
+1. Preserve the user's specific problem intent, function names, and variable names (e.g. if Two Sum, optimize Two Sum; if Longest Consecutive, optimize Longest Consecutive).
+2. If requested to optimize (action="optimize"): Reduce time complexity (e.g. O(N^2) -> O(N) or O(1)) and space complexity using optimal data structures (Hash Set, Hash Map, Two Pointers, memoization).
+3. If requested to fix or refactor: Clean up structure, fix potential bugs, and add exception handling.
+4. Return ONLY valid, parsable JSON matching this exact structure with NO markdown formatting outside the JSON:
 
-Return ONLY valid JSON in this exact structure:
 {{
   "modified_code": "the full updated optimized code string",
-  "explanation": "concise explanation of changes made to the user's code",
-  "suggestions": ["list of improvements or next steps"]
+  "explanation": "detailed breakdown of optimizations and complexity improvements made",
+  "suggestions": [
+    "actionable improvement recommendation 1",
+    "actionable improvement recommendation 2"
+  ]
 }}
 
 Request Action: {action}
-User Instructions: {prompt}
+User Instructions: {prompt or 'Optimize code for time and space efficiency'}
 Target Language: {language}
 
 Original Code:
@@ -172,30 +221,41 @@ Original Code:
 {code}
 ```
 """
+            print(f"[INFO] Invoking Ollama model '{active_model}' for code optimization ({action})...")
             response = requests.post(
                 f"{self.ollama_url}/api/generate",
                 json={
-                    "model": self.model,
+                    "model": active_model,
                     "prompt": system_prompt,
                     "stream": False,
                     "format": "json"
                 },
-                timeout=4
+                timeout=self.timeout
             )
             if response.status_code == 200:
                 result = response.json()
-                data = json.loads(result.get('response', '{}'))
-                if "modified_code" in data:
-                    diff = self._generate_diff(code, data["modified_code"])
+                raw_response = result.get('response', '')
+                data = self._parse_json_response(raw_response)
+                
+                modified_code = data.get("modified_code")
+                if modified_code and modified_code.strip():
+                    diff = self._generate_diff(code, modified_code)
+                    explanation = data.get("explanation") or f"Ollama ({active_model}) generated an optimized version of the code snippet."
+                    suggestions = data.get("suggestions") or ["Run execution tests to verify output."]
                     return {
                         "status": "success",
-                        "modified_code": data["modified_code"],
+                        "modified_code": modified_code,
                         "diff": diff,
-                        "explanation": data.get("explanation", "AI Agent applied requested code modifications."),
-                        "suggestions": data.get("suggestions", ["Run tests to verify functionality"])
+                        "explanation": explanation,
+                        "suggestions": suggestions,
+                        "model_used": active_model
                     }
-        except Exception:
-            pass
+                else:
+                    print(f"[WARN] Ollama response lacked 'modified_code'. Snippet: {raw_response[:200]}")
+            else:
+                print(f"[ERROR] Ollama API HTTP {response.status_code}: {response.text[:200]}")
+        except Exception as e:
+            print(f"[ERROR] Ollama model invocation failed: {type(e).__name__} - {str(e)}")
 
         # Smart rule-based Code Transformation fallback
         return self._intelligent_code_transformation(code, prompt, action, language)
@@ -456,6 +516,8 @@ if __name__ == "__main__":
                 "recommendations": []
             }
 
+        active_model = self.model or self._detect_ollama_model()
+
         # 1. Attempt LLM analysis if available
         try:
             prompt = f"""You are RepoSense AI Code Inspector. Analyze the following {language} code snippet in detail.
@@ -474,19 +536,21 @@ Source Code:
 {code}
 ```
 """
+            print(f"[INFO] Invoking Ollama model '{active_model}' for code explanation...")
             response = requests.post(
                 f"{self.ollama_url}/api/generate",
                 json={
-                    "model": self.model,
+                    "model": active_model,
                     "prompt": prompt,
                     "stream": False,
                     "format": "json"
                 },
-                timeout=4
+                timeout=self.timeout
             )
             if response.status_code == 200:
                 result = response.json()
-                data = json.loads(result.get('response', '{}'))
+                raw_resp = result.get('response', '')
+                data = self._parse_json_response(raw_resp)
                 if "overview" in data and len(data["overview"]) > 10:
                     return {
                         "status": "success",
@@ -494,10 +558,11 @@ Source Code:
                         "overview": data["overview"],
                         "complexity": data.get("complexity", "O(N)"),
                         "logic_steps": data.get("logic_steps", []),
-                        "recommendations": data.get("recommendations", [])
+                        "recommendations": data.get("recommendations", []),
+                        "model_used": active_model
                     }
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[WARN] Ollama explain_code failed: {type(e).__name__} - {str(e)}")
 
         # 2. Deep Intelligent Pattern & Code Logic Analyzer Fallback
         return self._deep_analyze_code_logic(code, language)
