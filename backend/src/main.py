@@ -1,25 +1,76 @@
+from contextlib import asynccontextmanager
+import asyncio
+
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+
+from src.api.deps.rate_limit import limiter
+from src.api.routes.collaboration import router as collaboration_router
+from src.api.routes.github import router as github_router
+from src.api.routes.meetings import router as meetings_router
+from src.api.routes.profile import router as profile_router
+from src.config.settings import settings
+from src.db import init_db, async_session_factory
+from src.services.meeting_service import MeetingService
 from src.services.search_service import engine
 from src.services.summarizer_service import RepoSummarizer
 from src.services.agent_service import agent_service
 from src.integrations.github import GitHubAnalyzer
 
+
+async def _empty_meeting_cleanup_loop() -> None:
+    while True:
+        await asyncio.sleep(15)
+        try:
+            async with async_session_factory() as session:
+                service = MeetingService(session)
+                await service.cleanup_empty_meetings()
+                await session.commit()
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            # Best-effort background cleanup; do not crash the API process.
+            pass
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    cleanup_task = asyncio.create_task(_empty_meeting_cleanup_loop())
+    try:
+        yield
+    finally:
+        cleanup_task.cancel()
+        try:
+            await cleanup_task
+        except asyncio.CancelledError:
+            pass
+
+
 app = FastAPI(
     title="RepoSense AI API",
-    description="Intelligent Repository Discovery & Semantic Search API"
+    description="Intelligent Repository Discovery & Semantic Search API",
+    lifespan=lifespan,
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Enable CORS (Cross-Origin Resource Sharing)
-# This allows your React frontend (running on port 5173/3000) to talk to this API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
-    allow_credentials=True,
+    allow_origins=settings.cors_origins,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(meetings_router)
+app.include_router(collaboration_router)
+app.include_router(github_router)
+app.include_router(profile_router)
 
 @app.get("/")
 async def health_check():
@@ -187,94 +238,7 @@ async def scan_repository_bugs(request: RepoScanRequest):
     """
     return agent_service.scan_repo_bugs(request.github_url)
 
-# --- Zoom Meeting & Collaborator Email Invite Endpoints ---
-from typing import List, Optional
-from src.services.zoom_service import zoom_service
 
-class ZoomCreateRequest(BaseModel):
-    host_name: str = "Shashidhar"
-    host_email: str = "5656shashidhar@gmail.com"
-    topic: Optional[str] = None
-    repo_name: str = "RepoSense Open Source Project"
-    collaborators: Optional[List[dict]] = None
-    custom_zoom_url: Optional[str] = None
-
-class ZoomInviteRequest(BaseModel):
-    meeting_id: str
-    host_name: str = "Shashidhar"
-    host_email: str = "5656shashidhar@gmail.com"
-    repo_name: str = "RepoSense Open Source Project"
-    collaborators: List[dict]
-    custom_message: Optional[str] = None
-
-@app.post("/api/zoom/create")
-async def create_zoom_meeting(request: ZoomCreateRequest):
-    """
-    Creates a hostable Zoom meeting session bound to the user's host email,
-    generating valid credentials and embedded viewport URLs.
-    """
-    meeting_data = zoom_service.create_meeting(
-        host_name=request.host_name,
-        host_email=request.host_email,
-        topic=request.topic,
-        repo_name=request.repo_name,
-        collaborators=request.collaborators,
-        custom_zoom_url=request.custom_zoom_url
-    )
-
-    return {
-        "status": "success",
-        "message": f"Zoom meeting created successfully for host {request.host_email}",
-        "meeting": meeting_data
-    }
-
-@app.post("/api/zoom/invite")
-async def invite_collaborators_email(request: ZoomInviteRequest):
-    """
-    Dispatches Zoom meeting invitations to all project collaborator email addresses.
-    """
-    return zoom_service.send_invitations(
-        meeting_id=request.meeting_id,
-        host_email=request.host_email,
-        host_name=request.host_name,
-        repo_name=request.repo_name,
-        collaborators=request.collaborators,
-        custom_message=request.custom_message
-    )
-
-@app.get("/api/zoom/active")
-async def list_active_zoom_meetings():
-    """Returns all currently active hosted Zoom meetings."""
-    return {
-        "count": len(zoom_service.list_active_meetings()),
-        "meetings": zoom_service.list_active_meetings()
-    }
-
-class ZoomSmtpConfigRequest(BaseModel):
-    smtp_user: str
-    smtp_password: str
-    smtp_host: str = "smtp.gmail.com"
-    smtp_port: int = 587
-
-@app.post("/api/zoom/config-smtp")
-async def configure_zoom_smtp(request: ZoomSmtpConfigRequest):
-    """
-    Configures or updates backend SMTP settings for automatic collaborator email invitations.
-    """
-    return zoom_service.update_smtp_config(
-        smtp_user=request.smtp_user,
-        smtp_password=request.smtp_password,
-        smtp_host=request.smtp_host,
-        smtp_port=request.smtp_port
-    )
-
-@app.get("/api/zoom/meeting/{meeting_id}")
-async def get_zoom_meeting_details(meeting_id: str):
-    """Fetches details for a specific Zoom meeting ID."""
-    meeting = zoom_service.get_meeting(meeting_id)
-    if not meeting:
-        return {"status": "error", "message": "Meeting not found"}
-    return {"status": "success", "meeting": meeting}
 
 
 if __name__ == "__main__":
