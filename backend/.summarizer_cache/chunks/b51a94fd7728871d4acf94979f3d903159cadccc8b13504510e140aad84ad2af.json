@@ -1,21 +1,19 @@
 {
   "file": "backend/serverRoutes/Public/upload.js",
   "chunk": 1,
-  "summary": "This code defines an Express router for handling file uploads, specifically for product images. It uses Multer for file handling and ensures that only image files are uploaded. The uploaded images are stored in a directory relative to the frontend and the full URL path to the image is returned to the client.",
+  "summary": "This chunk defines a route for uploading product images using Multer middleware and serves the uploaded images to the frontend.",
   "components": [
     "uploadrouter",
     "multer",
     "storage",
     "checkFileType",
-    "upload",
-    "post"
+    "upload"
   ],
   "evidence": [
-    "uploadrouter.post('/', upload.single('image'), ...)",
-    "storage.destination",
-    "storage.filename",
-    "checkFileType",
-    "upload.single('image')",
-    "res.json({ url: imageUrl })"
+    "Defines a router for handling image uploads",
+    "Uses Multer middleware for handling file uploads",
+    "Configures storage for uploaded images to a specific directory",
+    "Includes a check function to ensure uploaded files are images",
+    "Serves uploaded images to the frontend using a relative URL"
   ]
 }

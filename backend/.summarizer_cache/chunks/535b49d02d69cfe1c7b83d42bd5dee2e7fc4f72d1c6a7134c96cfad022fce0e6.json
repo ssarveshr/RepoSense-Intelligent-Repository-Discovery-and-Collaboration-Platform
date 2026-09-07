@@ -1,18 +1,12 @@
 {
   "file": "frontend/DBMS frontend/index.html",
   "chunk": 1,
-  "summary": "This is the HTML file for the frontend of the Events Management application. It includes the necessary meta tags, links to stylesheets and fonts, and a script tag to load the main application script.",
+  "summary": "This HTML file is the entry point for the frontend of the Events Management application. It sets up the basic structure of the page, including the document type, language, and metadata, and links to necessary stylesheets and scripts.",
   "components": [
-    "<head>",
-    "<body>",
-    "<div id='root'>",
+    "<div id='root'></div>",
     "<script type='module' src='/src/main.jsx'></script>"
   ],
   "evidence": [
-    "<meta charset='UTF-8' />",
-    "<link rel='stylesheet' href='/src/components/FigmaComponent.css'>",
-    "<link href='https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap' rel='stylesheet'>",
-    "<link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap' rel='stylesheet'>",
-    "<script type='module' src='/src/main.jsx'></script>"
+    "The <head> section contains meta tags for character set, favicon, viewport, and title, as well as links to CSS files and Google Fonts. The <body> section contains a <div> with the id 'root' and a script tag that references the main JavaScript file."
   ]
 }

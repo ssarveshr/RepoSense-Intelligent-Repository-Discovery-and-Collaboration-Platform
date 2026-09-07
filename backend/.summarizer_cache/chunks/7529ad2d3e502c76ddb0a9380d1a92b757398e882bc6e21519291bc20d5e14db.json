@@ -4,16 +4,12 @@
   "summary": "This component fetches user authentication and displays the user's dashboard.",
   "components": [
     "DashBoard",
-    "UserAuthentication",
-    "axios",
-    "useEffect",
-    "useState"
+    "UserAuthentication"
   ],
   "evidence": [
-    "axios.get",
-    "sessionStorage.getItem",
-    "setisview",
-    "setUser",
-    "console.log"
+    "Imports axios and React hooks",
+    "Uses useEffect to fetch user data from the server",
+    "Sets user state based on the response",
+    "Displays user's name in the dashboard"
   ]
 }

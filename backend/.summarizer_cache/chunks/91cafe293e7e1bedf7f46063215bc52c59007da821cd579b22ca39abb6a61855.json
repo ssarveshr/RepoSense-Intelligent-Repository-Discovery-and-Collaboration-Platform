@@ -1,17 +1,16 @@
 {
   "file": "backend/serverRoutes/Public/PublicRouter.js",
   "chunk": 1,
-  "summary": "This code defines a public router for the backend server, providing endpoints to fetch all events and a specific event by ID.",
+  "summary": "This chunk defines routes for public access to events, including fetching all events and a specific event by ID.",
   "components": [
-    "Public Router",
-    "Event Model",
-    "GET /events",
-    "GET /events/:id"
+    "Public",
+    "Event"
   ],
   "evidence": [
-    "Event.find()",
-    "Event.findById()",
-    "res.status(200).json()",
-    "res.status(404).json()"
+    "The code defines two routes: one for fetching all events and another for fetching a specific event by ID.",
+    "It uses the Express framework to create routes and the Event model to interact with the database.",
+    "The routes handle GET requests and return JSON responses.",
+    "The code checks if an event is ongoing and includes it in the response if it is.",
+    "The code logs errors and returns appropriate HTTP status codes."
   ]
 }

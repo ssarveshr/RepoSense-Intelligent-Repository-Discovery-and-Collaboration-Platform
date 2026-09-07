@@ -1,25 +1,19 @@
 {
   "file": "backend/serverRoutes/facultyrouter.js",
   "chunk": 1,
-  "summary": "This code defines routes for a faculty user to manage events, including fetching unapproved events, approving events, and denying events.",
+  "summary": "This file defines routes for managing events for faculty members, including fetching unapproved events, approving events, and denying events.",
   "components": [
     "Facultyrouter",
-    "get",
-    "put",
-    "delete",
-    "passport.authenticate",
-    "checkRole",
     "Event",
     "User"
   ],
   "evidence": [
-    "Facultyrouter.get('/', ...)",
-    "Facultyrouter.put('/approve-event', ...)",
-    "Facultyrouter.delete('/deny-event', ...)",
-    "passport.authenticate('jwt', { session: false })",
-    "checkRole('faculty')",
-    "Event.find({ facultyName: Faculty_name })",
-    "Event.findOne({ organiserName, title, facultyName })",
-    "Event.findOneAndDelete({ organiserName, title, facultyName })"
+    "Facultyrouter handles GET, PUT, and DELETE requests for managing events.",
+    "It uses passport for authentication and checkRole middleware to ensure only faculty members can access these routes.",
+    "The code retrieves faculty information from the User model and uses it to find events for that faculty.",
+    "It checks if events are unapproved and returns them. If all events are approved, it returns a message.",
+    "The PUT route updates the is_ongoing field of an event to 'true' to approve it.",
+    "The DELETE route deletes an event from the database if it exists.",
+    "Error handling is implemented for all routes to return appropriate status codes and messages."
   ]
 }

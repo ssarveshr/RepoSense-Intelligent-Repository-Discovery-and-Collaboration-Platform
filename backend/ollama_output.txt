@@ -1,25 +1,29 @@
 {
-  "what_it_does": "This project is a real estate platform that uses blockchain technology to record rent transactions and manage disputes. It includes features for owner and tenant management, dispute resolution, and AI-powered contract review.",
-  "project_type": "Real Estate Platform",
+  "what_it_does": "This software is a web application that provides a platform for managing events, including student, faculty, and organizer functionalities. It uses Node.js, Express.js, and MongoDB for backend development, React for frontend development, and JWT for authentication.",
+  "project_type": "Event Management System",
   "confidence": "High",
-  "confidence_reason": "The code evidence shows the presence of features like dispute resolution, AI-powered contract review, and blockchain integration.",
+  "confidence_reason": "The presence of backend routes for user management, event creation, and deletion, as well as frontend components for user authentication and event management, strongly indicates the project type.",
   "core_features": [
-    "Blockchain-based rent transaction recording",
-    "AI-powered contract review",
-    "Dispute resolution",
-    "Owner and tenant management"
+    "User Authentication",
+    "Event Management",
+    "Role-Based Access Control",
+    "File Uploads",
+    "JWT Token Generation"
   ],
   "core_workflow": [
-    "Users can create and manage properties",
-    "Owners can review and sign lease agreements",
-    "Tenants can dispute rent payments or lease terms"
+    "User Registration and Login",
+    "Event Creation and Management",
+    "File Upload and Download"
   ],
   "key_components": [
-    "app/owner/(tabs)/disputes.tsx: Dispute management",
-    "app/owner/(tabs)/profile.tsx: Owner profile management",
-    "app/owner/(tabs)/home.tsx: Owner dashboard",
-    "backend/routes/payment.js: Payment processing and blockchain integration"
+    "backend/server.js: Sets up the Express server",
+    "backend/models/User.js: Defines the User model",
+    "backend/models/events.js: Defines the Event model",
+    "backend/serverRoutes/commonlogin.js: Handles user login",
+    "backend/serverRoutes/commonsignup.js: Handles user sign-up",
+    "frontend/DBMS frontend/src/App.jsx: Main application component",
+    "frontend/DBMS frontend/src/components/Events.jsx: Displays a list of events"
   ],
   "difficulty": "Intermediate",
-  "best_for": "Real estate developers, property managers, and tenants"
+  "best_for": "Developers interested in building a web application with Node.js, Express.js, and MongoDB, as well as those looking to implement user authentication and event management functionalities."
 }
