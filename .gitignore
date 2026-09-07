@@ -36,7 +36,7 @@ commits.json
 # --- AI Models ---
 # Ignore downloaded models if stored locally
 .cache/
-models/
+
 
 # --- Environment & Secrets ---
 .env
