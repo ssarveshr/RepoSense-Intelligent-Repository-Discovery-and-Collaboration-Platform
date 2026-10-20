@@ -2,7 +2,7 @@
 
 RepoSense is an intelligent repository discovery and collaboration platform that leverages AI and semantic search to help developers find, understand, and explore open-source projects by meaning rather than keywords.
 
----
+-----
 
 ## Badges
 
