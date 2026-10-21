@@ -237,6 +237,7 @@ async def scan_repository_bugs(request: RepoScanRequest):
     """
     return agent_service.scan_repo_bugs(request.github_url)
 
+
 if __name__ == "__main__":
     import uvicorn
     print("RepoSense API is starting on http://localhost:8000")

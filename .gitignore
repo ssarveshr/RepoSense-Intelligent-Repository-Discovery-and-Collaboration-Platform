@@ -61,7 +61,14 @@ commits.json
 # --- AI Models ---
 # Ignore downloaded models if stored locally
 .cache/
-models/
+/models/
+
+# --- Generated / local-only artifacts ---
+node_modules/
+backend/.summarizer_cache/
+.summarizer_cache/
+backend/ollama_output.txt
+backend/summary_output.json
 
 # --- IDEs & OS ---
 .DS_Store

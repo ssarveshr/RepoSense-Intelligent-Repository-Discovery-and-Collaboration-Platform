@@ -10,6 +10,7 @@ import MeetingRoom from './pages/MeetingRoom';
 import MeetJoinPage from './pages/MeetJoinPage';
 import MeetingsHub from './pages/MeetingsHub';
 import AIAgentStudio from './pages/AIAgentStudio';
+import CollaborationStudio from './pages/CollaborationStudio';
 import SignInPage from './pages/SignInPage';
 import SignUpPage from './pages/SignUpPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -71,6 +72,7 @@ function MainAppShell() {
 
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/meetings" element={<ProtectedRoute><MeetingsHub /></ProtectedRoute>} />
+            <Route path="/collaboration" element={<ProtectedRoute><CollaborationStudio /></ProtectedRoute>} />
             <Route path="/github-summarizer" element={<ProtectedRoute><GitHubSummarizer /></ProtectedRoute>} />
             <Route path="/ai-agent" element={<ProtectedRoute><AIAgentStudio /></ProtectedRoute>} />
             <Route path="/repo/:id" element={<ProtectedRoute><RepositoryDetails /></ProtectedRoute>} />
@@ -89,6 +91,7 @@ export default function App() {
     <Routes>
       <Route element={<StandaloneMeetLayout />}>
         <Route path="/meet/join/:code" element={<MeetJoinPage />} />
+        <Route path="/meet/:id" element={<MeetingRoom />} />
         <Route path="/meetings/:id" element={<MeetingRoom />} />
       </Route>
       <Route path="*" element={<MainAppShell />} />

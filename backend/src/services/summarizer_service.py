@@ -1,82 +1,499 @@
 import requests
 import json
 import re
+import os
+import hashlib
 
 class RepoSummarizer:
-    def __init__(self, ollama_url="http://localhost:11434"):
-        self.ollama_url = ollama_url
-        self.model = "llama3:8b"
-    
+    def __init__(
+        self,
+        ollama_url=None,
+        output_file="summary_output.json",
+        ollama_raw_output_file="ollama_output.txt",
+        cache_dir=".summarizer_cache",
+    ):
+        self.ollama_url = ollama_url or os.getenv("OLLAMA_URL", "http://127.0.0.1:11434")
+        self.model = os.getenv("OLLAMA_MODEL", "qwen2.5-coder:3b")
+        self.output_file = output_file
+        self.ollama_raw_output_file = ollama_raw_output_file
+
+        # Chunk-level cache: unchanged code chunks are not sent to Ollama again.
+        # Final-summary cache: an unchanged repository can skip the final LLM call too.
+        self.cache_dir = cache_dir
+        self.chunk_cache_dir = os.path.join(cache_dir, "chunks")
+        self.final_cache_dir = os.path.join(cache_dir, "final")
+        os.makedirs(self.chunk_cache_dir, exist_ok=True)
+        os.makedirs(self.final_cache_dir, exist_ok=True)
+
+        # Keep individual chunk prompts comfortably below the 8K context used below.
+        self.chunk_size = 4500
+        self.max_chunk_chars_for_final = 12000
+        # Files that do not contribute significantly to understanding
+        # application behavior or architecture.
+        self.ignored_extensions = {
+            # Styling
+            ".css",
+            ".scss",
+            ".sass",
+            ".less",
+            ".styl",
+            ".stylus",
+            ".pcss",
+            ".postcss",
+
+            # Images / binary assets
+            ".png",
+            ".jpg",
+            ".jpeg",
+            ".gif",
+            ".webp",
+            ".ico",
+            ".bmp",
+            ".tif",
+            ".tiff",
+            ".svg",
+
+            # Fonts
+            ".woff",
+            ".woff2",
+            ".ttf",
+            ".otf",
+            ".eot",
+
+            # Source maps / logs / temporary files
+            ".map",
+            ".log",
+            ".tmp",
+            ".bak",
+            ".swp",
+        }
+
+        self.ignored_directories = {
+            # Styling
+            "css",
+            "scss",
+            "sass",
+            "less",
+            "styles",
+            "style",
+
+            # Dependencies / generated dependencies
+            "node_modules",
+
+            # Python cache
+            "__pycache__",
+
+            # Build / generated output
+            "dist",
+            "build",
+            "out",
+            ".next",
+
+            # Test / coverage output
+            "coverage",
+            "htmlcov",
+
+            # IDE metadata
+            ".idea",
+            ".vscode",
+
+            # Git internals
+            ".git",
+        }
+
+        self.ignored_filenames = {
+            "package-lock.json",
+            "yarn.lock",
+            "pnpm-lock.yaml",
+            "pnpm-lock.yml",
+        }
+
+    def _filter_unnecessary_files(self, source_files):
+        """Remove styling, assets, generated files and other low-value files."""
+        filtered = {}
+
+        for path, code in source_files.items():
+            normalized = str(path).replace("\\", "/")
+            parts = [part.lower() for part in normalized.split("/") if part]
+
+            if not parts:
+                continue
+
+            filename = parts[-1]
+            extension = os.path.splitext(filename)[1].lower()
+
+            # Ignore unnecessary file types
+            if extension in self.ignored_extensions:
+                continue
+
+            # Ignore known generated/dependency files
+            if filename in self.ignored_filenames:
+                continue
+
+            # Ignore files inside unnecessary directories
+            if any(directory in self.ignored_directories for directory in parts[:-1]):
+                continue
+
+            # Ignore minified files
+            if filename.endswith(".min.js") or filename.endswith(".min.css"):
+                continue
+
+            filtered[path] = code
+
+        return filtered
     def generate_summary(self, analysis_data):
         """
         Generates a structured summary of the repository.
-        Tries local Ollama LLM if available; otherwise uses deep repo content analysis.
-        """
-        # Call Ollama API if connected
-        try:
-            prompt = self._build_prompt(analysis_data)
-            response = requests.post(
-                f"{self.ollama_url}/api/generate",
-                json={
-                    "model": self.model,
-                    "prompt": prompt,
-                    "stream": False,
-                    "format": "json"
-                },
-                timeout=5
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                response_text = result.get('response', '')
-                try:
-                    return json.loads(response_text)
-                except json.JSONDecodeError:
-                    return self._extract_json(response_text)
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
-            print("[INFO] Ollama LLM unavailable. Performing deep repository content analysis.")
-import requests
-import json
-import re
 
-class RepoSummarizer:
-    def __init__(self, ollama_url="http://localhost:11434"):
-        self.ollama_url = ollama_url
-        self.model = "llama3:8b"
-    
-    def generate_summary(self, analysis_data):
+        Large repositories are processed in two stages:
+        1. Split source code into bounded chunks and summarize each chunk.
+        2. Send only the compact chunk summaries to the final model.
+
+        Chunk summaries are cached by content hash, so unchanged chunks are
+        not reprocessed on later runs.
         """
-        Generates a structured summary of the repository.
-        Tries local Ollama LLM if available; otherwise uses deep repo content analysis.
-        """
-        # Call Ollama API if connected
         try:
-            prompt = self._build_prompt(analysis_data)
-            response = requests.post(
-                f"{self.ollama_url}/api/generate",
-                json={
-                    "model": self.model,
-                    "prompt": prompt,
-                    "stream": False,
-                    "format": "json"
-                },
-                timeout=5
+            # Fast path: the complete repository has not changed.
+            final_cache_key = self._make_final_cache_key(analysis_data)
+            cached_final = self._load_final_cache(final_cache_key)
+            if cached_final is not None:
+                print("[CACHE] Final repository summary hit.")
+                self.save_output(cached_final)
+                return cached_final
+
+            source_files = self._filter_unnecessary_files(
+                analysis_data.get("key_source_files", {})
             )
-            
-            if response.status_code == 200:
-                result = response.json()
-                response_text = result.get('response', '')
+            analysis_data = dict(analysis_data)
+            analysis_data["key_source_files"] = source_files
+            # Keep the original single-call path for small repositories.
+            # This avoids adding extra LLM calls when chunking is unnecessary.
+            total_source_chars = sum(len(code or "") for code in source_files.values())
+            if total_source_chars <= self.chunk_size:
+                prompt = self._build_prompt(analysis_data)
+                response_text = self._ollama_generate(prompt, num_ctx=8192, num_predict=2048)
+            else:
+                print(
+                    f"[CHUNK] Repository source is {total_source_chars:,} chars; "
+                    f"processing in chunks of {self.chunk_size:,} chars."
+                )
+                chunk_summaries = self._summarize_source_chunks(source_files)
+
+                # Final prompt contains compact summaries instead of the full source.
+                prompt = self._build_chunk_synthesis_prompt(analysis_data, chunk_summaries)
+                response_text = self._ollama_generate(prompt, num_ctx=8192, num_predict=2048)
+
+            if response_text:
+                # Preserve the COMPLETE final Ollama response exactly as returned.
+                self.save_ollama_output(response_text)
+
                 try:
-                    return json.loads(response_text)
+                    parsed_llm = json.loads(response_text)
                 except json.JSONDecodeError:
-                    return self._extract_json(response_text)
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout):
-            print("[INFO] Ollama LLM unavailable. Performing deep repository content analysis.")
+                    parsed_llm = self._extract_json(response_text)
+
+                if (
+                    isinstance(parsed_llm, dict)
+                    and parsed_llm.get("what_it_does")
+                    and parsed_llm.get("what_it_does") != "Analysis complete."
+                ):
+                    summary = self._merge_deterministic_analysis(parsed_llm, analysis_data)
+                    self._save_final_cache(final_cache_key, summary)
+                    self.save_output(summary)
+                    return summary
+
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+            print(
+                f"[INFO] Ollama LLM unavailable ({type(e).__name__}). "
+                "Performing deep repository content analysis."
+            )
         except Exception as e:
             print(f"[WARN] Error invoking Ollama: {str(e)}. Falling back to content analysis.")
 
-        # Perform intelligent repo content analysis based on actual codebase contents
-        return self._generate_intelligent_summary(analysis_data)
+        summary = self._generate_intelligent_summary(analysis_data)
+        self.save_output(summary)
+        return summary
+
+    def _ollama_generate(self, prompt, num_ctx=8192, num_predict=2048):
+        """Send one prompt to Ollama and return its raw response text."""
+        response = requests.post(
+            f"{self.ollama_url}/api/generate",
+            json={
+                "model": self.model,
+                "prompt": prompt,
+                "stream": False,
+                "format": "json",
+                "options": {
+                    "temperature": 0.1,
+                    "num_ctx": num_ctx,
+                    "num_predict": num_predict,
+                },
+            },
+            timeout=1000,
+        )
+
+        if response.status_code != 200:
+            raise RuntimeError(f"Ollama returned HTTP {response.status_code}")
+
+        return response.json().get("response", "").strip()
+
+    def _cache_hash(self, value):
+        """Return a stable SHA-256 key for cache entries."""
+        return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+    def _make_chunk_cache_key(self, path, chunk):
+        # Include model and prompt version so cache entries are invalidated when
+        # the model or chunk-analysis instructions change.
+        cache_input = (
+            "chunk-v2\\n"
+            f"model={self.model}\\n"
+            f"path={path}\\n"
+            f"chunk={chunk}"
+        )
+        return self._cache_hash(cache_input)
+
+    def _make_final_cache_key(self, analysis_data):
+        """Hash the source/structure inputs that affect the LLM summary."""
+        source_files = analysis_data.get("key_source_files", {})
+        payload = {
+            "version": "final-v2",
+            "model": self.model,
+            "name": analysis_data.get("name", ""),
+            "file_tree": analysis_data.get("file_tree", []),
+            "tech_stack": analysis_data.get("tech_stack", []),
+            "dependencies": analysis_data.get("dependencies", []),
+            "source_files": sorted(source_files.items()),
+        }
+        return self._cache_hash(json.dumps(payload, sort_keys=True, ensure_ascii=False))
+
+    def _load_final_cache(self, key):
+        path = os.path.join(self.final_cache_dir, f"{key}.json")
+        if not os.path.exists(path):
+            return None
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (OSError, json.JSONDecodeError):
+            return None
+
+    def _save_final_cache(self, key, summary):
+        path = os.path.join(self.final_cache_dir, f"{key}.json")
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(summary, f, indent=2, ensure_ascii=False)
+
+    def _split_code_into_chunks(self, code):
+        """Split code into bounded pieces without arbitrarily dropping source."""
+        lines = code.splitlines()
+        chunks = []
+        current = []
+        current_chars = 0
+
+        for line in lines:
+            line_chars = len(line) + 1
+            if current and current_chars + line_chars > self.chunk_size:
+                chunks.append("\n".join(current))
+                current = []
+                current_chars = 0
+
+            current.append(line)
+            current_chars += line_chars
+
+        if current:
+            chunks.append("\n".join(current))
+
+        return chunks
+
+    def _build_chunk_prompt(self, path, chunk_number, total_chunks, chunk):
+        """Prompt used for a single source chunk."""
+        return f"""
+You are analyzing one chunk of source code from a software repository.
+
+File: {path}
+Chunk: {chunk_number}/{total_chunks}
+
+Analyze ONLY what this code directly supports. Do not guess the project purpose
+from the programming language or framework. Identify:
+- what this chunk does
+- important classes/functions
+- inputs and outputs
+- APIs, database operations, external services, or UI behavior
+- important data flow
+- how it may connect to other code
+
+Be concise. Return ONLY valid JSON:
+
+{{
+  "file": "{path}",
+  "chunk": {chunk_number},
+  "summary": "2-5 sentence summary of this chunk",
+  "components": ["important component/function/class"],
+  "evidence": ["specific behavior supported by the code"]
+}}
+
+SOURCE CODE:
+{chunk}
+""".strip()
+
+    def _summarize_source_chunks(self, source_files):
+        """Summarize each chunk, reusing cached results for unchanged chunks."""
+        summaries = []
+
+        for path, code in source_files.items():
+            if not code:
+                continue
+
+            # Match the same comment filtering used by the original prompt.
+            cleaned = code
+            if path.lower().endswith(".py"):
+                cleaned = re.sub(r"(?m)^\\s*#.*$", "", cleaned)
+            elif path.lower().endswith(
+                (".js", ".jsx", ".ts", ".tsx", ".java", ".c", ".cpp",
+                 ".h", ".hpp", ".go", ".rs", ".cs", ".kt", ".swift")
+            ):
+                cleaned = re.sub(r"(?m)^\\s*//.*$", "", cleaned)
+
+            cleaned = cleaned.strip()
+            if not cleaned:
+                continue
+
+            chunks = self._split_code_into_chunks(cleaned)
+
+            for index, chunk in enumerate(chunks, start=1):
+                cache_key = self._make_chunk_cache_key(path, chunk)
+                cache_path = os.path.join(self.chunk_cache_dir, f"{cache_key}.json")
+
+                cached = None
+                if os.path.exists(cache_path):
+                    try:
+                        with open(cache_path, "r", encoding="utf-8") as f:
+                            cached = json.load(f)
+                    except (OSError, json.JSONDecodeError):
+                        cached = None
+
+                if cached:
+                    print(f"[CACHE] Chunk hit: {path} ({index}/{len(chunks)})")
+                    chunk_result = cached
+                else:
+                    print(f"[LLM] Chunk: {path} ({index}/{len(chunks)})")
+                    chunk_prompt = self._build_chunk_prompt(
+                        path, index, len(chunks), chunk
+                    )
+                    raw = self._ollama_generate(
+                        chunk_prompt, num_ctx=8192, num_predict=768
+                    )
+                    try:
+                        chunk_result = json.loads(raw)
+                    except json.JSONDecodeError:
+                        chunk_result = self._extract_json(raw)
+
+                    if not isinstance(chunk_result, dict):
+                        chunk_result = {
+                            "file": path,
+                            "chunk": index,
+                            "summary": raw[:1500],
+                            "components": [],
+                            "evidence": [],
+                        }
+
+                    with open(cache_path, "w", encoding="utf-8") as f:
+                        json.dump(chunk_result, f, indent=2, ensure_ascii=False)
+
+                summaries.append(chunk_result)
+
+        return summaries
+
+    def _build_chunk_synthesis_prompt(self, analysis_data, chunk_summaries):
+        """Build the final prompt from compact cached chunk summaries."""
+        file_tree = analysis_data.get("file_tree", [])
+        tech_stack = analysis_data.get("tech_stack", [])
+        dependencies = analysis_data.get("dependencies", [])
+
+        tree_text = "\n".join(
+            f"{item.get('type', 'file')}: {item.get('name', '')}"
+            for item in file_tree
+        )
+
+        evidence = []
+        for item in chunk_summaries:
+            evidence.append(
+                f"--- {item.get('file', 'unknown')} / chunk {item.get('chunk', '?')} ---\\n"
+                f"Summary: {item.get('summary', '')}\\n"
+                f"Components: {json.dumps(item.get('components', []), ensure_ascii=False)}\\n"
+                f"Evidence: {json.dumps(item.get('evidence', []), ensure_ascii=False)}"
+            )
+
+        evidence_text = "\n".join(evidence)
+        if len(evidence_text) > self.max_chunk_chars_for_final:
+            evidence_text = evidence_text[:self.max_chunk_chars_for_final] + "\n[CHUNK SUMMARIES TRUNCATED]"
+
+        return f"""
+You are an expert software architect analyzing a repository from source-code
+evidence that has already been summarized chunk-by-chunk.
+
+Use ONLY the supplied code evidence and repository structure. Do not invent
+features. Resolve repeated or partial observations across chunks and infer the
+overall end-to-end behavior.
+
+REPOSITORY STRUCTURE:
+{tree_text[:6000]}
+
+DETECTED TECHNOLOGIES:
+{json.dumps(tech_stack)}
+
+DETECTED DEPENDENCIES:
+{json.dumps(dependencies[:30])}
+
+CHUNK-LEVEL SOURCE EVIDENCE:
+{evidence_text}
+
+Return ONLY valid JSON with exactly this structure:
+
+{{
+  "what_it_does": "Clear 2-4 sentence plain-language explanation of actual software behavior.",
+  "project_type": "Best inferred application/project type.",
+  "confidence": "High/Medium/Low",
+  "confidence_reason": "Strongest code evidence behind the conclusion.",
+  "core_features": [
+    "Feature directly supported by source code"
+  ],
+  "core_workflow": [
+    "Step 1",
+    "Step 2",
+    "Step 3"
+  ],
+  "key_components": [
+    "path/component: purpose inferred from its code"
+  ],
+  "difficulty": "Beginner/Intermediate/Advanced",
+  "best_for": "Likely target users or developers of the software"
+}}
+
+Do not include any text outside the JSON.
+""".strip()
+
+    def save_ollama_output(self, response_text, output_file=None):
+        """Save Ollama's raw response exactly as returned by the API."""
+        output_path = output_file or self.ollama_raw_output_file
+        output_dir = os.path.dirname(os.path.abspath(output_path))
+        os.makedirs(output_dir, exist_ok=True)
+
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(response_text)
+
+        print(f"[INFO] Complete Ollama output saved to: {output_path}")
+        return output_path
+
+    def save_output(self, summary, output_file=None):
+        """Save the generated summary to a JSON file."""
+        output_path = output_file or self.output_file
+        output_dir = os.path.dirname(os.path.abspath(output_path))
+        os.makedirs(output_dir, exist_ok=True)
+
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(summary, f, indent=2, ensure_ascii=False)
+
+        print(f"[INFO] Summary saved to: {output_path}")
+        return output_path
 
     def _generate_intelligent_summary(self, analysis_data):
         """
@@ -84,8 +501,8 @@ class RepoSummarizer:
         to generate a deep architectural and code file analysis.
         """
         repo_name = analysis_data.get('name', 'This project')
-        description = analysis_data.get('description', '')
-        readme = analysis_data.get('readme_content', '')
+        description = ''
+        readme = ''
         file_tree = analysis_data.get('file_tree', [])
         config_files = analysis_data.get('config_files', {})
         key_source_files = analysis_data.get('key_source_files', {})
@@ -106,25 +523,72 @@ class RepoSummarizer:
         # --- 3. Environment Variables Extraction ---
         env_vars = self._extract_env_vars(key_source_files, config_files)
 
-        # --- 4. Purpose Analysis ---
+        # --- 4. Purpose Analysis -> what_it_does ---
+        readme_intro = analysis_data.get('readme_intro', '')
+        pkg_desc = analysis_data.get('package_description', {}).get('description', '')
+
         purpose_parts = []
-        if description and description != 'No description provided':
+        if readme_intro:
+            purpose_parts.append(readme_intro)
+        elif pkg_desc:
+            purpose_parts.append(pkg_desc)
+        elif description and description != 'No description provided':
             purpose_parts.append(description.strip())
-        
-        clean_readme = self._clean_readme_markdown(readme)
-        lead_para = self._extract_lead_paragraph(clean_readme, repo_name)
-        if lead_para and lead_para not in purpose_parts:
-            purpose_parts.append(lead_para)
 
         if topics:
             purpose_parts.append(f"Key topics & focus areas: {', '.join(topics[:6])}.")
 
         if purpose_parts:
-            purpose = " ".join(purpose_parts[:2])
-            if len(purpose) > 400:
-                purpose = purpose[:397] + "..."
+            what_it_does = " ".join(purpose_parts[:2]).strip()
+            if len(what_it_does) > 600:
+                what_it_does = what_it_does[:597] + "..."
+            if len(what_it_does) < 5 or what_it_does == "-":
+                what_it_does = f"{repo_name} is a software project built with {', '.join(tech_stack[:3]) if tech_stack else 'modern technologies'}."
         else:
-            purpose = f"{repo_name} is a software project built with {', '.join(tech_stack[:3]) if tech_stack else 'modern technologies'}."
+            what_it_does = f"{repo_name} is a software project built with {', '.join(tech_stack[:3]) if tech_stack else 'modern technologies'}."
+
+        # --- 4.5 Core Features Analysis ---
+        route_paths = analysis_data.get('route_paths', [])
+        ui_strings = analysis_data.get('ui_strings', [])
+        docstrings = analysis_data.get('docstrings', [])
+
+        keyword_map = {
+            'auth': 'Manages user authentication and authorization',
+            'login': 'Handles user login',
+            'upload': 'Supports file uploads and management',
+            'predict': 'Runs predictive models or machine learning inference',
+            'match': 'Matches data entities based on criteria',
+            'checkout': 'Processes e-commerce checkout and payments',
+            'cart': 'Manages shopping cart functionality',
+            'booking': 'Handles reservations and bookings',
+            'search': 'Provides search capabilities',
+            'profile': 'Manages user profiles',
+            'dashboard': 'Provides a central data dashboard',
+            'generate': 'Generates reports, invoices, or content'
+        }
+
+        core_features = set()
+
+        for route in route_paths:
+            for kw, phrase in keyword_map.items():
+                if kw in route.lower():
+                    core_features.add(phrase)
+
+        for text in ui_strings + docstrings:
+            for kw, phrase in keyword_map.items():
+                if kw in text.lower():
+                    core_features.add(phrase)
+
+        # Add basic feature if none found
+        if not core_features:
+            if api_endpoints:
+                core_features.add("Provides REST API endpoints for data integration")
+            if 'React' in tech_stack or 'Vue' in tech_stack:
+                core_features.add("Provides an interactive web user interface")
+            if not core_features:
+                core_features.add("Core application logic and processing")
+
+        core_features = list(core_features)[:6]
 
         # --- 5. How To Run Analysis ---
         how_to_run = self._extract_run_instructions(readme, config_files, tech_stack, key_source_files)
@@ -137,19 +601,22 @@ class RepoSummarizer:
 
         # --- 8. Difficulty & Audience ---
         difficulty = self._assess_difficulty(file_tree, tech_stack, dependencies)
-        best_for = self._determine_best_for(repo_name, tech_stack, topics, purpose)
+        best_for = self._determine_best_for(repo_name, tech_stack, topics, what_it_does)
         contributing_guide = self._extract_contributing_guide(readme, file_tree)
 
         return {
-            "purpose": purpose,
-            "tech_stack": tech_stack if tech_stack else ["Software Development"],
+            "what_it_does": what_it_does,
+            "core_features": core_features,
+            "technical_details": {
+                "tech_stack": tech_stack if tech_stack else ["Software Development"],
+                "architecture": architecture,
+                "dependencies": dependencies[:12] if dependencies else ["Core package modules"],
+                "api_endpoints": api_endpoints,
+                "env_vars": env_vars
+            },
             "how_to_run": how_to_run,
-            "architecture": architecture,
             "key_components": key_components,
             "project_file_analysis": project_file_analysis,
-            "api_endpoints": api_endpoints,
-            "env_vars": env_vars,
-            "dependencies": dependencies[:12] if dependencies else ["Core package modules"],
             "license": analysis_data.get('license', 'Not specified'),
             "difficulty": difficulty,
             "best_for": best_for,
@@ -245,7 +712,7 @@ class RepoSummarizer:
     def _extract_api_endpoints(self, key_source_files):
         """Scans code files for REST API route definitions"""
         endpoints = []
-        
+
         for path, content in key_source_files.items():
             # Python FastAPI / Flask routes
             py_matches = re.findall(r'@(?:app|router)\.(get|post|put|delete|patch)\(["\']([^"\']+)["\']', content, re.IGNORECASE)
@@ -360,14 +827,14 @@ class RepoSummarizer:
             return "1. Clone repository.\n2. Run `cargo build`.\n3. Run `cargo run`."
         elif 'Go' in tech_stack:
             return "1. Clone repository.\n2. Run `go run main.go`."
-        
-        return "1. Clone repository.\n2. Install dependencies based on configuration files.\n3. Follow setup commands in README."
+
+        return "Run using the detected project entry point and configuration files. README was excluded from analysis."
 
     def _analyze_architecture(self, file_tree, config_files, tech_stack, key_source_files=None):
         """Infers system architecture from directory layout, configs, and source code files"""
         tree_paths = [item['name'].lower() for item in file_tree]
         key_source_files = key_source_files or {}
-        
+
         is_monorepo = 'packages' in tree_paths or 'lerna.json' in config_files
         has_frontend = any('frontend' in p or 'client' in p or 'ui' in p for p in tree_paths)
         has_backend = any('backend' in p or 'server' in p or 'api' in p for p in tree_paths)
@@ -394,7 +861,7 @@ class RepoSummarizer:
     def _analyze_key_components(self, file_tree, repo_name, project_file_analysis=None):
         """Maps file tree directories and inspected files to component roles"""
         directories = list(set([item['name'].split('/')[0] for item in file_tree if '/' in item['name']] + [item['name'] for item in file_tree if item['type'] == 'tree']))[:10]
-        
+
         role_map = {
             'src': 'Core application logic and module implementation',
             'packages': 'Sub-packages and modular workspace libraries',
@@ -454,7 +921,7 @@ class RepoSummarizer:
         tree_files = [item['name'].lower() for item in file_tree]
         if 'contributing.md' in tree_files:
             return "Refer to the dedicated `CONTRIBUTING.md` file in the repository root for detailed pull request guidelines."
-        
+
         if readme and readme != "No README found":
             contrib_match = re.search(r'(?i)(?:#+|\*\*|\b)(contributing|contribution|how to contribute)\b(.*?)(?=\n#+|\n\*\*|\Z)', readme, re.DOTALL)
             if contrib_match:
@@ -462,82 +929,283 @@ class RepoSummarizer:
                 if len(extracted) > 20:
                     return extracted[:300]
 
-        return "Check open issues for 'good first issue' or 'help wanted' tags, fork the repo, and submit a pull request with unit tests."
+        return "Contribution workflow cannot be inferred reliably from source code alone."
 
     def _build_prompt(self, analysis_data):
-        """Build a detailed prompt for the LLM including inspected code files"""
-        key_source_summary = ""
-        for path, code in analysis_data.get('key_source_files', {}).items():
-            key_source_summary += f"\n--- FILE: {path} ---\n{code[:1500]}\n"
+        """
+        Build a code-first repository understanding prompt.
 
-        prompt = f"""You are an expert software architect. Analyze the following repository information and inspected source code files to generate a comprehensive structured summary.
+        Documentation and repository descriptions are intentionally excluded
+        from the LLM evidence. The model should infer the project from code,
+        structure, routes, imports, models and component behavior.
+        """
+        source_files = analysis_data.get("key_source_files", {})
+        file_tree = analysis_data.get("file_tree", [])
+        tech_stack = analysis_data.get("tech_stack", [])
+        dependencies = analysis_data.get("dependencies", [])
 
-REPOSITORY ANALYSIS DATA:
+        # Repository structure is important even when source files are large.
+        tree_text = "\n".join(
+            f"{item.get('type', 'file')}: {item.get('name', '')}"
+            for item in file_tree
+        )
 
-READ ME CONTENT:
-{analysis_data.get('readme_content', 'No README found')[:2000]}
+        # Send substantially more source evidence than the previous 15K limit.
+        # Each file gets a bounded section so one huge file cannot dominate.
+        source_parts = []
+        total_chars = 0
+        max_chars = 16000
 
-LICENSE:
-{analysis_data.get('license', 'No license found')[:500]}
+        # Prioritize entry points, routes, services, models and frontend roots.
+        def source_priority(path):
+            p = path.lower()
+            score = 0
+            if re.search(r'(main|app|server|index)\.(py|js|jsx|ts|tsx)$', p):
+                score += 100
+            if any(x in p for x in ('route', 'router', 'controller', 'service', 'model', 'schema')):
+                score += 60
+            if any(x in p for x in ('api', 'backend', 'frontend', 'src')):
+                score += 20
+            return score
 
-FOLDER STRUCTURE:
-{json.dumps([item['name'] for item in analysis_data.get('file_tree', [])[:60]], indent=2)[:1500]}
+        ordered_sources = sorted(
+            source_files.items(),
+            key=lambda item: source_priority(item[0]),
+            reverse=True
+        )
 
-INSPECTED SOURCE CODE FILES:
-{key_source_summary[:3000]}
+        for path, code in ordered_sources:
+            if not code:
+                continue
 
-TECH STACK DETECTED:
-{', '.join(analysis_data.get('tech_stack', []))}
+            # Remove common comment lines so prose in comments does not become
+            # the model's primary source of project-purpose information.
+            cleaned = code
 
-DEPENDENCIES:
-{chr(10).join(analysis_data.get('dependencies', []))[:800]}
+            if path.lower().endswith(".py"):
+                import re as _re
+                cleaned = _re.sub(r'(?m)^\\s*#.*$', '', cleaned)
 
-Generate a JSON response with EXACTLY this structure (no additional text, only valid JSON):
+            if path.lower().endswith((
+                ".js", ".jsx", ".ts", ".tsx", ".java", ".c", ".cpp",
+                ".h", ".hpp", ".go", ".rs", ".cs", ".kt", ".swift"
+            )):
+                import re as _re
+                cleaned = _re.sub(r'(?m)^\\s*//.*$', '', cleaned)
+
+            cleaned = cleaned.strip()
+            if not cleaned:
+                continue
+
+            # Keep more than the old first-100-lines strategy.
+            if len(cleaned) > 5000:
+                cleaned = cleaned[:5000] + "\n[FILE TRUNCATED]"
+
+            block = f"\n--- SOURCE FILE: {path} ---\n{cleaned}\n"
+
+            if total_chars + len(block) > max_chars:
+                break
+
+            source_parts.append(block)
+            total_chars += len(block)
+
+        source_text = "".join(source_parts)
+
+        prompt = f"""
+You are an expert software architect analyzing a repository ONLY from its
+source code and code structure.
+
+IMPORTANT: THIS IS CODE-ONLY ANALYSIS.
+
+DO NOT use:
+- README.md or any README
+- documentation files
+- package/project descriptions
+- repository topics or metadata
+- badges
+- author-written project descriptions
+- comments or docstrings as evidence
+
+Do NOT identify the project merely from its framework or language.
+
+Infer the actual purpose from executable/source code such as:
+- imports and libraries actually used
+- classes and functions
+- function calls
+- API endpoints and handlers
+- database models and queries
+- frontend components and user interactions
+- state management
+- authentication/authorization logic
+- file processing
+- algorithms
+- external service integrations
+- configuration used by the application
+- relationships between modules
+- data flow from input to output
+
+Your primary task is to answer:
+
+1. WHAT PROJECT IS THIS?
+2. WHAT REAL-WORLD PROBLEM DOES IT SOLVE?
+3. WHAT DOES THE USER ACTUALLY DO WITH IT?
+4. WHAT IS THE END-TO-END WORKFLOW?
+5. WHAT ARE THE MAIN FEATURES?
+6. HOW DO THE MAJOR CODE COMPONENTS WORK TOGETHER?
+
+Be conservative. If the code does not provide enough evidence, report
+"Unknown" or lower confidence instead of inventing functionality.
+
+REPOSITORY STRUCTURE:
+{tree_text[:6000]}
+
+DETECTED TECHNOLOGIES:
+{json.dumps(tech_stack)}
+
+DETECTED DEPENDENCIES:
+{json.dumps(dependencies[:30])}
+
+SOURCE CODE:
+{source_text}
+
+Return ONLY valid JSON with exactly this structure:
 
 {{
-  "purpose": "A clear, concise description of what this project does and its main goal (2-3 sentences)",
-  "tech_stack": ["list", "of", "technologies", "used"],
-  "how_to_run": "Step-by-step instructions on how to set up and run this project",
-  "architecture": "Overview of the project architecture and design patterns used",
-  "key_components": ["list", "of", "main", "components", "and", "their", "purposes"],
-  "project_file_analysis": [
-    {{"file": "filename", "lines": 100, "role": "File role", "insights": "Key findings from code"}}
+  "what_it_does": "Clear 2-4 sentence plain-language explanation of the actual software behavior.",
+  "project_type": "Best inferred application/project type.",
+  "confidence": "High/Medium/Low",
+  "confidence_reason": "Strongest code evidence behind the conclusion.",
+  "core_features": [
+    "Feature directly supported by source code"
   ],
-  "api_endpoints": [
-    {{"method": "GET", "path": "/endpoint", "source_file": "file.py"}}
+  "core_workflow": [
+    "Step 1",
+    "Step 2",
+    "Step 3"
   ],
-  "env_vars": ["VAR_1", "VAR_2"],
-  "dependencies": ["list", "of", "major", "dependencies"],
-  "license": "License type",
+  "key_components": [
+    "path/component: purpose inferred from its code"
+  ],
   "difficulty": "Beginner/Intermediate/Advanced",
-  "best_for": "Who this project is best for",
-  "contributing_guide": "Brief summary on how to start contributing"
+  "best_for": "Likely target users or developers of the software"
 }}
+
+Do not include any text outside the JSON.
 """
         return prompt
 
+    def _merge_deterministic_analysis(self, result, analysis_data):
+        """Attach deterministic repository analysis without spending LLM tokens."""
+        if not isinstance(result, dict):
+            result = {}
+
+        key_source_files = analysis_data.get("key_source_files", {})
+        config_files = analysis_data.get("config_files", {})
+        file_tree = analysis_data.get("file_tree", [])
+        tech_stack = analysis_data.get("tech_stack", []) or ["Software Development"]
+        dependencies = analysis_data.get("dependencies", [])
+
+        # Deterministic project file analysis
+        result["project_file_analysis"] = self._extract_project_file_analysis(
+            key_source_files, config_files
+        )
+
+        technical = result.setdefault("technical_details", {})
+        technical["tech_stack"] = tech_stack
+        technical["dependencies"] = dependencies[:12] if dependencies else ["Core package modules"]
+        technical["api_endpoints"] = self._extract_api_endpoints(key_source_files)
+        technical["env_vars"] = self._extract_env_vars(key_source_files, config_files)
+
+        if not technical.get("architecture") or technical["architecture"] == "Standard layout.":
+            technical["architecture"] = self._analyze_architecture(
+                file_tree, config_files, tech_stack, key_source_files
+            )
+
+        if not result.get("how_to_run") or result.get("how_to_run") == "Refer to README.":
+            result["how_to_run"] = self._extract_run_instructions(
+                "", config_files, tech_stack, key_source_files
+            )
+
+        if not result.get("contributing_guide") or result.get("contributing_guide") == "Check repo issues.":
+            result["contributing_guide"] = self._extract_contributing_guide("", file_tree)
+
+        if not result.get("license") or result.get("license") == "Unknown":
+            result["license"] = analysis_data.get("license", "Not specified")
+
+        if not result.get("difficulty") or result.get("difficulty") == "Intermediate":
+            result["difficulty"] = self._assess_difficulty(file_tree, tech_stack, dependencies)
+
+        if not result.get("best_for") or result.get("best_for") == "Developers":
+            result["best_for"] = self._determine_best_for(
+                analysis_data.get('name', 'This project'), tech_stack, analysis_data.get('topics', []), result.get('what_it_does', '')
+            )
+
+        return result
+
     def _extract_json(self, text):
-        """Try to extract JSON from text that might contain additional content"""
+        """Try to extract JSON from text that might contain markdown fences or be truncated."""
+        if not text:
+            return {}
+
+        # 1. Strip markdown fences if present
+        cleaned_text = re.sub(r'^```(?:json)?\s*', '', text.strip(), flags=re.MULTILINE)
+        cleaned_text = re.sub(r'\s*```$', '', cleaned_text.strip(), flags=re.MULTILINE)
+
+        # 2. Try standard json parsing on the cleanest slice
         try:
-            start = text.find('{')
-            end = text.rfind('}') + 1
+            start = cleaned_text.find('{')
+            end = cleaned_text.rfind('}') + 1
             if start != -1 and end > start:
-                return json.loads(text[start:end])
-        except:
+                return json.loads(cleaned_text[start:end])
+        except Exception:
             pass
-        
-        return {
-            "purpose": "Analysis complete.",
-            "tech_stack": [],
-            "how_to_run": "Refer to README.",
-            "architecture": "Standard layout.",
-            "key_components": [],
-            "project_file_analysis": [],
-            "api_endpoints": [],
-            "env_vars": [],
-            "dependencies": [],
-            "license": "Unknown",
-            "difficulty": "Intermediate",
-            "best_for": "Developers",
-            "contributing_guide": "Check repo issues."
-        }
+
+        # 3. Robust regex-based partial field extraction in case of truncation
+        partial_data = {}
+
+        what_match = re.search(r'"what_it_does"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"', text)
+        if what_match:
+            partial_data["what_it_does"] = what_match.group(1).encode('utf-8').decode('unicode_escape', 'ignore')
+
+        project_type_match = re.search(r'"project_type"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"', text)
+        if project_type_match:
+            partial_data["project_type"] = project_type_match.group(1)
+
+        confidence_match = re.search(r'"confidence"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"', text)
+        if confidence_match:
+            partial_data["confidence"] = confidence_match.group(1)
+
+        confidence_reason_match = re.search(r'"confidence_reason"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"', text)
+        if confidence_reason_match:
+            partial_data["confidence_reason"] = confidence_reason_match.group(1)
+
+        difficulty_match = re.search(r'"difficulty"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"', text)
+        if difficulty_match:
+            partial_data["difficulty"] = difficulty_match.group(1)
+
+        best_for_match = re.search(r'"best_for"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"', text)
+        if best_for_match:
+            partial_data["best_for"] = best_for_match.group(1)
+
+        features_match = re.search(r'"core_features"\s*:\s*\[(.*?)\]', text, re.DOTALL)
+        if features_match:
+            items = re.findall(r'"([^"\\]*(?:\\.[^"\\]*)*)"', features_match.group(1))
+            if items:
+                partial_data["core_features"] = items
+
+        workflow_match = re.search(r'"core_workflow"\s*:\s*\[(.*?)\]', text, re.DOTALL)
+        if workflow_match:
+            items = re.findall(r'"([^"\\]*(?:\\.[^"\\]*)*)"', workflow_match.group(1))
+            if items:
+                partial_data["core_workflow"] = items
+
+        components_match = re.search(r'"key_components"\s*:\s*\[(.*?)\]', text, re.DOTALL)
+        if components_match:
+            items = re.findall(r'"([^"\\]*(?:\\.[^"\\]*)*)"', components_match.group(1))
+            if items:
+                partial_data["key_components"] = items
+
+        if partial_data.get("what_it_does"):
+            return partial_data
+
+        return {}
