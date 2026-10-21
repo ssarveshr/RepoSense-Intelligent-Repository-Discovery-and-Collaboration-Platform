@@ -16,7 +16,7 @@ Internet
    +---------------------------+
    |                           |
    v                           v
-https://xxxx.trycloudflare.com   https://yyyy.trycloudflare.com
+<FRONTEND_PUBLIC_URL>            <BACKEND_PUBLIC_URL>
    (frontend Quick Tunnel)         (backend Quick Tunnel)
    |                           |
    v                           v
@@ -79,11 +79,7 @@ Or without global install:
 npx --yes cloudflared tunnel --url http://localhost:5173
 ```
 
-Copy the generated URL, e.g.:
-```
-https://random-words-here.trycloudflare.com
-```
-This is your **FRONTEND_QUICK_TUNNEL_URL**.
+Copy the generated HTTPS URL from the tunnel output. This is your **FRONTEND_QUICK_TUNNEL_URL**. Do not commit that hostname.
 
 ### Terminal 4 — Backend Quick Tunnel
 
@@ -100,21 +96,17 @@ Copy the generated URL — your **BACKEND_QUICK_TUNNEL_URL**.
 
 ---
 
-## Update `.env` files (every time Quick Tunnel URLs change)
+## Update configuration (every time Quick Tunnel URLs change)
 
-Restart order matters: start tunnels first, copy URLs, update `.env`, then **restart backend and frontend**.
+Restart order matters: start tunnels first, copy URLs, then update `.env` files and restart the processes that read them.
 
 ### `frontend/.env`
 
 ```env
 VITE_API_BASE_URL=<BACKEND_QUICK_TUNNEL_URL>
-VITE_LIVEKIT_URL=wss://reposense-meetings-18f7x8bu.livekit.cloud
 ```
 
-Example:
-```env
-VITE_API_BASE_URL=https://yyyy.trycloudflare.com
-```
+Restart `npm run dev`. Vite embeds `VITE_*` at process start; production builds require a rebuild after this change.
 
 ### `backend/.env`
 
@@ -126,15 +118,7 @@ GITHUB_OAUTH_REDIRECT_URI=<BACKEND_QUICK_TUNNEL_URL>/api/github/oauth/callback
 LIVEKIT_URL=wss://reposense-meetings-18f7x8bu.livekit.cloud
 ```
 
-Example:
-```env
-FRONTEND_BASE_URL=https://xxxx.trycloudflare.com
-API_BASE_URL=https://yyyy.trycloudflare.com
-CORS_ORIGINS=http://localhost:5173,https://xxxx.trycloudflare.com
-GITHUB_OAUTH_REDIRECT_URI=https://yyyy.trycloudflare.com/api/github/oauth/callback
-```
-
-Then restart Terminal 1 (backend) and Terminal 2 (frontend).
+Then restart Terminal 1 (backend).
 
 ---
 
@@ -145,7 +129,7 @@ Then restart Terminal 1 (backend) and Terminal 2 (frontend).
 3. Start backend Quick Tunnel → copy **BACKEND_QUICK_TUNNEL_URL**
 4. Set `VITE_API_BASE_URL` in `frontend/.env`
 5. Set `FRONTEND_BASE_URL`, `API_BASE_URL`, `CORS_ORIGINS`, `GITHUB_OAUTH_REDIRECT_URI` in `backend/.env`
-6. Restart backend and frontend
+6. Restart backend and frontend (`npm run dev`). Rebuild the frontend for a production build.
 7. Update GitHub OAuth callback (manual — see below)
 8. Update Clerk allowed origin (manual — see below)
 9. Create meeting → send invitation → teammate opens public link
@@ -243,7 +227,7 @@ Expect `Access-Control-Allow-Origin: <FRONTEND_QUICK_TUNNEL_URL>`.
 |---------|-----|
 | Vite "Blocked request" / invalid Host | Ensure `vite.config.js` has `allowedHosts: ['.trycloudflare.com']` and restart `npm run dev` |
 | CORS error | Add current frontend Quick Tunnel URL to `CORS_ORIGINS` |
-| API calls hit localhost on public site | Set `VITE_API_BASE_URL` and restart frontend |
+| API calls hit localhost on public site | Set `VITE_API_BASE_URL` to the backend tunnel and restart Vite |
 | GitHub OAuth fails | Callback must exactly match current backend Quick Tunnel URL |
 | Meeting invite has wrong link | Set `FRONTEND_BASE_URL` and restart backend |
 

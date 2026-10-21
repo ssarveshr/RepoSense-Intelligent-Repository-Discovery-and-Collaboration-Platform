@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { SearchIcon, StarIcon } from '../components/icons';
 import { fetchTrending, searchRepositories } from '../services/api';
 import { useProfileAuth } from '../providers/profileAuthContext.js';
+import PublicLanding from './PublicLanding';
 
 const categories = ["Web Development", "Machine Learning", "IoT", "DevOps", "Blockchain", "Cybersecurity"];
 
@@ -11,6 +12,21 @@ const TRENDING_ERROR_MESSAGE = 'Recommended repositories could not be loaded. Pl
 
 export default function Home() {
   const { clerkEnabled, isLoaded, isSignedIn } = useProfileAuth();
+  const authReady = !clerkEnabled || isLoaded;
+
+  if (!authReady) {
+    return <div className="min-h-[40vh]" aria-busy="true" aria-label="Loading" />;
+  }
+
+  if (!isSignedIn) {
+    return <PublicLanding />;
+  }
+
+  return <DiscoverHome />;
+}
+
+function DiscoverHome() {
+  const { isSignedIn } = useProfileAuth();
   const [repositories, setRepositories] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -119,22 +135,6 @@ export default function Home() {
           <p className="text-lg text-gray-600 dark:text-gray-400">
             Stop guessing keywords. Describe what you want to build, and RepoSense's AI will find the perfect open-source project for you.
           </p>
-          {clerkEnabled && isLoaded && !isSignedIn && (
-            <div className="flex flex-wrap justify-center gap-3 pt-2">
-              <Link
-                to="/sign-in"
-                className="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold hover:from-blue-700 hover:to-indigo-700 transition-all"
-              >
-                Sign In
-              </Link>
-              <Link
-                to="/sign-up"
-                className="px-6 py-3 rounded-xl border-2 border-gray-200 dark:border-gray-700 font-bold hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
-              >
-                Get Started
-              </Link>
-            </div>
-          )}
         </div>
         
         <form onSubmit={handleSearchSubmit} className="max-w-2xl mx-auto relative group">

@@ -12,7 +12,7 @@ import {
 describe('openMeetingTab', () => {
   beforeEach(() => {
     vi.stubGlobal('open', vi.fn());
-    vi.stubEnv('VITE_FRONTEND_BASE_URL', 'https://example.trycloudflare.com');
+    vi.stubEnv('VITE_FRONTEND_BASE_URL', 'https://app.example.com');
   });
 
   afterEach(() => {
@@ -22,7 +22,7 @@ describe('openMeetingTab', () => {
 
   it('builds an absolute meeting URL from the public frontend base', () => {
     expect(getMeetingUrl('meeting-123')).toBe(
-      'https://example.trycloudflare.com/meetings/meeting-123',
+      'https://app.example.com/meetings/meeting-123',
     );
   });
 
@@ -33,7 +33,7 @@ describe('openMeetingTab', () => {
     openMeetingInNewTab('meeting-123');
 
     expect(window.open).toHaveBeenCalledWith(
-      'https://example.trycloudflare.com/meetings/meeting-123',
+      'https://app.example.com/meetings/meeting-123',
       '_blank',
       'noopener,noreferrer',
     );
@@ -65,7 +65,7 @@ describe('openMeetingTab', () => {
     navigateMeetingTab(mockTab, 'meeting-456');
 
     expect(mockTab.location.href).toBe(
-      'https://example.trycloudflare.com/meetings/meeting-456',
+      'https://app.example.com/meetings/meeting-456',
     );
   });
 
@@ -87,7 +87,7 @@ describe('openMeetingTab', () => {
     expect(window.open).toHaveBeenCalledTimes(1);
     expect(window.open).toHaveBeenCalledWith('', '_blank');
     expect(mockTab.location.href).toBe(
-      'https://example.trycloudflare.com/meetings/meeting-launch',
+      'https://app.example.com/meetings/meeting-launch',
     );
   });
 
@@ -98,7 +98,7 @@ describe('openMeetingTab', () => {
     navigateMeetingTab(null, 'meeting-789');
 
     expect(window.open).toHaveBeenCalledWith(
-      'https://example.trycloudflare.com/meetings/meeting-789',
+      'https://app.example.com/meetings/meeting-789',
       '_blank',
       'noopener,noreferrer',
     );
@@ -129,7 +129,7 @@ describe('openMeetingTab', () => {
     );
 
     expect(mockTab.location.href).toBe(
-      'https://example.trycloudflare.com/meetings/resolved-meeting-id',
+      'https://app.example.com/meetings/resolved-meeting-id',
     );
     expect(mockTab.close).not.toHaveBeenCalled();
   });

@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { fetchFromApi } from '../config/apiBase.js';
 
 const defaultPythonCode = `def process_user_data(users):\n    # Calculate summary statistics\n    total_age = 0\n    results = []\n    for u in users:\n        total_age += u['age']\n        results.append(f"User: {u['name']}, Age: {u['age']}")\n    \n    avg_age = total_age / len(users)\n    print(f"Processed {len(users)} users. Average age: {avg_age:.1f}")\n    return results\n\nsample_data = [\n    {"name": "Alice", "age": 28},\n    {"name": "Bob", "age": 34},\n    {"name": "Charlie", "age": 22}\n]\n\noutput = process_user_data(sample_data)\nprint("Results:", output)`;
 
@@ -88,9 +89,8 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
     setIsRunning(true);
     setRunResult(null);
     try {
-      const response = await fetch("http://localhost:8000/api/agent/run", {
+      const response = await fetchFromApi("/api/agent/run", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code, language })
       });
       const data = await response.json();
@@ -100,7 +100,7 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
       setRunResult({
         status: "error",
         stdout: "",
-        stderr: `Failed to connect to AI Agent backend: ${err.message}. Ensure backend is running on port 8000.`,
+        stderr: `Failed to connect to AI Agent backend: ${err.message}`,
         duration_ms: 0,
         exit_code: -1
       });
@@ -117,9 +117,8 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
     setIsModifying(true);
     setAiResult(null);
     try {
-      const response = await fetch("http://localhost:8000/api/agent/modify", {
+      const response = await fetchFromApi("/api/agent/modify", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           code,
           prompt: customPrompt || prompt,
@@ -147,9 +146,8 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
     modifyInFlight.current = true;
     setIsModifying(true);
     try {
-      const response = await fetch("http://localhost:8000/api/agent/explain", {
+      const response = await fetchFromApi("/api/agent/explain", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code, language })
       });
       const data = await response.json();
@@ -187,9 +185,8 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
     setIsScanningRepo(true);
     setRepoBugsResult(null);
     try {
-      const response = await fetch("http://localhost:8000/api/agent/scan-repo", {
+      const response = await fetchFromApi("/api/agent/scan-repo", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ github_url: targetUrl })
       });
       const data = await response.json();
@@ -228,9 +225,8 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
     setActiveTab("console");
 
     try {
-      const response = await fetch("http://localhost:8000/api/agent/run", {
+      const response = await fetchFromApi("/api/agent/run", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code: bug.suggested_fix, language: bug.language || "python" })
       });
       const data = await response.json();

@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import delete, select
@@ -66,7 +67,12 @@ class GitHubConnectionRepository:
         await self.session.flush()
 
     async def create_oauth_state(self, *, state: str, clerk_user_id: str, expires_at: datetime) -> GitHubOAuthState:
-        oauth_state = GitHubOAuthState(state=state, clerk_user_id=clerk_user_id, expires_at=expires_at)
+        oauth_state = GitHubOAuthState(
+            id=str(uuid.uuid4()),
+            state=state,
+            clerk_user_id=clerk_user_id,
+            expires_at=expires_at,
+        )
         self.session.add(oauth_state)
         await self.session.flush()
         return oauth_state

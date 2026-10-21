@@ -1,5 +1,4 @@
-import { fetchAuthenticatedApi, getApiBaseUrl, parseApiError } from '../config/apiBase.js';
-import { normalizeFetchError } from '../utils/apiError.js';
+import { fetchAuthenticatedApi, fetchFromApi, getApiBaseUrl } from '../config/apiBase.js';
 
 function buildHeaders(extra = {}) {
   return { 'Content-Type': 'application/json', ...extra };
@@ -60,13 +59,8 @@ export async function getProfileActivity(token) {
 
 export async function resolveMeeting(identifier) {
   const encoded = encodeURIComponent(identifier.trim());
-  const apiBaseUrl = getApiBaseUrl();
-  try {
-    const response = await fetch(`${apiBaseUrl}/api/meetings/resolve/${encoded}`);
-    return parseJsonResponse(response);
-  } catch (error) {
-    throw new Error(normalizeFetchError(error, apiBaseUrl));
-  }
+  const response = await fetchFromApi(`/api/meetings/resolve/${encoded}`);
+  return parseJsonResponse(response);
 }
 
 export async function getMeeting(meetingId, token) {
@@ -90,43 +84,25 @@ export async function getMeetingParticipants(meetingId, { token, participantId, 
 }
 
 export async function joinMeeting(meetingId, { displayName, passcode }) {
-  const apiBaseUrl = getApiBaseUrl();
-  try {
-    const response = await fetch(`${apiBaseUrl}/api/meetings/${meetingId}/join`, {
-      method: 'POST',
-      headers: buildHeaders(),
-      body: JSON.stringify({
-        display_name: displayName,
-        passcode: passcode || undefined,
-      }),
-    });
-    return parseJsonResponse(response);
-  } catch (error) {
-    if (error instanceof Error && error.message.startsWith('Request failed')) {
-      throw error;
-    }
-    throw new Error(normalizeFetchError(error, apiBaseUrl));
-  }
+  const response = await fetchFromApi(`/api/meetings/${meetingId}/join`, {
+    method: 'POST',
+    body: JSON.stringify({
+      display_name: displayName,
+      passcode: passcode || undefined,
+    }),
+  });
+  return parseJsonResponse(response);
 }
 
 export async function leaveMeeting(meetingId, participantId, participantToken) {
-  const apiBaseUrl = getApiBaseUrl();
-  try {
-    const response = await fetch(`${apiBaseUrl}/api/meetings/${meetingId}/leave`, {
-      method: 'POST',
-      headers: buildHeaders(),
-      body: JSON.stringify({
-        participant_id: participantId,
-        participant_token: participantToken,
-      }),
-    });
-    return parseJsonResponse(response);
-  } catch (error) {
-    if (error instanceof Error && error.message.startsWith('Request failed')) {
-      throw error;
-    }
-    throw new Error(normalizeFetchError(error, apiBaseUrl));
-  }
+  const response = await fetchFromApi(`/api/meetings/${meetingId}/leave`, {
+    method: 'POST',
+    body: JSON.stringify({
+      participant_id: participantId,
+      participant_token: participantToken,
+    }),
+  });
+  return parseJsonResponse(response);
 }
 
 /**

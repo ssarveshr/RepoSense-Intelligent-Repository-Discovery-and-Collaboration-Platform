@@ -1,4 +1,4 @@
-import { fetchAuthenticatedApi, getApiBaseUrl, parseApiError } from '../config/apiBase.js';
+import { fetchAuthenticatedApi, fetchFromApi, getApiBaseUrl } from '../config/apiBase.js';
 import { normalizeFetchError } from '../utils/apiError.js';
 import { GitHubRequestError, parseStructuredApiError } from '../utils/githubError.js';
 async function parseError(response) {
@@ -43,13 +43,8 @@ export async function fetchRepositoryCollaborators(githubUrl, token) {
 
 export async function resolveMeeting(identifier) {
   const encoded = encodeURIComponent(identifier.trim());
-  const apiBaseUrl = getApiBaseUrl();
-  try {
-    const response = await fetch(`${apiBaseUrl}/api/meetings/resolve/${encoded}`);
-    return parseJsonResponse(response);
-  } catch (error) {
-    throw new Error(normalizeFetchError(error, apiBaseUrl));
-  }
+  const response = await fetchFromApi(`/api/meetings/resolve/${encoded}`);
+  return parseJsonResponse(response);
 }
 
 export async function sendMeetingInvitations(meetingId, payload, token) {

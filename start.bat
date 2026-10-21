@@ -83,8 +83,7 @@ echo.
 echo Cloudflare Quick Tunnels (temporary URLs):
 echo   1. Copy FRONTEND URL from "RepoSense Tunnel (Frontend)"
 echo   2. Copy BACKEND URL from "RepoSense Tunnel (Backend)"
-echo   3. Update frontend/.env:
-echo        VITE_API_BASE_URL=^<BACKEND_QUICK_TUNNEL_URL^>
+echo   3. Set VITE_API_BASE_URL=^<BACKEND_QUICK_TUNNEL_URL^> in frontend/.env
 echo   4. Update backend/.env:
 echo        FRONTEND_BASE_URL=^<FRONTEND_QUICK_TUNNEL_URL^>
 echo        API_BASE_URL=^<BACKEND_QUICK_TUNNEL_URL^>

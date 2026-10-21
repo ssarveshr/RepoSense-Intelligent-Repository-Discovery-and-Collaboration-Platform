@@ -60,7 +60,7 @@ npm install
 copy .env.example .env
 ```
 
-Edit `frontend/.env` with your values. Restart `npm run dev` after any Vite env change (values are baked in at startup).
+Edit `frontend/.env` with your values. Set `VITE_API_BASE_URL` to the backend origin. Restart `npm run dev` after any Vite env change (`VITE_*` values are baked in at process start). Production builds require a rebuild after changing `VITE_API_BASE_URL`.
 
 ## Environment configuration
 
@@ -70,7 +70,7 @@ Use the templates. Never put real secrets in git or in this README.
 
 | Variable | Purpose |
 | --- | --- |
-| `VITE_API_BASE_URL` | Public backend URL. Local default: `http://localhost:8000` |
+| `VITE_API_BASE_URL` | Public backend URL (baked at Vite start / build). Local example: `http://localhost:8000`. Required for production builds. |
 | `VITE_FRONTEND_BASE_URL` | Optional public frontend origin for shareable meet links |
 | `VITE_LIVEKIT_URL` | Optional LiveKit WebSocket URL (join API also returns `livekit_url`) |
 | `VITE_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (`pk_test_...` / `pk_live_...`) |
@@ -82,7 +82,8 @@ Use the templates. Never put real secrets in git or in this README.
 | `DATABASE_URL` | SQLite URL (default local file under `backend/`) |
 | `FRONTEND_BASE_URL` | Public frontend origin (invitation links) |
 | `API_BASE_URL` | Public API origin |
-| `CORS_ORIGINS` | Comma-separated allowed origins |
+| `CORS_ORIGINS` | Comma-separated allowed origins (`*` is rejected) |
+| `ENVIRONMENT` | `development` (default) or `production` (requires public URL env vars) |
 | `CLERK_JWKS_URL` / `CLERK_ISSUER` / `CLERK_AUDIENCE` | Clerk JWT verification |
 | `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` / `LIVEKIT_URL` | LiveKit Cloud |
 | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` / `GITHUB_OAUTH_REDIRECT_URI` | GitHub OAuth |
@@ -91,11 +92,13 @@ Use the templates. Never put real secrets in git or in this README.
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` | Optional invitation email |
 | `OLLAMA_URL` / `OLLAMA_MODEL` | Optional; defaults documented below |
 
-A leftover `*.trycloudflare.com` value in `VITE_API_BASE_URL` will break **local** Meetings and Profile. For local-only work, use `http://localhost:8000`.
+A leftover public/tunnel backend URL in `VITE_API_BASE_URL` will break **local** Meetings and Profile. For local-only work, use `http://localhost:8000`.
+
+Cloudflare Quick Tunnel hostnames change whenever the tunnel is recreated. Put the live backend URL in `frontend/.env` as `VITE_API_BASE_URL` and restart Vite. Never put those hostnames in source.
 
 ## Run locally (Windows PowerShell)
 
-Two terminals. Do **not** use a Vite proxy; the frontend calls `VITE_API_BASE_URL` directly.
+Two terminals. Do **not** use a Vite proxy; the frontend calls `VITE_API_BASE_URL` through the centralized API client.
 
 **Terminal 1 — backend**
 
@@ -141,11 +144,10 @@ From the **repository root**:
 
 Quick Tunnel URLs are **temporary**. After you copy them:
 
-1. Set `VITE_API_BASE_URL` to the **backend** tunnel URL in `frontend/.env`.
-2. Set `FRONTEND_BASE_URL`, `API_BASE_URL`, `CORS_ORIGINS`, and `GITHUB_OAUTH_REDIRECT_URI` in `backend/.env` (see `backend/.env.example`).
-3. Restart the Backend and Frontend windows.
-4. Update the GitHub OAuth callback and Clerk allowed origins to match the new URLs.
-5. Do **not** tunnel LiveKit. Browsers connect to LiveKit Cloud directly.
+1. Set `VITE_API_BASE_URL` in `frontend/.env` to the backend tunnel URL, then restart the Frontend window (`npm run dev`). Production deploys need a rebuild.
+2. Set `FRONTEND_BASE_URL`, `API_BASE_URL`, `CORS_ORIGINS`, and `GITHUB_OAUTH_REDIRECT_URI` in `backend/.env` (see `backend/.env.example`), then restart the backend.
+3. Update the GitHub OAuth callback and Clerk allowed origins to match the new URLs.
+4. Do **not** tunnel LiveKit. Browsers connect to LiveKit Cloud directly. Backend CORS and OAuth URLs must independently match the active frontend and backend origins.
 
 Requires `frontend/node_modules` (`npm install` once). Uses `cloudflared` if installed, otherwise `npx --yes cloudflared`.
 
@@ -194,7 +196,7 @@ Backend tests expect `pytest` and `pytest-asyncio` in the environment (they are 
 
 | Symptom | What to check |
 | --- | --- |
-| Meetings/Profile “Unable to reach …trycloudflare.com” | `VITE_API_BASE_URL` still points at a dead tunnel. Set `http://localhost:8000` and restart Vite. |
+| Meetings/Profile “Unable to reach …” a dead public URL | Stale `VITE_API_BASE_URL`. Point it at the current backend and restart Vite (or rebuild). |
 | Frontend loads, API calls fail | Backend not running; CORS origin missing `http://localhost:5173`; wrong `VITE_API_BASE_URL`. |
 | Clerk sign-in loops or 401s | Publishable key, JWKS/issuer, and allowed origins must match the URL you actually open. |
 | GitHub connect fails after tunnel restart | Update GitHub OAuth callback to the new backend tunnel + `/api/github/oauth/callback`. |

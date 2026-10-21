@@ -11,7 +11,12 @@ from src.api.routes.collaboration import router as collaboration_router
 from src.api.routes.github import router as github_router
 from src.api.routes.meetings import router as meetings_router
 from src.api.routes.profile import router as profile_router
-from src.config.settings import settings
+from src.config.settings import (
+    get_allowed_cors_origins,
+    normalize_cors_origin,
+    settings,
+    validate_production_configuration,
+)
 from src.db import init_db, async_session_factory
 from src.services.meeting_service import MeetingService
 from src.services.search_service import engine
@@ -37,6 +42,7 @@ async def _empty_meeting_cleanup_loop() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    validate_production_configuration()
     await init_db()
     cleanup_task = asyncio.create_task(_empty_meeting_cleanup_loop())
     try:
@@ -57,13 +63,20 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+class ConfigurableCORSMiddleware(CORSMiddleware):
+    """Allow origins from current env/.env instead of the import-time snapshot."""
+
+    def is_allowed_origin(self, origin: str) -> bool:
+        return normalize_cors_origin(origin) in set(get_allowed_cors_origins())
+
+
 # Enable CORS (Cross-Origin Resource Sharing)
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    ConfigurableCORSMiddleware,
+    allow_origins=get_allowed_cors_origins(),
     allow_credentials=False,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["Authorization", "Content-Type", "*"],
 )
 
 app.include_router(meetings_router)

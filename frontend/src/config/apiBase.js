@@ -6,37 +6,60 @@ import {
 
 export { AuthenticationRequiredError, resolveClerkBearerToken };
 
-const DEFAULT_API_BASE_URL = 'http://localhost:8000';
+const LOCAL_DEV_API_BASE_URL = 'http://localhost:8000';
 
-function normalizeConfiguredApiBaseUrl(configured) {
-  const cleaned = configured.trim().replace(/\/+$/, '');
+export class ApiConfigurationError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'ApiConfigurationError';
+  }
+}
+
+export function parseAbsoluteHttpUrl(value) {
+  if (typeof value !== 'string') return null;
+  const cleaned = value.trim().replace(/\/+$/, '');
+  if (!cleaned) return null;
   try {
     const parsed = new URL(cleaned);
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-      throw new Error('invalid protocol');
+      return null;
     }
     return cleaned;
   } catch {
-    if (import.meta.env.DEV) {
-      console.warn(
-        `[RepoSense] VITE_API_BASE_URL is not a valid absolute HTTP/HTTPS URL: "${configured}". ` +
-          `Using ${DEFAULT_API_BASE_URL} instead.`,
+    return null;
+  }
+}
+
+export function resolveApiBaseUrl({ viteUrl, isDev }) {
+  const viteRaw = typeof viteUrl === 'string' ? viteUrl.trim() : '';
+  if (viteRaw) {
+    const vite = parseAbsoluteHttpUrl(viteRaw);
+    if (!vite) {
+      throw new ApiConfigurationError(
+        `VITE_API_BASE_URL is not a valid absolute HTTP/HTTPS URL: "${viteUrl}".`,
       );
     }
-    return DEFAULT_API_BASE_URL;
+    return vite;
   }
+
+  if (isDev) {
+    return LOCAL_DEV_API_BASE_URL;
+  }
+
+  throw new ApiConfigurationError(
+    'RepoSense API URL is not configured. Set VITE_API_BASE_URL to an absolute HTTP/HTTPS URL before building the app.',
+  );
 }
 
 /**
  * Public backend URL for all RepoSense API requests.
- * Set VITE_API_BASE_URL to your public backend URL during remote development.
+ * Reads VITE_API_BASE_URL (baked in at Vite start / production build).
  */
 export function getApiBaseUrl() {
-  const configured = import.meta.env.VITE_API_BASE_URL;
-  if (typeof configured === 'string' && configured.trim()) {
-    return normalizeConfiguredApiBaseUrl(configured);
-  }
-  return DEFAULT_API_BASE_URL;
+  return resolveApiBaseUrl({
+    viteUrl: import.meta.env.VITE_API_BASE_URL,
+    isDev: Boolean(import.meta.env.DEV),
+  });
 }
 
 export function buildApiHeaders(token, extra = {}) {
@@ -73,6 +96,7 @@ export async function fetchFromApi(path, options = {}, token) {
       headers: buildApiHeaders(token, extraHeaders),
     });
   } catch (error) {
+    if (error instanceof ApiConfigurationError) throw error;
     throw new Error(normalizeFetchError(error, apiBaseUrl));
   }
 }

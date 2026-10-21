@@ -30,6 +30,38 @@ function renderHome(overrides = {}) {
   );
 }
 
+describe('public landing', () => {
+  beforeEach(() => {
+    fetchTrending.mockReset();
+    searchRepositories.mockReset();
+  });
+
+  it('renders a product landing page without discovery API calls', () => {
+    renderHome({ isSignedIn: false });
+
+    expect(screen.getByRole('heading', { name: /Understand Code/i })).toBeInTheDocument();
+    expect(screen.getByText('AI-POWERED DEVELOPER DISCOVERY')).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: 'Get Started' })[0]).toHaveAttribute('href', '/sign-up');
+    expect(screen.getByRole('link', { name: 'Sign In' })).toHaveAttribute('href', '/sign-in');
+    expect(screen.getByText('Discover Open-Source Projects')).toBeInTheDocument();
+    expect(screen.getByText('AI-Powered Code Summarization')).toBeInTheDocument();
+    expect(screen.getByText('Ready to explore code differently?')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Search repositories')).not.toBeInTheDocument();
+    expect(screen.queryByText('Recommended Repositories')).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(fetchTrending).not.toHaveBeenCalled();
+    expect(searchRepositories).not.toHaveBeenCalled();
+  });
+
+  it('does not fetch recommendations while Clerk is still loading', () => {
+    renderHome({ isLoaded: false, isSignedIn: false });
+
+    expect(fetchTrending).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText('Search repositories')).not.toBeInTheDocument();
+    expect(screen.queryByText('Recommended Repositories')).not.toBeInTheDocument();
+  });
+});
+
 describe('Home search', () => {
   beforeEach(() => {
     fetchTrending.mockReset();

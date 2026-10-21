@@ -7,13 +7,13 @@ describe('frontendBaseUrl', () => {
   });
 
   it('uses configured VITE_FRONTEND_BASE_URL when set', () => {
-    vi.stubEnv('VITE_FRONTEND_BASE_URL', 'https://example.trycloudflare.com');
-    expect(getPublicFrontendBaseUrl()).toBe('https://example.trycloudflare.com');
+    vi.stubEnv('VITE_FRONTEND_BASE_URL', 'https://app.example.com');
+    expect(getPublicFrontendBaseUrl()).toBe('https://app.example.com');
   });
 
   it('strips trailing slash from configured base URL', () => {
-    vi.stubEnv('VITE_FRONTEND_BASE_URL', 'https://example.trycloudflare.com/');
-    expect(getPublicFrontendBaseUrl()).toBe('https://example.trycloudflare.com');
+    vi.stubEnv('VITE_FRONTEND_BASE_URL', 'https://app.example.com/');
+    expect(getPublicFrontendBaseUrl()).toBe('https://app.example.com');
   });
 
   it('falls back to window.location.origin when env is unset', () => {
@@ -22,7 +22,7 @@ describe('frontendBaseUrl', () => {
   });
 
   it('builds meet join URLs from short codes', () => {
-    vi.stubEnv('VITE_FRONTEND_BASE_URL', 'https://example.trycloudflare.com');
-    expect(buildMeetJoinUrl('ABCD-EFGH')).toBe('https://example.trycloudflare.com/meet/join/ABCD-EFGH');
+    vi.stubEnv('VITE_FRONTEND_BASE_URL', 'https://app.example.com');
+    expect(buildMeetJoinUrl('ABCD-EFGH')).toBe('https://app.example.com/meet/join/ABCD-EFGH');
   });
 });
