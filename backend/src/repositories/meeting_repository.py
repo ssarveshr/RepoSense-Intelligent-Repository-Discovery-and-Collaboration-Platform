@@ -139,6 +139,14 @@ class MeetingRepository:
         await self.session.refresh(meeting, attribute_names=["participants"])
         return meeting
 
+    async def delete_meeting(self, meeting_id: str) -> bool:
+        meeting = await self.get_meeting_by_id(meeting_id)
+        if meeting is None:
+            return False
+        await self.session.delete(meeting)
+        await self.session.flush()
+        return True
+
     async def mark_meeting_empty(self, meeting_id: str) -> None:
         meeting = await self.get_meeting_by_id_light(meeting_id)
         if meeting is None or meeting.status == MeetingStatus.ended.value:
@@ -163,6 +171,31 @@ class MeetingRepository:
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+    async def list_ended_empty_meetings(self) -> list[Meeting]:
+        """Ended meetings with no active participants (legacy rows pending deletion)."""
+        stmt = (
+            select(Meeting)
+            .where(Meeting.status == MeetingStatus.ended.value)
+            .options(selectinload(Meeting.participants))
+        )
+        result = await self.session.execute(stmt)
+        meetings = list(result.scalars().all())
+        empty: list[Meeting] = []
+        for meeting in meetings:
+            count_stmt = (
+                select(func.count())
+                .select_from(Participant)
+                .where(
+                    Participant.meeting_id == meeting.id,
+                    Participant.left_at.is_(None),
+                    Participant.joined_at.is_not(None),
+                )
+            )
+            count_result = await self.session.execute(count_stmt)
+            if int(count_result.scalar_one()) == 0:
+                empty.append(meeting)
+        return empty
 
     async def count_active_participants(self, meeting_id: str) -> int:
         stmt = (

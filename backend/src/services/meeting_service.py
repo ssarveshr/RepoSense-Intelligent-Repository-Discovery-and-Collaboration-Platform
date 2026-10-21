@@ -285,7 +285,7 @@ class MeetingService:
             active_count = await self.repository.count_active_participants(meeting_id)
             if active_count == 0:
                 await self.repository.mark_meeting_empty(meeting_id)
-                auto_ended = await self._try_end_empty_meeting_after_grace(meeting_id)
+                auto_ended = await self._try_cleanup_empty_meeting_after_grace(meeting_id)
                 if auto_ended:
                     meeting_status = MeetingStatus.ended.value
 
@@ -294,6 +294,57 @@ class MeetingService:
             meeting_status=meeting_status,
             auto_ended=auto_ended,
         )
+
+    async def _try_cleanup_empty_meeting_after_grace(self, meeting_id: str) -> bool:
+        meeting = await self.repository.get_meeting_by_id(meeting_id)
+        if meeting is None:
+            return False
+
+        active_count = await self.repository.count_active_participants(meeting_id)
+        if active_count > 0:
+            await self.repository.clear_meeting_empty(meeting_id)
+            return False
+
+        if not self._meeting_empty_past_grace(meeting):
+            return False
+
+        if meeting.status != MeetingStatus.ended.value:
+            ended = await self.repository.end_meeting(meeting_id)
+            if ended is None:
+                return False
+
+        return await self.repository.delete_meeting(meeting_id)
+
+    async def cleanup_empty_meetings(self) -> int:
+        """End and delete joinable meetings empty beyond the configured grace period."""
+        deleted_count = 0
+        candidates = await self.repository.list_joinable_meetings()
+
+        for meeting in candidates:
+            active_count = await self.repository.count_active_participants(meeting.id)
+            if active_count > 0:
+                if meeting.empty_since is not None:
+                    await self.repository.clear_meeting_empty(meeting.id)
+                continue
+
+            if meeting.empty_since is None:
+                await self.repository.mark_meeting_empty(meeting.id)
+                meeting = await self.repository.get_meeting_by_id(meeting.id)
+                if meeting is None:
+                    continue
+
+            if not self._meeting_empty_past_grace(meeting):
+                continue
+
+            if await self._try_cleanup_empty_meeting_after_grace(meeting.id):
+                deleted_count += 1
+
+        ended_stale = await self.repository.list_ended_empty_meetings()
+        for meeting in ended_stale:
+            if await self.repository.delete_meeting(meeting.id):
+                deleted_count += 1
+
+        return deleted_count
 
     def _empty_reference_time(self, meeting) -> datetime | None:
         if meeting.empty_since is not None:
@@ -318,45 +369,3 @@ class MeetingService:
         grace = max(0, settings.empty_meeting_grace_seconds)
         cutoff = datetime.now(timezone.utc) - timedelta(seconds=grace)
         return reference <= cutoff
-
-    async def _try_end_empty_meeting_after_grace(self, meeting_id: str) -> bool:
-        meeting = await self.repository.get_meeting_by_id(meeting_id)
-        if meeting is None or meeting.status == MeetingStatus.ended.value:
-            return False
-
-        active_count = await self.repository.count_active_participants(meeting_id)
-        if active_count > 0:
-            await self.repository.clear_meeting_empty(meeting_id)
-            return False
-
-        if not self._meeting_empty_past_grace(meeting):
-            return False
-
-        ended = await self.repository.end_meeting(meeting_id)
-        return ended is not None
-
-    async def cleanup_empty_meetings(self) -> int:
-        """End joinable meetings that have been empty beyond the configured grace period."""
-        ended_count = 0
-        candidates = await self.repository.list_joinable_meetings()
-
-        for meeting in candidates:
-            active_count = await self.repository.count_active_participants(meeting.id)
-            if active_count > 0:
-                if meeting.empty_since is not None:
-                    await self.repository.clear_meeting_empty(meeting.id)
-                continue
-
-            if meeting.empty_since is None:
-                await self.repository.mark_meeting_empty(meeting.id)
-                meeting = await self.repository.get_meeting_by_id(meeting.id)
-                if meeting is None:
-                    continue
-
-            if not self._meeting_empty_past_grace(meeting):
-                continue
-
-            if await self._try_end_empty_meeting_after_grace(meeting.id):
-                ended_count += 1
-
-        return ended_count

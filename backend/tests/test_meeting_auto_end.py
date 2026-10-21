@@ -1,5 +1,6 @@
 import pytest
 
+from src.config import settings
 from src.models.meeting import MeetingCreate, MeetingStatus
 from src.services.meeting_service import MeetingJoinError, MeetingService
 from src.services.participant_service import ParticipantLeaveError, ParticipantService
@@ -36,9 +37,7 @@ async def test_single_participant_leave_auto_ends_meeting(async_session, zero_em
     assert result.meeting_status == MeetingStatus.ended.value
     assert result.auto_ended is True
 
-    meeting = await service.get_meeting(created.id)
-    assert meeting.status == MeetingStatus.ended.value
-    assert meeting.ended_at is not None
+    assert await service.get_meeting(created.id) is None
 
 
 @pytest.mark.asyncio
@@ -113,8 +112,7 @@ async def test_last_participant_leave_auto_ends_meeting(async_session, zero_empt
     assert result.auto_ended is True
     assert result.meeting_status == MeetingStatus.ended.value
 
-    meeting = await service.get_meeting(created.id)
-    assert meeting.status == MeetingStatus.ended.value
+    assert await service.get_meeting(created.id) is None
 
 
 @pytest.mark.asyncio
@@ -182,12 +180,12 @@ async def test_auto_ended_meeting_cannot_be_joined(async_session, zero_empty_gra
             token_service=FakeTokenService(),
         )
 
-    assert exc_info.value.status_code == 409
-    assert exc_info.value.message == "Meeting has ended"
+    assert exc_info.value.status_code == 400
 
 
 @pytest.mark.asyncio
-async def test_leave_is_idempotent(async_session, zero_empty_grace):
+async def test_leave_is_idempotent(async_session, monkeypatch):
+    monkeypatch.setattr(settings, "empty_meeting_grace_seconds", 30)
     service = MeetingService(async_session)
 
     created = await service.create_meeting(
@@ -216,7 +214,8 @@ async def test_leave_is_idempotent(async_session, zero_empty_grace):
     assert second.auto_ended is False
 
     meeting = await service.get_meeting(created.id)
-    assert meeting.status == MeetingStatus.ended.value
+    assert meeting is not None
+    assert meeting.status == MeetingStatus.active.value
 
 
 @pytest.mark.asyncio

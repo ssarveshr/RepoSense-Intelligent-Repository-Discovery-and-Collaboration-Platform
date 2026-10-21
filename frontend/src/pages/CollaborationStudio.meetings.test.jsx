@@ -119,4 +119,77 @@ describe('CollaborationStudio meeting controls', () => {
       expect(mockEndMeeting).toHaveBeenCalledWith('meeting-1', 'token');
     });
   });
+
+  it('removes active meeting cards after refresh when API returns no meetings', async () => {
+    render(
+      <MemoryRouter>
+        <ProfileAuthContext.Provider value={authValue}>
+          <CollaborationStudio />
+        </ProfileAuthContext.Provider>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('hello')).toBeInTheDocument();
+
+    mockListMeetings.mockResolvedValueOnce([]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+
+    await waitFor(() => {
+      expect(mockListMeetings).toHaveBeenCalledTimes(2);
+    });
+
+    expect(screen.queryByText('hello')).not.toBeInTheDocument();
+    expect(screen.getByText(/No active meetings yet/i)).toBeInTheDocument();
+  });
+
+  it('clears deleted meetings from the list after a visibility refetch', async () => {
+    render(
+      <MemoryRouter>
+        <ProfileAuthContext.Provider value={authValue}>
+          <CollaborationStudio />
+        </ProfileAuthContext.Provider>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('hello')).toBeInTheDocument();
+
+    mockListMeetings.mockResolvedValueOnce([]);
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    await waitFor(() => {
+      expect(screen.queryByText('hello')).not.toBeInTheDocument();
+    });
+  });
+
+  it('refetches active meetings when the tab becomes visible again', async () => {
+    render(
+      <MemoryRouter>
+        <ProfileAuthContext.Provider value={authValue}>
+          <CollaborationStudio />
+        </ProfileAuthContext.Provider>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(mockListMeetings).toHaveBeenCalledTimes(1);
+    });
+
+    mockListMeetings.mockResolvedValueOnce([]);
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    await waitFor(() => {
+      expect(mockListMeetings).toHaveBeenCalledTimes(2);
+    });
+  });
 });

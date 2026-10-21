@@ -417,6 +417,19 @@ export default function CollaborationStudio() {
     }
   }, [isLoaded, isSignedIn, loadActiveMeetings]);
 
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return undefined;
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') {
+        loadActiveMeetings();
+      }
+    };
+
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    return () => document.removeEventListener('visibilitychange', refreshWhenVisible);
+  }, [isLoaded, isSignedIn, loadActiveMeetings]);
+
   const emailStats = useMemo(() => {
     const withEmail = collaborators.filter((c) => isValidEmail(c.email)).length;
     return {
