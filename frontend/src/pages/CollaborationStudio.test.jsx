@@ -63,11 +63,13 @@ describe('CollaborationStudio', () => {
       </MemoryRouter>,
     );
 
+    expect(screen.getByRole('heading', { name: 'Meetings' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Host Meeting & Broadcast Collaborator Invites/i })).toBeInTheDocument();
     expect(screen.getByText('Host Setup & Meeting Configuration')).toBeInTheDocument();
     expect(screen.getByText('GitHub connection')).toBeInTheDocument();
     expect(screen.getByText('Select a repository')).toBeInTheDocument();
     expect(screen.getByText('Your Active Meetings')).toBeInTheDocument();
+    expect(screen.getByLabelText('Join an existing meeting')).toBeInTheDocument();
     expect(screen.queryByText('Sarah Frontend')).not.toBeInTheDocument();
     expect(screen.queryByText(/Zoom Collaboration/i)).not.toBeInTheDocument();
     expect(screen.queryByText('RepoSense Collaboration Studio')).not.toBeInTheDocument();

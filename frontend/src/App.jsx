@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { Routes, Route, Link } from 'react-router-dom';
 import Home from './pages/Home';
 import RepositoryDetails from './pages/RepositoryDetails';
@@ -14,51 +13,35 @@ import CollaborationStudio from './pages/CollaborationStudio';
 import SignInPage from './pages/SignInPage';
 import SignUpPage from './pages/SignUpPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
-import { AppNav, AppUserMenu } from './components/auth/AppNav';
+import { AppNav, AppMobileNav, AppUserMenu } from './components/auth/AppNav';
 import StandaloneMeetLayout from './layouts/StandaloneMeetLayout.jsx';
 import { MeetLayoutContext } from './layouts/meetLayoutContext.js';
 
-import { SunIcon, MoonIcon } from './components/icons';
+import ThemeToggle from './components/ThemeToggle';
+import { usePersistedTheme } from './hooks/usePersistedTheme.js';
 
 function MainAppShell() {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const toggleTheme = () => setIsDarkMode(!isDarkMode);
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDarkMode]);
+  const { isDarkMode, toggleTheme } = usePersistedTheme();
 
   return (
     <MeetLayoutContext.Provider value={{ standalone: false }}>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-500 ease-in-out">
-        <nav className="sticky top-0 z-50 backdrop-blur-md bg-white/70 dark:bg-gray-900/70 border-b border-gray-200 dark:border-gray-800 transition-colors duration-500">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-sans transition-colors duration-300 ease-in-out motion-reduce:transition-none">
+        <nav className="sticky top-0 z-50 overflow-visible bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 transition-colors duration-300 motion-reduce:transition-none">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <Link to="/" className="flex items-center space-x-2 cursor-pointer">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-500/30">R</div>
-                <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">RepoSense</span>
+            <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center h-[66px] md:h-[76px] gap-2 md:gap-3">
+              <Link to="/" className="flex items-center gap-2 md:gap-2.5 cursor-pointer shrink-0 min-w-0">
+                <div className="w-9 h-9 md:w-10 md:h-10 rounded-[10px] bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-xl md:text-[1.375rem] shadow-sm shadow-blue-500/30">R</div>
+                <span className="font-bold text-xl md:text-[1.4rem] tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-400">RepoSense</span>
               </Link>
 
-              <AppNav />
+              <div className="hidden md:flex justify-center min-w-0">
+                <AppNav />
+              </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center justify-end gap-1.5 sm:gap-2 shrink-0">
+                <AppMobileNav />
                 <AppUserMenu />
-                <button
-                  onClick={toggleTheme}
-                  className="p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 hover:bg-gray-200 dark:hover:bg-gray-800 transition-all duration-500 overflow-hidden relative"
-                  aria-label="Toggle Dark Mode"
-                >
-                  <div className={`transform transition-transform duration-500 ${isDarkMode ? 'rotate-[360deg] scale-0 opacity-0 absolute' : 'rotate-0 scale-100 opacity-100'}`}>
-                    <SunIcon />
-                  </div>
-                  <div className={`transform transition-transform duration-500 ${isDarkMode ? 'rotate-0 scale-100 opacity-100' : '-rotate-[360deg] scale-0 opacity-0 absolute'}`}>
-                    <MoonIcon />
-                  </div>
-                </button>
+                <ThemeToggle isDarkMode={isDarkMode} onToggle={toggleTheme} />
               </div>
             </div>
           </div>

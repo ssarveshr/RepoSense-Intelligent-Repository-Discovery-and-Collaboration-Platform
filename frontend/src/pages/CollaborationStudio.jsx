@@ -642,6 +642,7 @@ export default function CollaborationStudio() {
   };
 
   const handleJoinExisting = async () => {
+    if (joiningMeeting || creatingMeeting || sendingInvites) return;
     setErrorMessage('');
     const id = inputMeetingId.trim();
     if (!id) {
@@ -777,12 +778,21 @@ export default function CollaborationStudio() {
   const busy = creatingMeeting || sendingInvites || joiningMeeting;
 
   return (
-    <div className="max-w-7xl mx-auto py-6 px-4 animate-fade-in-up">
+    <div className="max-w-7xl mx-auto animate-fade-in-up">
+      <header className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Meetings</h1>
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 max-w-3xl">
+          Create a LiveKit meeting, invite repository collaborators, or join a session you already have.
+        </p>
+      </header>
+
       {/* Toast notification */}
       {inviteNotification && (
-        <div className="mb-6 p-4 bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 rounded-2xl shadow-lg flex items-center justify-between gap-4">
+        <div className="mb-6 p-4 bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 rounded-2xl shadow-sm flex items-center justify-between gap-4">
           <div className="flex items-center space-x-3 min-w-0">
-            <span className="text-xl shrink-0" aria-hidden="true">📧</span>
+            <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
             <p className="font-bold text-sm md:text-base truncate">{inviteNotification}</p>
           </div>
           <span className="text-xs bg-emerald-500 text-white px-3 py-1 rounded-full font-bold shrink-0">
@@ -803,9 +813,10 @@ export default function CollaborationStudio() {
         </div>
       )}
 
-      <section className="mb-6 p-6 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl shadow-lg space-y-4">
+      <section className="mb-6 p-6 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-300 mb-1">Repository setup</p>
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">GitHub connection</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Connect GitHub to load your repositories and collaborators automatically.
@@ -904,7 +915,7 @@ export default function CollaborationStudio() {
       {!githubUrl && (
         <form
           onSubmit={handleApplyRepository}
-          className="mb-6 p-6 bg-white dark:bg-gray-900 border border-amber-200 dark:border-amber-900/40 rounded-3xl shadow-lg space-y-3"
+          className="mb-6 p-6 bg-white dark:bg-gray-900 border border-amber-200 dark:border-amber-900/40 rounded-2xl shadow-sm space-y-3"
         >
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">
             {isGitHubConnected ? 'Or enter a repository manually' : 'Select a repository'}
@@ -967,7 +978,7 @@ export default function CollaborationStudio() {
 
       {inviteSummary && createdMeeting && (
         <div
-          className="mb-6 p-6 bg-white dark:bg-gray-900 border border-emerald-200 dark:border-emerald-900/50 rounded-3xl shadow-xl"
+          className="mb-6 p-6 bg-white dark:bg-gray-900 border border-emerald-200 dark:border-emerald-900/50 rounded-2xl shadow-sm"
           role="status"
         >
           <div className="flex items-start gap-4">
@@ -975,6 +986,7 @@ export default function CollaborationStudio() {
               ✓
             </div>
             <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 mb-1">Current meeting</p>
               <p className="font-bold text-lg text-gray-900 dark:text-white">Meeting created successfully</p>
               <p className="text-base font-semibold text-gray-700 dark:text-gray-200 mt-1 truncate">
                 {createdMeeting.title}
@@ -992,7 +1004,7 @@ export default function CollaborationStudio() {
                 </div>
                 <div className="rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/40 px-4 py-3">
                   <p className="text-amber-700 dark:text-amber-300 font-bold">
-                    ⚠ {inviteSummary.email_unavailable} unavailable
+                    {inviteSummary.email_unavailable} unavailable
                   </p>
                 </div>
                 <div className="rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/40 px-4 py-3">
@@ -1009,7 +1021,7 @@ export default function CollaborationStudio() {
               <button
                 type="button"
                 onClick={enterMeeting}
-                className="mt-5 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl text-sm shadow-lg transition-all"
+                className="mt-5 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               >
                 Enter Meeting
               </button>
@@ -1022,12 +1034,13 @@ export default function CollaborationStudio() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Host setup card */}
         <div className="md:col-span-2">
-          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-8 shadow-xl">
+          <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-8 shadow-sm">
             <div className="flex items-center space-x-4 mb-6">
               <div className="w-14 h-14 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center shrink-0">
                 <VideoCameraIcon className="w-8 h-8" />
               </div>
               <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-300 mb-1">Create a meeting</p>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                   Host Setup &amp; Meeting Configuration
                 </h2>
@@ -1092,11 +1105,12 @@ export default function CollaborationStudio() {
             </div>
 
             <div className="bg-gray-50 dark:bg-gray-800/40 p-5 rounded-2xl border border-gray-200 dark:border-gray-700/60 mb-6 space-y-3">
-              <label className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
-                Or Join Existing Meeting ID
+              <label htmlFor="join-existing-meeting-id" className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300">
+                Join an existing meeting
               </label>
               <div className="flex flex-col sm:flex-row gap-3">
                 <input
+                  id="join-existing-meeting-id"
                   type="text"
                   value={inputMeetingId}
                   onChange={(e) => setInputMeetingId(e.target.value)}
@@ -1107,7 +1121,8 @@ export default function CollaborationStudio() {
                   type="button"
                   onClick={handleJoinExisting}
                   disabled={!inputMeetingId.trim() || busy}
-                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition-all disabled:opacity-50 shrink-0"
+                  aria-busy={joiningMeeting}
+                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                 >
                   {joiningMeeting ? 'Joining…' : 'Join Meeting'}
                 </button>
@@ -1118,7 +1133,8 @@ export default function CollaborationStudio() {
               type="button"
               onClick={handleRequestBroadcast}
               disabled={busy}
-              className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold rounded-2xl shadow-xl transition-all transform hover:scale-[1.01] flex items-center justify-center space-x-3 disabled:opacity-60 disabled:hover:scale-100"
+              aria-busy={busy}
+              className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-sm transition-colors flex items-center justify-center space-x-3 disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
               <span>
                 {creatingMeeting
@@ -1132,7 +1148,7 @@ export default function CollaborationStudio() {
           </div>
 
           {autoLogEntries.length > 0 && (
-            <div className="mt-6 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-xl">
+            <div className="mt-6 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
               <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-3 uppercase tracking-wider">
                 Invitation Auto Log
               </h3>
@@ -1149,12 +1165,15 @@ export default function CollaborationStudio() {
         </div>
 
         {/* Collaborator panel */}
-        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between min-h-[520px]">
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm flex flex-col justify-between min-h-[520px]">
           <div>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                Repository Collaborators ({collaborators.length})
-              </h3>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-300 mb-1">Invite collaborators</p>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                  Repository Collaborators ({collaborators.length})
+                </h3>
+              </div>
               <button
                 type="button"
                 onClick={() => setShowAddCollabModal(true)}
@@ -1368,9 +1387,9 @@ export default function CollaborationStudio() {
                               !createdMeeting
                             }
                             title="Send invitation email via backend SMTP"
-                            className="text-xs px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl shadow-md transition-all disabled:opacity-40"
+                            className="text-xs px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm transition-colors disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                           >
-                            {sendingSingleId === c.id ? 'Sending…' : '📬 Send Mail'}
+                            {sendingSingleId === c.id ? 'Sending…' : 'Send Mail'}
                           </button>
                           <button
                             type="button"
@@ -1403,9 +1422,10 @@ export default function CollaborationStudio() {
         </div>
       </div>
 
-      <section className="mt-10 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-xl">
+      <section className="mt-10 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm">
         <div className="flex items-center justify-between gap-4 mb-4">
           <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-300 mb-1">Existing meetings</p>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Your Active Meetings</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">LiveKit rooms you have hosted in RepoSense.</p>
           </div>
@@ -1482,7 +1502,7 @@ export default function CollaborationStudio() {
 
       {endTargetMeeting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 w-full max-w-md shadow-2xl border border-gray-200 dark:border-gray-800">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md shadow-lg border border-gray-200 dark:border-gray-800">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">End meeting?</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
               End <span className="font-semibold">{endTargetMeeting.title}</span> ({endTargetMeeting.short_code}) for everyone? New joins will be rejected.
@@ -1510,7 +1530,7 @@ export default function CollaborationStudio() {
 
       {showInviteSummaryModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-3xl p-6 w-full max-w-lg shadow-2xl border border-gray-200 dark:border-gray-800">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-lg shadow-lg border border-gray-200 dark:border-gray-800">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Invitation Summary</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
               Review who will receive RepoSense meeting invitations before sending.
@@ -1549,7 +1569,7 @@ export default function CollaborationStudio() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <form
             onSubmit={handleAddCollaborator}
-            className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-200 dark:border-gray-800"
+            className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md shadow-lg border border-gray-200 dark:border-gray-800"
           >
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Add collaborator email</h3>
             {addEmailError && (

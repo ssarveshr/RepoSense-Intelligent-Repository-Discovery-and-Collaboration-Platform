@@ -11,6 +11,11 @@ describe('apiBase', () => {
     expect(getApiBaseUrl()).toBe('http://localhost:8000');
   });
 
+  it('uses an explicit localhost API URL for local development', () => {
+    vi.stubEnv('VITE_API_BASE_URL', 'http://localhost:8000');
+    expect(getApiBaseUrl()).toBe('http://localhost:8000');
+  });
+
   it('uses VITE_API_BASE_URL and strips trailing slashes', () => {
     vi.stubEnv('VITE_API_BASE_URL', 'https://api.example.com/');
     expect(getApiBaseUrl()).toBe('https://api.example.com');

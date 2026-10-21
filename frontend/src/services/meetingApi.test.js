@@ -28,6 +28,14 @@ describe('meetingApi', () => {
     expect(options.headers['X-Meeting-Api-Key']).toBeUndefined();
   });
 
+  it('listMeetings uses an explicit local API base URL', async () => {
+    vi.stubEnv('VITE_API_BASE_URL', 'http://localhost:8000');
+    await listMeetings('clerk-jwt-token');
+
+    expect(fetch).toHaveBeenCalledOnce();
+    expect(fetch.mock.calls[0][0]).toBe('http://localhost:8000/api/meetings');
+  });
+
   it('listMeetings uses authenticated fetch wrapper', async () => {
     await listMeetings('clerk-jwt-token');
 

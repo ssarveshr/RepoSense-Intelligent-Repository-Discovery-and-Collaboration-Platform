@@ -9,7 +9,7 @@ import { sanitizeUsernameInput, updateClerkUsername } from '../components/profil
 import { useProfileAuth } from '../providers/profileAuthContext.js';
 
 export function useProfile() {
-  const { isLoaded, isSignedIn, user, getAuthToken } = useProfileAuth();
+  const { isLoaded, isSignedIn, isSessionReady, user, getAuthToken } = useProfileAuth();
   const [bio, setBio] = useState('');
   const [skills, setSkills] = useState([]);
   const [profileLoading, setProfileLoading] = useState(true);
@@ -20,6 +20,12 @@ export function useProfile() {
       setBio('');
       setSkills([]);
       setProfileLoading(false);
+      setError(null);
+      return;
+    }
+
+    if (!isSessionReady) {
+      setProfileLoading(true);
       return;
     }
 
@@ -39,12 +45,12 @@ export function useProfile() {
     } finally {
       setProfileLoading(false);
     }
-  }, [getAuthToken, isSignedIn]);
+  }, [getAuthToken, isSessionReady, isSignedIn]);
 
   useEffect(() => {
     if (!isLoaded) return;
     loadProfile();
-  }, [isLoaded, isSignedIn, loadProfile]);
+  }, [isLoaded, isSessionReady, isSignedIn, loadProfile]);
 
   const profile = useMemo(() => {
     const displayName = getClerkDisplayName(user);
@@ -119,7 +125,7 @@ export function useProfile() {
 
   return {
     profile,
-    loading: !isLoaded || profileLoading,
+    loading: !isLoaded || (Boolean(isSignedIn) && !isSessionReady) || profileLoading,
     error,
     saveProfile,
     reloadProfile: loadProfile,

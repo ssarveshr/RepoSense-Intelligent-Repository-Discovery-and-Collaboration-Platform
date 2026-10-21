@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import Profile from './Profile';
+
+const mockSignOut = vi.fn();
+
+vi.mock('@clerk/clerk-react', () => ({
+  useClerk: () => ({ signOut: mockSignOut }),
+}));
 
 vi.mock('../hooks/useProfile', () => ({
   useProfile: vi.fn(),
@@ -82,6 +88,14 @@ describe('Profile', () => {
     expect(screen.queryByText(/Created meeting/i)).not.toBeInTheDocument();
   });
 
+  it('signs out with Clerk from the profile page', () => {
+    render(<Profile />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+
+    expect(mockSignOut).toHaveBeenCalledWith({ redirectUrl: '/' });
+  });
+
   it('does not keep the page skeleton after profile data is ready', () => {
     render(<Profile />);
 
@@ -125,6 +139,24 @@ describe('Profile', () => {
     render(<Profile />);
 
     expect(screen.getByText('github-connected')).toBeInTheDocument();
+  });
+
+  it('keeps retry available when the profile API cannot be reached', () => {
+    useProfile.mockReturnValue({
+      profile: { displayName: 'Suhan G', bio: '', skills: [] },
+      loading: false,
+      error:
+        'Unable to reach the RepoSense API at http://localhost:8000. Make sure the backend is running.',
+      saveProfile: vi.fn(),
+      reloadProfile: vi.fn(),
+    });
+
+    render(<Profile />);
+
+    expect(screen.getByText("Couldn't load your profile.")).toBeInTheDocument();
+    expect(screen.getByText(/Unable to reach the RepoSense API at http:\/\/localhost:8000/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
+    expect(screen.queryByTestId('profile-sidebar')).not.toBeInTheDocument();
   });
 
   it('does not fetch meeting activity endpoints', () => {

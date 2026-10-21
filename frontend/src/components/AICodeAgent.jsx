@@ -1,8 +1,55 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 
 const defaultPythonCode = `def process_user_data(users):\n    # Calculate summary statistics\n    total_age = 0\n    results = []\n    for u in users:\n        total_age += u['age']\n        results.append(f"User: {u['name']}, Age: {u['age']}")\n    \n    avg_age = total_age / len(users)\n    print(f"Processed {len(users)} users. Average age: {avg_age:.1f}")\n    return results\n\nsample_data = [\n    {"name": "Alice", "age": 28},\n    {"name": "Bob", "age": 34},\n    {"name": "Charlie", "age": 22}\n]\n\noutput = process_user_data(sample_data)\nprint("Results:", output)`;
 
 const defaultJSCode = `function calculateMetrics(items) {\n  let total = 0;\n  const processed = [];\n  \n  items.forEach(item => {\n    total += item.price * item.quantity;\n    processed.push({\n      id: item.id,\n      subtotal: item.price * item.quantity\n    });\n  });\n  \n  console.log("Total Order Value: $" + total.toFixed(2));\n  return { total, processed };\n}\n\nconst inventory = [\n  { id: "A1", price: 19.99, quantity: 3 },\n  { id: "B2", price: 49.50, quantity: 1 }\n];\n\nconst summary = calculateMetrics(inventory);\nconsole.log("Summary:", JSON.stringify(summary, null, 2));`;
+
+function Icon({ path, className = 'w-4 h-4 shrink-0' }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={path} />
+    </svg>
+  );
+}
+
+const LightningIcon = () => (
+  <Icon path="M13 10V3L4 14h7v7l9-11h-7z" />
+);
+const SearchGlyph = () => (
+  <Icon path="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+);
+const PlayIcon = () => (
+  <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M8 5v14l11-7z" />
+  </svg>
+);
+const ShieldIcon = () => (
+  <Icon path="M12 3l8 4v5c0 5-3.5 8.5-8 9.5C7.5 20.5 4 17 4 12V7l8-4z" />
+);
+const PaintIcon = () => (
+  <Icon path="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h10a2 2 0 012 2v3M15 11l6 6-3 3-6-6v-3h3z" />
+);
+const RocketIcon = () => (
+  <Icon path="M5 15l-2 6 6-2 9-9a4 4 0 00-4-4L5 15zM9 11l4 4" />
+);
+const DocumentIcon = () => (
+  <Icon path="M9 12h6m-6 4h6M7 4h6l4 4v12a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z" />
+);
+const TerminalIcon = () => (
+  <Icon path="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+);
+const SparkIcon = () => (
+  <Icon path="M5 3v4M3 5h4M6 17v4m-2-2h4m9-13l-2 2m0 8l2 2M13 7l6 6-4 4-6-6V7h4z" />
+);
+const BeakerIcon = () => (
+  <Icon path="M9 3h6M10 3v6L5 18a3 3 0 002.6 4.5h8.8A3 3 0 0019 18L14 9V3" />
+);
+const TagIcon = () => (
+  <Icon path="M7 7h.01M3 11l8.5-8.5a2 2 0 012.8 0L21 11v8a2 2 0 01-2 2h-8L3 11z" />
+);
+const FolderGlyph = () => (
+  <Icon path="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" className="w-3.5 h-3.5 shrink-0" />
+);
 
 export default function AICodeAgent({ initialCode, initialLanguage = "python", initialRepoUrl = "" }) {
   // Main view mode: "sandbox" | "repo_audit"
@@ -24,6 +71,9 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
   const [repoBugsResult, setRepoBugsResult] = useState(null);
   const [bugFilter, setBugFilter] = useState("ALL"); // "ALL" | "HIGH" | "MEDIUM" | "Security Vulnerability"
   const [expandedBugId, setExpandedBugId] = useState(null);
+  const runInFlight = useRef(false);
+  const modifyInFlight = useRef(false);
+  const scanInFlight = useRef(false);
 
   const handleLanguageChange = (newLang) => {
     setLanguage(newLang);
@@ -33,6 +83,8 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
   };
 
   const runCode = async () => {
+    if (runInFlight.current) return;
+    runInFlight.current = true;
     setIsRunning(true);
     setRunResult(null);
     try {
@@ -54,11 +106,14 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
       });
       setActiveTab("console");
     } finally {
+      runInFlight.current = false;
       setIsRunning(false);
     }
   };
 
   const handleAIAction = async (actionType, customPrompt = "") => {
+    if (modifyInFlight.current) return;
+    modifyInFlight.current = true;
     setIsModifying(true);
     setAiResult(null);
     try {
@@ -82,11 +137,14 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
         suggestions: []
       });
     } finally {
+      modifyInFlight.current = false;
       setIsModifying(false);
     }
   };
 
   const explainCode = async () => {
+    if (modifyInFlight.current) return;
+    modifyInFlight.current = true;
     setIsModifying(true);
     try {
       const response = await fetch("http://localhost:8000/api/agent/explain", {
@@ -109,6 +167,7 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
     } catch (err) {
       setAiResult({ status: "error", explanation: err.message, suggestions: [] });
     } finally {
+      modifyInFlight.current = false;
       setIsModifying(false);
     }
   };
@@ -123,7 +182,8 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
 
   // Repo Bug Scanner Handler
   const scanRepoBugs = async (targetUrl = repoUrl) => {
-    if (!targetUrl.trim()) return;
+    if (!targetUrl.trim() || scanInFlight.current) return;
+    scanInFlight.current = true;
     setIsScanningRepo(true);
     setRepoBugsResult(null);
     try {
@@ -143,6 +203,7 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
         message: `Failed to audit repository: ${err.message}`
       });
     } finally {
+      scanInFlight.current = false;
       setIsScanningRepo(false);
     }
   };
@@ -157,6 +218,8 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
 
   // 1-Click Run & Verify Bug Fix in Runner
   const runAndVerifyBugFix = async (bug) => {
+    if (runInFlight.current) return;
+    runInFlight.current = true;
     setCode(bug.suggested_fix);
     setLanguage(bug.language || "python");
     setViewMode("sandbox");
@@ -181,6 +244,7 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
         exit_code: -1
       });
     } finally {
+      runInFlight.current = false;
       setIsRunning(false);
     }
   };
@@ -196,15 +260,15 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
     : [];
 
   return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-3xl p-6 shadow-2xl space-y-6">
+    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-6 shadow-sm space-y-6">
       {/* Top Header Bar & Mode Toggle */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 pb-4 border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white font-black shadow-lg shadow-blue-500/30">
-            ⚡
+          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm">
+            <LightningIcon />
           </div>
           <div>
-            <h3 className="font-extrabold text-xl text-gray-900 dark:text-white flex items-center gap-2">
+            <h3 className="font-bold text-xl text-gray-900 dark:text-white flex items-center gap-2">
               RepoSense AI Code Agent
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 font-bold">
                 Repo Bug Scanner & Runner
@@ -218,26 +282,30 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
         <div className="flex bg-gray-100 dark:bg-gray-800 p-1.5 rounded-2xl border border-gray-200 dark:border-gray-700/60">
           <button
             onClick={() => setViewMode("sandbox")}
-            className={`px-5 py-2 rounded-xl text-xs font-extrabold transition-all ${
+            className={`px-5 py-2 rounded-xl text-xs font-semibold transition-colors min-h-[40px] ${
               viewMode === "sandbox"
-                ? "bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-md"
+                ? "bg-white dark:bg-gray-900 text-blue-600 dark:text-blue-400 shadow-sm"
                 : "text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
             }`}
           >
-            ⚡ Live Code Sandbox & Runner
+            <span className="inline-flex items-center gap-1.5">
+              <LightningIcon />
+              Live Code Sandbox & Runner
+            </span>
           </button>
           <button
             onClick={() => {
               setViewMode("repo_audit");
               if (!repoBugsResult && !isScanningRepo) scanRepoBugs();
             }}
-            className={`px-5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-1.5 ${
+            className={`px-5 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center space-x-1.5 min-h-[40px] ${
               viewMode === "repo_audit"
-                ? "bg-white dark:bg-gray-900 text-emerald-600 dark:text-emerald-400 shadow-md"
+                ? "bg-white dark:bg-gray-900 text-emerald-600 dark:text-emerald-400 shadow-sm"
                 : "text-gray-500 hover:text-gray-800 dark:hover:text-gray-200"
             }`}
           >
-            <span>🔍 Audit Chosen Repo Bugs</span>
+            <SearchGlyph />
+            <span>Audit Chosen Repo Bugs</span>
             {repoBugsResult?.total_bugs > 0 && (
               <span className="px-1.5 py-0.5 rounded-full bg-red-500 text-white text-[10px]">
                 {repoBugsResult.total_bugs}
@@ -251,7 +319,7 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
       {viewMode === "repo_audit" ? (
         <div className="space-y-6 animate-fade-in-up">
           {/* Repo Input Bar & Quick Presets */}
-          <div className="bg-gray-50 dark:bg-gray-800/40 p-6 rounded-3xl border border-gray-200 dark:border-gray-800 space-y-4">
+          <div className="bg-gray-50 dark:bg-gray-800/40 p-6 rounded-2xl border border-gray-200 dark:border-gray-800 space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
               <label className="text-xs font-bold uppercase tracking-wider text-gray-700 dark:text-gray-300 flex items-center gap-2">
                 <span>Select Repository to Audit for Bugs & Fixes</span>
@@ -265,8 +333,10 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
                 ].map((p, idx) => (
                   <button
                     key={idx}
+                    type="button"
+                    disabled={isScanningRepo}
                     onClick={() => { setRepoUrl(p.url); scanRepoBugs(p.url); }}
-                    className="px-2.5 py-1 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium hover:bg-blue-500 hover:text-white transition-all"
+                    className="px-2.5 py-1 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium hover:bg-blue-500 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {p.name}
                   </button>
@@ -284,9 +354,11 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
                 className="flex-1 px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
               />
               <button
+                type="button"
                 onClick={() => scanRepoBugs()}
                 disabled={isScanningRepo || !repoUrl.trim()}
-                className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold rounded-xl shadow-lg transition-all flex items-center space-x-2 shrink-0 disabled:opacity-50"
+                aria-busy={isScanningRepo}
+                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-sm transition-colors flex items-center space-x-2 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
               >
                 {isScanningRepo ? (
                   <>
@@ -298,7 +370,8 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
                   </>
                 ) : (
                   <>
-                    <span>🔍 Audit Repo Bugs</span>
+                    <SearchGlyph />
+                    <span>Audit Repo Bugs</span>
                   </>
                 )}
               </button>
@@ -309,7 +382,7 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
           {repoBugsResult && (
             <div className="space-y-6">
               {repoBugsResult.status === "error" ? (
-                <div className="p-4 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 rounded-2xl">
+                <div role="alert" className="p-4 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 rounded-2xl">
                   {repoBugsResult.message}
                 </div>
               ) : (
@@ -318,22 +391,22 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div className="p-4 bg-gray-50 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-800 rounded-2xl">
                       <p className="text-xs font-bold text-gray-500 uppercase">Target Repository</p>
-                      <p className="text-lg font-black text-gray-900 dark:text-white truncate mt-1">{repoBugsResult.repo_name}</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white truncate mt-1">{repoBugsResult.repo_name}</p>
                     </div>
 
                     <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-2xl">
                       <p className="text-xs font-bold text-red-600 dark:text-red-400 uppercase">High Severity Bugs</p>
-                      <p className="text-2xl font-black text-red-600 dark:text-red-400 mt-1">{repoBugsResult.high_count}</p>
+                      <p className="text-2xl font-bold text-red-600 dark:text-red-400 mt-1">{repoBugsResult.high_count}</p>
                     </div>
 
                     <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl">
                       <p className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase">Medium Severity</p>
-                      <p className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">{repoBugsResult.medium_count}</p>
+                      <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">{repoBugsResult.medium_count}</p>
                     </div>
 
                     <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-2xl">
                       <p className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase">Total Detected Bugs</p>
-                      <p className="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1">{repoBugsResult.total_bugs}</p>
+                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">{repoBugsResult.total_bugs}</p>
                     </div>
                   </div>
 
@@ -341,9 +414,9 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
                   <div className="flex flex-wrap gap-2 border-b border-gray-200 dark:border-gray-800 pb-3">
                     {[
                       { id: "ALL", label: `All Bugs (${repoBugsResult.bugs.length})` },
-                      { id: "HIGH", label: `🔴 High Severity (${repoBugsResult.high_count})` },
-                      { id: "MEDIUM", label: `🟡 Medium Severity (${repoBugsResult.medium_count})` },
-                      { id: "Security Vulnerability", label: `🛡️ Security Flaws` }
+                      { id: "HIGH", label: `High Severity (${repoBugsResult.high_count})` },
+                      { id: "MEDIUM", label: `Medium Severity (${repoBugsResult.medium_count})` },
+                      { id: "Security Vulnerability", label: `Security Flaws` }
                     ].map((f) => (
                       <button
                         key={f.id}
@@ -375,7 +448,7 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-gray-200 dark:border-gray-800">
                           <div>
                             <div className="flex items-center space-x-2 mb-2">
-                              <span className={`px-2.5 py-0.5 rounded-full text-xs font-black ${
+                              <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                                 bug.severity === 'HIGH' ? 'bg-red-500/20 text-red-600 dark:text-red-400' :
                                 bug.severity === 'MEDIUM' ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400' :
                                 'bg-blue-500/20 text-blue-600 dark:text-blue-400'
@@ -385,12 +458,13 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
                               <span className="px-2.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-xs font-bold">
                                 {bug.category}
                               </span>
-                              <span className="text-xs font-mono text-gray-500">
-                                📁 {bug.file} (Line {bug.line_number})
+                              <span className="text-xs font-mono text-gray-500 inline-flex items-center gap-1">
+                                <FolderGlyph />
+                                {bug.file} (Line {bug.line_number})
                               </span>
                             </div>
 
-                            <h4 className="font-extrabold text-lg text-gray-900 dark:text-white">
+                            <h4 className="font-bold text-lg text-gray-900 dark:text-white">
                               {bug.title}
                             </h4>
                           </div>
@@ -400,14 +474,16 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
                               onClick={() => applyBugFixToSandbox(bug)}
                               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-md transition-all flex items-center space-x-1"
                             >
-                              <span>⚡ Load Fix to Sandbox</span>
+                              <LightningIcon />
+                              <span>Load Fix to Sandbox</span>
                             </button>
 
                             <button
                               onClick={() => runAndVerifyBugFix(bug)}
                               className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition-all flex items-center space-x-1"
                             >
-                              <span>▶️ Run & Verify Fix</span>
+                              <PlayIcon />
+                              <span>Run & Verify Fix</span>
                             </button>
                           </div>
                         </div>
@@ -427,12 +503,12 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
                           {/* Buggy Code vs Fixed Code Side-by-Side */}
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 font-mono text-xs pt-2">
                             <div className="bg-gray-950 rounded-xl p-3 border border-red-900/50">
-                              <div className="text-red-400 font-bold mb-2 pb-1 border-b border-red-900/50">❌ Buggy Code ({bug.file})</div>
+                              <div className="text-red-400 font-bold mb-2 pb-1 border-b border-red-900/50">Buggy Code ({bug.file})</div>
                               <pre className="text-red-300 whitespace-pre-wrap">{bug.buggy_code}</pre>
                             </div>
 
                             <div className="bg-gray-950 rounded-xl p-3 border border-emerald-900/50">
-                              <div className="text-emerald-400 font-bold mb-2 pb-1 border-b border-emerald-900/50">✅ AI Proposed Fix</div>
+                              <div className="text-emerald-400 font-bold mb-2 pb-1 border-b border-emerald-900/50">AI Proposed Fix</div>
                               <pre className="text-emerald-300 whitespace-pre-wrap">{bug.suggested_fix}</pre>
                             </div>
                           </div>
@@ -479,9 +555,11 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
             {/* Run Button & Toolbar */}
             <div className="flex justify-between items-center pt-1">
               <button
+                type="button"
                 onClick={runCode}
                 disabled={isRunning}
-                className="px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold rounded-xl shadow-lg transition-all transform hover:scale-105 flex items-center space-x-2 disabled:opacity-50"
+                aria-busy={isRunning}
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-sm transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 min-h-[44px]"
               >
                 {isRunning ? (
                   <>
@@ -505,7 +583,10 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
                 onClick={() => { setViewMode("repo_audit"); scanRepoBugs(); }}
                 className="px-4 py-2.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 font-bold text-xs rounded-xl border border-blue-500/30 transition-all"
               >
-                🔍 Audit Repo for Bugs
+                <span className="inline-flex items-center gap-1.5">
+                  <SearchGlyph />
+                  Audit Repo for Bugs
+                </span>
               </button>
             </div>
 
@@ -519,7 +600,8 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
                   disabled={isModifying}
                   className="p-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-xl font-bold text-xs transition-all flex items-center justify-center space-x-1.5"
                 >
-                  <span>⚡ Fix Bugs</span>
+                  <LightningIcon />
+                  <span>Fix Bugs</span>
                 </button>
 
                 <button
@@ -527,7 +609,8 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
                   disabled={isModifying}
                   className="p-2.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30 rounded-xl font-bold text-xs transition-all flex items-center justify-center space-x-1.5"
                 >
-                  <span>🎨 Refactor</span>
+                  <PaintIcon />
+                  <span>Refactor</span>
                 </button>
 
                 <button
@@ -535,7 +618,8 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
                   disabled={isModifying}
                   className="p-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 rounded-xl font-bold text-xs transition-all flex items-center justify-center space-x-1.5"
                 >
-                  <span>🚀 Optimize</span>
+                  <RocketIcon />
+                  <span>Optimize</span>
                 </button>
 
                 <button
@@ -543,7 +627,8 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
                   disabled={isModifying}
                   className="p-2.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/30 rounded-xl font-bold text-xs transition-all flex items-center justify-center space-x-1.5"
                 >
-                  <span>📝 Explain</span>
+                  <DocumentIcon />
+                  <span>Explain</span>
                 </button>
               </div>
 
@@ -570,10 +655,10 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
                 {/* Quick Preset Action Pills */}
                 <div className="flex flex-wrap gap-1.5 pt-1">
                   {[
-                    { label: "🧪 Unit Tests", text: "Generate comprehensive unit test suite with edge cases" },
-                    { label: "⚡ Async", text: "Convert to non-blocking async/await concurrency" },
-                    { label: "🏷️ Type Hints", text: "Add static type annotations and return types" },
-                    { label: "🛡️ Validation", text: "Add defensive input validation and exception guards" }
+                    { label: "Unit Tests", icon: BeakerIcon, text: "Generate comprehensive unit test suite with edge cases" },
+                    { label: "Async", icon: LightningIcon, text: "Convert to non-blocking async/await concurrency" },
+                    { label: "Type Hints", icon: TagIcon, text: "Add static type annotations and return types" },
+                    { label: "Validation", icon: ShieldIcon, text: "Add defensive input validation and exception guards" }
                   ].map((preset, idx) => (
                     <button
                       key={idx}
@@ -582,8 +667,9 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
                         handleAIAction("custom", preset.text);
                       }}
                       disabled={isModifying}
-                      className="px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-gray-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-[11px] font-semibold text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 border border-gray-200 dark:border-gray-700/60 transition-all"
+                      className="px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-gray-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-[11px] font-semibold text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 border border-gray-200 dark:border-gray-700/60 transition-colors inline-flex items-center gap-1"
                     >
+                      {preset.icon ? <preset.icon /> : null}
                       {preset.label}
                     </button>
                   ))}
@@ -604,7 +690,8 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
                     : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                 }`}
               >
-                <span>💻 Terminal Output</span>
+                <TerminalIcon />
+                <span>Terminal Output</span>
                 {runResult && (
                   <span className={`w-2 h-2 rounded-full ${runResult.status === "success" ? "bg-emerald-500" : "bg-red-500"}`}></span>
                 )}
@@ -618,19 +705,21 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
                     : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                 }`}
               >
-                <span>✨ AI Code Changes & Diff</span>
-                {aiResult?.diff && <span className="px-1.5 py-0.5 text-[10px] bg-blue-500 text-white rounded-full font-extrabold">NEW</span>}
+                <SparkIcon />
+                <span>AI Code Changes & Diff</span>
+                {aiResult?.diff && <span className="px-1.5 py-0.5 text-[10px] bg-blue-500 text-white rounded-full font-semibold">NEW</span>}
               </button>
 
               <button
                 onClick={() => setActiveTab("explanation")}
-                className={`px-4 py-2 font-bold text-xs rounded-t-lg transition-colors ${
+                className={`px-4 py-2 font-bold text-xs rounded-t-lg transition-colors flex items-center space-x-1.5 ${
                   activeTab === "explanation"
                     ? "border-b-2 border-purple-500 text-purple-600 dark:text-purple-400 bg-purple-50/50 dark:bg-purple-950/30"
                     : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                 }`}
               >
-                <span>🔍 AI Analysis</span>
+                <SearchGlyph />
+                <span>AI Analysis</span>
               </button>
             </div>
 
@@ -706,7 +795,7 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
                 <div className="flex-1 p-4 overflow-y-auto min-h-[300px] space-y-4">
                   {!aiResult ? (
                     <div className="h-full flex flex-col items-center justify-center text-gray-600 space-y-2 py-12">
-                      <p className="text-gray-500">Click any AI action button (⚡ Fix, 🎨 Refactor, 🚀 Optimize) to generate code modifications.</p>
+                      <p className="text-gray-500">Click any AI action button (Fix, Refactor, Optimize) to generate code modifications.</p>
                     </div>
                   ) : (
                     <>
@@ -796,7 +885,7 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
                     )}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-xs">Click "📝 Explain" to get detailed AI feedback on code logic, complexity analysis, and optimization recommendations.</p>
+                  <p className="text-gray-500 text-xs">Click Explain to get detailed AI feedback on code logic, complexity analysis, and optimization recommendations.</p>
                 )}
               </div>
             )}

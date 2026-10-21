@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { summarizeRepo } from '../services/api';
 
 const GitHubSummarizer = () => {
@@ -8,37 +8,27 @@ const GitHubSummarizer = () => {
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState('');
   const [fileFilter, setFileFilter] = useState('');
-  const [loadingStage, setLoadingStage] = useState(0);
-
-  const loadingStages = [
-    'Fetching repository structure...',
-    'Inspecting important source files...',
-    'Extracting routes and configuration...',
-    'Qwen is analyzing the code...',
-    'Building the final summary...'
-  ];
-
-  useEffect(() => {
-    if (!loading) {
-      setLoadingStage(0);
-      return;
-    }
-
-    const timer = setInterval(() => {
-      setLoadingStage(prev => Math.min(prev + 1, loadingStages.length - 1));
-    }, 2500);
-
-    return () => clearInterval(timer);
-  }, [loading]);
+  const requestInFlight = useRef(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   const validateGitHubUrl = (url) => {
     const pattern = /^https?:\/\/github\.com\/[^/]+\/[^/]+/;
     return pattern.test(url);
   };
 
-  const handleSummarize = async () => {
+  useEffect(() => {
+    const fromNav = location.state?.githubUrl;
+    if (typeof fromNav === 'string' && validateGitHubUrl(fromNav)) {
+      setGithubUrl(fromNav);
+    }
+  }, [location.state]);
+
+  const handleSummarize = async (event) => {
+    event?.preventDefault();
+    if (requestInFlight.current) return;
+
     if (!githubUrl.trim()) {
       setError('Please enter a GitHub repository URL');
       return;
@@ -49,8 +39,8 @@ const GitHubSummarizer = () => {
       return;
     }
 
+    requestInFlight.current = true;
     setLoading(true);
-    setLoadingStage(0);
     setError('');
     setSummary(null);
     setFileFilter('');
@@ -67,13 +57,8 @@ const GitHubSummarizer = () => {
       setError('Failed to connect to backend. Make sure the server is running.');
       console.error(err);
     } finally {
+      requestInFlight.current = false;
       setLoading(false);
-    }
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleSummarize();
     }
   };
 
@@ -97,16 +82,10 @@ const GitHubSummarizer = () => {
   const dependencies = technicalDetails.dependencies || summary?.dependencies || [];
 
   return (
-    <div className="py-4 px-4 bg-transparent">
+    <div className="bg-transparent">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-12">
-          <button
-            onClick={() => navigate('/')}
-            className="mb-6 px-4 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-          >
-            ← Back to Home
-          </button>
+        <div className="text-center mb-10">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-3">
             GitHub Repository Summarizer
           </h1>
@@ -116,27 +95,30 @@ const GitHubSummarizer = () => {
         </div>
 
         {/* Input Section */}
-        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 mb-8 border border-gray-100 dark:border-gray-800">
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-8 mb-8 border border-gray-100 dark:border-gray-800">
+          <label htmlFor="github-repo-url" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
             GitHub Repository URL
           </label>
-          <div className="flex gap-3">
+          <form onSubmit={handleSummarize} className="flex gap-3">
             <input
+              id="github-repo-url"
               type="text"
               value={githubUrl}
               onChange={(e) => setGithubUrl(e.target.value)}
-              onKeyPress={handleKeyPress}
               placeholder="https://github.com/owner/repository"
-              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+              aria-label="GitHub repository URL"
+              disabled={loading}
+              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition disabled:opacity-60"
             />
             <button
-              onClick={handleSummarize}
+              type="submit"
               disabled={loading}
+              aria-busy={loading}
               className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
             >
-              {loading ? 'Analyzing...' : 'Summarize'}
+              {loading ? 'Analyzing…' : 'Summarize'}
             </button>
-          </div>
+          </form>
           
           {/* Example URLs */}
           <div className="mt-4">
@@ -145,8 +127,10 @@ const GitHubSummarizer = () => {
               {examples.map((example, idx) => (
                 <button
                   key={idx}
+                  type="button"
                   onClick={() => setGithubUrl(example)}
-                  className="text-xs px-3 py-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400 transition"
+                  disabled={loading}
+                  className="text-xs px-3 py-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {example.split('/').slice(-2).join('/')}
                 </button>
@@ -156,17 +140,21 @@ const GitHubSummarizer = () => {
         </div>
 
         {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-6 py-4 rounded-lg mb-8">
+        {error && !loading && (
+          <div role="alert" className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-6 py-4 rounded-lg mb-8">
             <strong>Error:</strong> {error}
           </div>
         )}
 
         {/* Loading State */}
         {loading && (
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-12 text-center border border-gray-100 dark:border-gray-800">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400 font-semibold">{loadingStages[loadingStage]}</p>
+          <div
+            role="status"
+            aria-live="polite"
+            className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-12 text-center border border-gray-100 dark:border-gray-800"
+          >
+            <div className="inline-block animate-spin motion-reduce:animate-none rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400 font-semibold">Analyzing repository. This can take a while.</p>
             <p className="text-sm text-gray-500 mt-2">
               Local Qwen analysis focuses on important code evidence for faster results.
             </p>
@@ -177,7 +165,7 @@ const GitHubSummarizer = () => {
         {summary && !loading && (
           <div className="space-y-6">
             {/* Repository Overview */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-800">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-8 border border-gray-100 dark:border-gray-800">
               <div className="flex items-start justify-between mb-4">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
                   <span className="w-2.5 h-2.5 bg-blue-600 rounded-full mr-3"></span>
@@ -206,10 +194,14 @@ const GitHubSummarizer = () => {
                   )}
                 </div>
                 <button
+                  type="button"
                   onClick={() => navigate('/ai-agent', { state: { repoUrl: githubUrl } })}
-                  className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold rounded-xl shadow-md transition-all flex items-center space-x-2 shrink-0"
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-sm transition-colors flex items-center space-x-2 shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
                 >
-                  <span>⚡ Audit Repo Bugs with AI Agent</span>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  <span>Audit Repo Bugs with AI Agent</span>
                 </button>
               </div>
               
@@ -247,7 +239,7 @@ const GitHubSummarizer = () => {
 
             {/* Complete Project Files Analysis */}
             {summary.project_file_analysis && summary.project_file_analysis.length > 0 && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-800">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-8 border border-gray-100 dark:border-gray-800">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
@@ -311,7 +303,7 @@ const GitHubSummarizer = () => {
 
             {/* Detected API Endpoints & Routes */}
             {apiEndpoints && apiEndpoints.length > 0 && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-800">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-8 border border-gray-100 dark:border-gray-800">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
                   <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full mr-3"></span>
                   Detected API Endpoints & Routes ({apiEndpoints.length})
@@ -345,7 +337,7 @@ const GitHubSummarizer = () => {
 
             {/* Environment Variables */}
             {envVars && envVars.length > 0 && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-800">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-8 border border-gray-100 dark:border-gray-800">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
                   <span className="w-2.5 h-2.5 bg-amber-500 rounded-full mr-3"></span>
                   Required Environment Variables
@@ -364,7 +356,7 @@ const GitHubSummarizer = () => {
             )}
 
             {/* Tech Stack */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-800">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-8 border border-gray-100 dark:border-gray-800">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
                 <span className="w-2.5 h-2.5 bg-green-600 rounded-full mr-3"></span>
                 Tech Stack
@@ -386,7 +378,7 @@ const GitHubSummarizer = () => {
             </div>
 
             {/* Architecture */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-800">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-8 border border-gray-100 dark:border-gray-800">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
                 <span className="w-2.5 h-2.5 bg-purple-600 rounded-full mr-3"></span>
                 Architecture Overview
@@ -397,7 +389,7 @@ const GitHubSummarizer = () => {
             </div>
 
             {/* How to Run */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-800">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-8 border border-gray-100 dark:border-gray-800">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
                 <span className="w-2.5 h-2.5 bg-orange-600 rounded-full mr-3"></span>
                 How to Run
@@ -411,7 +403,7 @@ const GitHubSummarizer = () => {
 
             {/* Contributing Guide */}
             {summary.contributing_guide && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-800">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-8 border border-gray-100 dark:border-gray-800">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
                   <span className="w-2.5 h-2.5 bg-pink-600 rounded-full mr-3"></span>
                   Contributing Guide
@@ -425,7 +417,7 @@ const GitHubSummarizer = () => {
             )}
 
             {/* Key Components */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-800">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-8 border border-gray-100 dark:border-gray-800">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
                 <span className="w-2.5 h-2.5 bg-red-600 rounded-full mr-3"></span>
                 Key Component Folders
@@ -448,7 +440,7 @@ const GitHubSummarizer = () => {
             </div>
 
             {/* Dependencies */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-800">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-8 border border-gray-100 dark:border-gray-800">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
                 <span className="w-2.5 h-2.5 bg-teal-600 rounded-full mr-3"></span>
                 Dependencies
@@ -470,7 +462,7 @@ const GitHubSummarizer = () => {
             </div>
 
             {/* License */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-8 border border-gray-100 dark:border-gray-800">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-8 border border-gray-100 dark:border-gray-800">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
                 <span className="w-2.5 h-2.5 bg-yellow-600 rounded-full mr-3"></span>
                 License
