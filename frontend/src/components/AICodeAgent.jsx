@@ -99,7 +99,9 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
         status: "success",
         modified_code: code,
         explanation: data.overview || data.summary,
-        complexity: data.complexity,
+        complexity: typeof data.complexity === 'object'
+          ? `Time: ${data.complexity.time || 'O(1)'} | Space: ${data.complexity.space || 'O(1)'}`
+          : data.complexity,
         logic_steps: data.logic_steps || [],
         suggestions: data.recommendations || []
       });
@@ -545,23 +547,47 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
                 </button>
               </div>
 
-              {/* Custom AI Prompt Request Bar */}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAIAction("custom", prompt)}
-                  placeholder="Ask AI Agent to make custom code changes (e.g. 'Add async handling')..."
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
-                />
-                <button
-                  onClick={() => handleAIAction("custom", prompt)}
-                  disabled={isModifying || !prompt.trim()}
-                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition-all disabled:opacity-50"
-                >
-                  {isModifying ? "AI Processing..." : "Modify"}
-                </button>
+              {/* Custom AI Prompt Request Bar & Quick Presets */}
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleAIAction("custom", prompt)}
+                    placeholder="Ask AI Agent to make custom code changes (e.g. 'Add async handling')..."
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                  <button
+                    onClick={() => handleAIAction("custom", prompt)}
+                    disabled={isModifying || !prompt.trim()}
+                    className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition-all disabled:opacity-50"
+                  >
+                    {isModifying ? "AI Processing..." : "Modify"}
+                  </button>
+                </div>
+
+                {/* Quick Preset Action Pills */}
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {[
+                    { label: "🧪 Unit Tests", text: "Generate comprehensive unit test suite with edge cases" },
+                    { label: "⚡ Async", text: "Convert to non-blocking async/await concurrency" },
+                    { label: "🏷️ Type Hints", text: "Add static type annotations and return types" },
+                    { label: "🛡️ Validation", text: "Add defensive input validation and exception guards" }
+                  ].map((preset, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setPrompt(preset.text);
+                        handleAIAction("custom", preset.text);
+                      }}
+                      disabled={isModifying}
+                      className="px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-gray-800/80 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-[11px] font-semibold text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 border border-gray-200 dark:border-gray-700/60 transition-all"
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -717,7 +743,9 @@ export default function AICodeAgent({ initialCode, initialLanguage = "python", i
                   <span>AI Code Architecture & Logic Analysis</span>
                   {aiResult?.complexity && (
                     <span className="text-xs px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-mono font-bold border border-purple-300 dark:border-purple-800/50">
-                      {aiResult.complexity}
+                      {typeof aiResult.complexity === 'object'
+                        ? `Time: ${aiResult.complexity.time || 'O(1)'} | Space: ${aiResult.complexity.space || 'O(1)'}`
+                        : String(aiResult.complexity)}
                     </span>
                   )}
                 </h4>
