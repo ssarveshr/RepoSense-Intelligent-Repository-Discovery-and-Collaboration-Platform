@@ -17,7 +17,7 @@
 ---
 
 ## 3. Technical Field of the Invention
-This invention pertains generally to the fields of **Artificial Intelligence (AI), Natural Language Processing (NLP), Information Retrieval, Software Engineering Tooling, Version Control Systems (VCS), and Collaborative Distributed Systems**.
+This invention pertains generally to the fields of **Artificial Intelligence (AI), Natural Language Processing (NLP), Information Retrieval, Software Engineering Tooling, Version Control Systems (VCS), and Collaborative Distributed Systems**. 
 
 More specifically, the invention relates to:
 - Dense vector similarity search and dynamic algorithmic reranking for source code repositories.
@@ -29,7 +29,7 @@ More specifically, the invention relates to:
 ---
 
 ## 4. Background of the Invention & Prior Art
-Open-source software has become foundational infrastructure for global computing. Millions of developers and enterprises rely on publicly hosted repositories across platforms such as GitHub, GitLab, and Bitbucket.
+Open-source software has become foundational infrastructure for global computing. Millions of developers and enterprises rely on publicly hosted repositories across platforms such as GitHub, GitLab, and Bitbucket. 
 
 However, existing platforms exhibit structural deficiencies across the software lifecycle:
 1. **Lexical Brittleness:** Current search engines rely on inverted indexing, BM25, and bag-of-words heuristics matched against repository titles, descriptions, and manual topic tags. When maintainers and developers use different terms for identical concepts (e.g., *"task runner"* vs. *"pipeline orchestrator"*), search fails due to vocabulary mismatch.
@@ -55,13 +55,13 @@ However, existing platforms exhibit structural deficiencies across the software 
 
 **RepoSense** is an integrated full-stack intelligence and collaboration platform that addresses these limitations through four tightly integrated subsystems:
 
-1. **AI Semantic Discovery & Dynamic Reranking Subsystem:**
+1. **AI Semantic Discovery & Dynamic Reranking Subsystem:**  
    Encodes natural language user queries and repository composite metadata into 384-dimensional dense vectors using a pre-trained Sentence-Transformer (`all-MiniLM-L6-v2`) and ChromaDB vector store. Employs a hybrid scoring algorithm that combines semantic cosine similarity with logarithmic community adoption metrics (stars) and lexical name-boosting.
-2. **Zero-Clone Deep Architectural Inference Engine:**
+2. **Zero-Clone Deep Architectural Inference Engine:**  
    Recursively traverses remote repository trees (inspecting up to 500 files) via GitHub REST APIs without disk cloning. Samples key source entrypoints and configuration manifests (`package.json`, `requirements.txt`, `Cargo.toml`), parses REST API routes and environment variables via AST/regex, and uses a locally hosted Large Language Model (Llama 3 8B via Ollama) to synthesize deep architectural breakdowns, file role walkthroughs, and installation guides.
-3. **Autonomous AI Code Agent Studio & Execution Sandbox:**
+3. **Autonomous AI Code Agent Studio & Execution Sandbox:**  
    Features an isolated subprocess execution sandbox enforcing strict time limits ($\Delta t_{\text{max}} = 5.0\text{s}$) and memory constraints to safely run Python/JavaScript code snippets. Features an autonomous AI agent capable of vulnerability auditing, logic explanation, code refactoring, and automated Unified Diff patch generation.
-4. **In-Context Video Collaboration Hub & Self-Hosted Git VCS Server:**
+4. **In-Context Video Collaboration Hub & Self-Hosted Git VCS Server:**  
    Embeds the Zoom Web Client SDK (`ZoomRoom.jsx`) directly beside repository code and the AI Agent Studio, enabling zero-install video, audio, and screen sharing. Complemented by an HTTP Smart-Git Version Control Gateway that intercepts `git push` payloads to dynamically initialize bare repositories on-the-fly over Wi-Fi LAN and Cloudflare WAN tunnels.
 
 ```

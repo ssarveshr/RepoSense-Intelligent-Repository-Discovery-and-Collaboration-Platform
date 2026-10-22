@@ -1,0 +1,101 @@
+{
+  "what_it_does": "AI-pothole-detection-and-mapping is a software project built with HTML, Flask.",
+  "core_features": [
+    "Core application logic and processing"
+  ],
+  "technical_details": {
+    "tech_stack": [
+      "HTML",
+      "Flask"
+    ],
+    "architecture": "Standard single-tier modular repository organization. Inspected 12 key application source code files to verify structure.",
+    "dependencies": [
+      "Core package modules"
+    ],
+    "api_endpoints": [],
+    "env_vars": []
+  },
+  "how_to_run": "1. Clone repository.\n2. Run `pip install -r requirements.txt`.\n3. Run entrypoint script (`python main.py` or `uvicorn`).",
+  "key_components": [
+    "`templates/`: Sub-directory for `templates` functionality",
+    "`generated/`: Sub-directory for `generated` functionality"
+  ],
+  "project_file_analysis": [
+    {
+      "file": "Convert.py",
+      "lines": 45,
+      "role": "Code Module / Script",
+      "insights": "Exports: `get_color, convert`"
+    },
+    {
+      "file": "Map.py",
+      "lines": 29,
+      "role": "Code Module / Script",
+      "insights": "Exports: `map1`"
+    },
+    {
+      "file": "README.md",
+      "lines": 203,
+      "role": "Code Module / Script",
+      "insights": "Exports: `names`"
+    },
+    {
+      "file": "app.py",
+      "lines": 76,
+      "role": "Backend Service Entry Point & API Server",
+      "insights": "76 lines of code"
+    },
+    {
+      "file": "best.pt",
+      "lines": 109,
+      "role": "Code Module / Script",
+      "insights": "109 lines of code"
+    },
+    {
+      "file": "data.yaml",
+      "lines": 6,
+      "role": "Code Module / Script",
+      "insights": "6 lines of code"
+    },
+    {
+      "file": "detect2.py",
+      "lines": 46,
+      "role": "Code Module / Script",
+      "insights": "Exports: `getpotholeinfo`"
+    },
+    {
+      "file": "generated/pothole_map.html",
+      "lines": 157,
+      "role": "Code Module / Script",
+      "insights": "157 lines of code"
+    },
+    {
+      "file": "gps_color.json",
+      "lines": 222,
+      "role": "Code Module / Script",
+      "insights": "222 lines of code"
+    },
+    {
+      "file": "pothole_counts.json",
+      "lines": 321,
+      "role": "Code Module / Script",
+      "insights": "321 lines of code"
+    },
+    {
+      "file": "templates/index.html",
+      "lines": 253,
+      "role": "Code Module / Script",
+      "insights": "Exports: `login, deleteGPS, generateMap, data, showLogin`"
+    },
+    {
+      "file": "train.py",
+      "lines": 14,
+      "role": "Code Module / Script",
+      "insights": "Exports: `main`"
+    }
+  ],
+  "license": "Not specified",
+  "difficulty": "Beginner",
+  "best_for": "Software engineers working with HTML, Flask looking to integrate or learn from AI-pothole-detection-and-mapping.",
+  "contributing_guide": "Contribution workflow cannot be inferred reliably from source code alone."
+}

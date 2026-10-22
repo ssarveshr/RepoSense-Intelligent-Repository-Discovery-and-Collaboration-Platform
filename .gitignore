@@ -1,19 +1,7 @@
-# --- Environment & Secrets ---
-.env
-.env.*
-!.env.example
-
-*.pem
-*.key
-*.p12
-*.pfx
-
 # --- Python ---
 backend/venv/
 backend/repo_db/
 backend/__pycache__/
-backend/.pytest_cache/
-backend/**/__pycache__/
 backend/.ipynb_checkpoints/
 *.py[cod]
 *$py.class
@@ -36,21 +24,8 @@ frontend/.bin
 frontend/.map
 frontend/.swp
 frontend/.swo
-frontend/.swo
 frontend/.DS_Store
 .eslintcache
-
-# --- Local databases & runtime storage ---
-*.db
-*.db-journal
-*.db-wal
-*.db-shm
-*.sqlite3
-*.bak
-
-# --- Logs & temp artifacts ---
-*.log
-agent-tools-*.txt
 
 # --- RepoSense Custom ---
 # We ignore the local version control data so it doesn't conflict with Git
@@ -61,16 +36,16 @@ commits.json
 # --- AI Models ---
 # Ignore downloaded models if stored locally
 .cache/
-/models/
 
-# --- Generated / local-only artifacts ---
-node_modules/
-backend/.summarizer_cache/
-.summarizer_cache/
-backend/ollama_output.txt
-backend/summary_output.json
 
-# --- IDEs & OS ---
+# --- Environment & Secrets ---
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# --- OS Specific ---
 .DS_Store
 .DS_Store?
 ._*
@@ -78,6 +53,8 @@ backend/summary_output.json
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# --- IDEs ---
 .vscode/
 .idea/
 *.sublime-project
@@ -85,3 +62,4 @@ Thumbs.db
 .project
 .pydevproject
 .settings/
+.summarizer_cache/
