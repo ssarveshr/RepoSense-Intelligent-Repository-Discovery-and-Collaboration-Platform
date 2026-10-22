@@ -227,28 +227,28 @@ async def run_agent_code(request: CodeRunRequest):
     """
     Executes Python or JavaScript code snippets safely and returns terminal output, duration, and exit status.
     """
-    return agent_service.run_code(request.code, request.language)
+    return await asyncio.to_thread(agent_service.run_code, request.code, request.language)
 
 @app.post("/api/agent/modify")
 async def modify_agent_code(request: CodeModifyRequest):
     """
     AI Agent endpoint for code modifications, refactorings, bug fixes, optimization, and diff patch generation.
     """
-    return agent_service.modify_code(request.code, request.prompt, request.action, request.language)
+    return await asyncio.to_thread(agent_service.modify_code, request.code, request.prompt, request.action, request.language)
 
 @app.post("/api/agent/explain")
 async def explain_agent_code(request: CodeExplainRequest):
     """
     AI Agent endpoint for explaining code architecture, complexity analysis, and recommendations.
     """
-    return agent_service.explain_code(request.code, request.language)
+    return await asyncio.to_thread(agent_service.explain_code, request.code, request.language)
 
 @app.post("/api/agent/scan-repo")
 async def scan_repository_bugs(request: RepoScanRequest):
     """
     AI Agent endpoint to audit any chosen repository for bugs, security vulnerabilities, and generate fix patches.
     """
-    return agent_service.scan_repo_bugs(request.github_url)
+    return await asyncio.to_thread(agent_service.scan_repo_bugs, request.github_url)
 
 
 if __name__ == "__main__":

@@ -138,6 +138,31 @@ function PublicNavLinks({ onNavigate, mobile = false, prominentSignUp = true }) 
         Home
       </AppNavLink>
       <AppNavLink
+        to="/github-summarizer"
+        onNavigate={onNavigate}
+        idleClassName={idle}
+        activeClassName={active}
+      >
+        GitHub Summarizer
+      </AppNavLink>
+      <AppNavLink
+        to="/ai-agent"
+        onNavigate={onNavigate}
+        idleClassName={idle}
+        activeClassName={active}
+      >
+        AI Code Agent
+      </AppNavLink>
+      <AppNavLink
+        to="/meetings"
+        matchPrefixes={['/meetings', '/collaboration', '/zoom-meeting', '/meeting-lobby-preview']}
+        onNavigate={onNavigate}
+        idleClassName={idle}
+        activeClassName={active}
+      >
+        Meetings
+      </AppNavLink>
+      <AppNavLink
         to="/sign-in"
         onNavigate={onNavigate}
         idleClassName={idle}
@@ -314,7 +339,7 @@ export function AppMobileNav() {
 }
 
 export function AppUserMenu() {
-  const { clerkEnabled } = useProfileAuth();
-  if (!clerkEnabled) return null;
+  const { isSignedIn } = useProfileAuth();
+  if (!isSignedIn) return null;
   return <UserMenu />;
 }

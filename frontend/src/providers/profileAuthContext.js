@@ -9,6 +9,8 @@ export const defaultAuth = {
   isSessionReady: true,
   user: null,
   openUserProfile: null,
+  signOut: async () => {},
+  signIn: () => {},
   getAuthToken: async () => null,
   usernameSetupState: 'idle',
 };

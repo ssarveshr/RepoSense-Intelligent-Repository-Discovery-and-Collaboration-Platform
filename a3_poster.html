@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RepoSense - Project Poster</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    /* ----------------------------------------------------
+       CLEAN, MODERN, HUMAN-READABLE POSTER DESIGN
+       ---------------------------------------------------- */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #0f172a;
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      color: #1e293b;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Print Controls Bar */
+    .controls-bar {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ffffff;
+      padding: 8px 18px;
+      border-radius: 999px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 99999;
+    }
+
+    .controls-bar button {
+      background: #f1f5f9;
+      color: #0f172a;
+      border: 1px solid #cbd5e1;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .controls-bar button.primary {
+      background: #6366f1;
+      color: #ffffff;
+      border: none;
+    }
+
+    .controls-bar button:hover {
+      transform: translateY(-1px);
+    }
+
+    .zoom-text {
+      font-weight: 700;
+      font-size: 13px;
+      color: #6366f1;
+      min-width: 45px;
+      text-align: center;
+    }
+
+    /* Stage */
+    .poster-viewport {
+      padding: 70px 20px 40px;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    /* ISO A3 Landscape (420mm x 297mm) */
+    .poster-page {
+      width: 420mm;
+      height: 297mm;
+      max-width: 420mm;
+      max-height: 297mm;
+      background: #f8fafc;
+      padding: 10mm 14mm 8mm;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transform-origin: top center;
+    }
+
+    /* Subtle background grid pattern */
+    .poster-page::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: 
+        radial-gradient(#e2e8f0 1.5px, transparent 1.5px);
+      background-size: 10mm 10mm;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .content-wrap {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* ----------------------------------------------------
+       HEADER
+       ---------------------------------------------------- */
+    .header {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      padding: 5mm 8mm;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+    }
+
+    .brand-left {
+      display: flex;
+      align-items: center;
+      gap: 5mm;
+    }
+
+    .logo-icon {
+      width: 16mm;
+      height: 16mm;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 16px rgba(99, 102, 241, 0.3);
+    }
+
+    .logo-icon svg {
+      width: 60%;
+      height: 60%;
+    }
+
+    .title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5mm;
+    }
+
+    .main-title {
+      font-size: 28pt;
+      font-weight: 900;
+      color: #0f172a;
+      letter-spacing: -1px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      gap: 3mm;
+    }
+
+    .title-badge {
+      font-size: 9pt;
+      font-weight: 800;
+      background: #eff6ff;
+      color: #3b82f6;
+      border: 1px solid #bfdbfe;
+      padding: 1.5mm 3.5mm;
+      border-radius: 999px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .tagline {
+      font-size: 12pt;
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    .authors-info {
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5mm;
+    }
+
+    .authors-names {
+      font-size: 10.5pt;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .guide-text {
+      font-size: 9.5pt;
+      font-weight: 700;
+      color: #6366f1;
+    }
+
+    .college-text {
+      font-size: 8.5pt;
+      font-weight: 600;
+      color: #94a3b8;
+    }
+
+    /* ----------------------------------------------------
+       MIDDLE SECTION: PROBLEM -> CORE -> SOLUTION
+       ---------------------------------------------------- */
+    .story-section {
+      display: grid;
+      grid-template-columns: 1fr 1.25fr 1fr;
+      gap: 5mm;
+      align-items: stretch;
+      margin: 4mm 0;
+      flex: 1;
+    }
+
+    /* Story Card Base */
+    .story-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      padding: 5mm 6mm;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.04);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card-heading-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 3.5mm;
+      padding-bottom: 2mm;
+      border-bottom: 2px solid #f1f5f9;
+    }
+
+    .card-heading {
+      font-size: 14pt;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      gap: 2.5mm;
+    }
+
+    .heading-problem { color: #e11d48; }
+    .heading-flow { color: #6366f1; }
+    .heading-solution { color: #0d9488; }
+
+    .card-tag {
+      font-size: 8pt;
+      font-weight: 800;
+      padding: 1mm 2.8mm;
+      border-radius: 999px;
+      text-transform: uppercase;
+    }
+
+    .tag-rose { background: #ffe4e6; color: #be123c; }
+    .tag-indigo { background: #e0e7ff; color: #4338ca; }
+    .tag-teal { background: #ccfbf1; color: #0f766e; }
+
+    /* ----------------------------------------------------
+       COLUMN 1: THE PROBLEM (SIMPLE BULLETS)
+       ---------------------------------------------------- */
+    .problem-items-box {
+      display: flex;
+      flex-direction: column;
+      gap: 3mm;
+      flex: 1;
+      justify-content: space-around;
+    }
+
+    .problem-row {
+      background: #fff5f5;
+      border: 1px solid #fecdd3;
+      border-left: 4px solid #f43f5e;
+      border-radius: 10px;
+      padding: 3mm 3.5mm;
+      display: flex;
+      flex-direction: column;
+      gap: 1mm;
+    }
+
+    .problem-title {
+      font-size: 10.5pt;
+      font-weight: 800;
+      color: #9f1239;
+      display: flex;
+      align-items: center;
+      gap: 2mm;
+    }
+
+    .problem-desc {
+      font-size: 9pt;
+      font-weight: 500;
+      color: #475569;
+      line-height: 1.4;
+    }
+
+    /* ----------------------------------------------------
+       COLUMN 2: HOW IT WORKS (THE PIPELINE WITH LINES)
+       ---------------------------------------------------- */
+    .pipeline-steps-box {
+      display: flex;
+      flex-direction: column;
+      gap: 2.2mm;
+      flex: 1;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .pipeline-step-item {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 2.8mm 3.5mm;
+      display: flex;
+      align-items: center;
+      gap: 3.5mm;
+      position: relative;
+      transition: all 0.2s;
+    }
+
+    .step-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #6366f1;
+      color: #ffffff;
+      font-weight: 900;
+      font-size: 10pt;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 4px 10px rgba(99, 102, 241, 0.35);
+    }
+
+    .step-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5mm;
+    }
+
+    .step-header {
+      font-size: 10pt;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .step-summary {
+      font-size: 8.8pt;
+      font-weight: 500;
+      color: #64748b;
+      line-height: 1.35;
+    }
+
+    .step-arrow-down {
+      display: flex;
+      justify-content: center;
+      color: #6366f1;
+      font-size: 12pt;
+      font-weight: 900;
+      margin: -2mm 0;
+    }
+
+    /* ----------------------------------------------------
+       COLUMN 3: THE SOLUTION (FRIENDLY BENEFIT CARDS)
+       ---------------------------------------------------- */
+    .solution-items-box {
+      display: flex;
+      flex-direction: column;
+      gap: 3mm;
+      flex: 1;
+      justify-content: space-around;
+    }
+
+    .solution-row {
+      background: #f0fdfa;
+      border: 1px solid #ccfbf1;
+      border-left: 4px solid #0d9488;
+      border-radius: 10px;
+      padding: 3mm 3.5mm;
+      display: flex;
+      flex-direction: column;
+      gap: 1mm;
+    }
+
+    .solution-title {
+      font-size: 10.5pt;
+      font-weight: 800;
+      color: #0f766e;
+      display: flex;
+      align-items: center;
+      gap: 2mm;
+    }
+
+    .solution-desc {
+      font-size: 9pt;
+      font-weight: 500;
+      color: #334155;
+      line-height: 1.4;
+    }
+
+    /* ----------------------------------------------------
+       BOTTOM HALF: SYSTEM STRUCTURE & HIGHLIGHT NUMBERS
+       ---------------------------------------------------- */
+    .bottom-section {
+      display: grid;
+      grid-template-columns: 1.6fr 1.1fr;
+      gap: 5mm;
+      margin-top: 1mm;
+    }
+
+    /* Architecture Block */
+    .arch-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      padding: 4mm 6mm;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+      display: flex;
+      flex-direction: column;
+      gap: 2.5mm;
+    }
+
+    .arch-title {
+      font-size: 12pt;
+      font-weight: 900;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 2mm;
+    }
+
+    .arch-three-columns {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3mm;
+    }
+
+    .arch-block {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 3mm 3.5mm;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5mm;
+    }
+
+    .arch-block-head {
+      font-size: 9pt;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #6366f1;
+    }
+
+    .arch-point {
+      font-size: 8.5pt;
+      font-weight: 600;
+      color: #1e293b;
+      line-height: 1.35;
+    }
+
+    .arch-subtext {
+      font-size: 7.8pt;
+      font-weight: 500;
+      color: #64748b;
+    }
+
+    /* Numbers Highlight Block */
+    .metrics-card {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      color: #ffffff;
+      border-radius: 18px;
+      padding: 4mm 6mm;
+      box-shadow: 0 8px 24px rgba(79, 70, 229, 0.25);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .metrics-title {
+      font-size: 11pt;
+      font-weight: 800;
+      color: #e0e7ff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .metrics-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3mm;
+      margin-top: 1mm;
+    }
+
+    .metric-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5mm;
+    }
+
+    .metric-num {
+      font-size: 22pt;
+      font-weight: 900;
+      line-height: 1;
+      color: #ffffff;
+    }
+
+    .metric-caption {
+      font-size: 8.5pt;
+      font-weight: 700;
+      color: #c7d2fe;
+    }
+
+    /* ----------------------------------------------------
+       FOOTER
+       ---------------------------------------------------- */
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 3mm;
+      border-top: 1px solid #e2e8f0;
+      font-size: 8.5pt;
+      font-weight: 600;
+      color: #64748b;
+      margin-top: 2mm;
+    }
+
+    .footer-pills {
+      display: flex;
+      gap: 2mm;
+    }
+
+    .f-pill {
+      background: #f1f5f9;
+      padding: 0.8mm 2.5mm;
+      border-radius: 6px;
+      font-size: 7.8pt;
+      color: #475569;
+    }
+
+    /* ----------------------------------------------------
+       PRINT STYLES FOR A3 PDF
+       ---------------------------------------------------- */
+    @page {
+      size: A3 landscape;
+      margin: 0;
+    }
+
+    @media print {
+      body {
+        background: #ffffff !important;
+      }
+      .controls-bar {
+        display: none !important;
+      }
+      .poster-viewport {
+        padding: 0 !important;
+      }
+      .poster-page {
+        box-shadow: none !important;
+        transform: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ====================================================
+       INTERACTIVE CONTROLS
+       ==================================================== -->
+  <div class="controls-bar">
+    <button class="primary" onclick="window.print()">
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+      Print / Save A3 PDF
+    </button>
+    <div style="display:flex; align-items:center; gap:6px;">
+      <button onclick="adjustZoom(-0.1)">-</button>
+      <span class="zoom-text" id="zoomVal">75%</span>
+      <button onclick="adjustZoom(0.1)">+</button>
+      <button onclick="fitZoom()">Fit Screen</button>
+    </div>
+  </div>
+
+  <!-- ====================================================
+       POSTER STAGE
+       ==================================================== -->
+  <div class="poster-viewport">
+    <div class="poster-page" id="posterPage">
+      <div class="content-wrap">
+
+        <!-- ====================================================
+             HEADER: TITLE, AUTHORS & INSTITUTION
+             ==================================================== -->
+        <header class="header">
+          <div class="brand-left">
+            <div class="logo-icon">
+              <!-- RepoSense Git Branch Symbol -->
+              <svg viewBox="0 0 48 46" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill="#ffffff" d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z"/>
+              </svg>
+            </div>
+            <div class="title-group">
+              <h1 class="main-title">
+                RepoSense
+                <span class="title-badge">Smart Repository Intelligence</span>
+              </h1>
+              <p class="tagline">Search Open-Source Code by Meaning &bull; Understand Without Downloading &bull; Collaborate Live</p>
+            </div>
+          </div>
+
+          <div class="authors-info">
+            <div class="authors-names">Sai Sarvesh R &bull; Shashidhar N S &bull; Priyanshu Kumar &bull; Suhan Ganesh</div>
+            <div class="guide-text">Project Guide: Naveen B M (Assistant Professor)</div>
+            <div class="college-text">Dept. of Computer Science &amp; Engineering &bull; RNS Institute of Technology</div>
+          </div>
+        </header>
+
+        <!-- ====================================================
+             3-COLUMN MAIN STORY (PROBLEM -> PIPELINE -> SOLUTION)
+             ==================================================== -->
+        <main class="story-section">
+
+          <!-- --------------------------------------------------
+               COLUMN 1: THE PROBLEM (EASY TO UNDERSTAND)
+               -------------------------------------------------- -->
+          <section class="story-card">
+            <div class="card-heading-row">
+              <h2 class="card-heading heading-problem">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                The Problem
+              </h2>
+              <span class="card-tag tag-rose">Why GitHub Fails</span>
+            </div>
+
+            <div class="problem-items-box">
+              <div class="problem-row">
+                <div class="problem-title">
+                  <span>&times;</span> Keyword Matching Fails
+                </div>
+                <div class="problem-desc">
+                  If you search for <em>"task scheduler"</em>, GitHub won't show you projects titled <em>"job runner"</em> or <em>"workflow engine"</em> because the words don't match.
+                </div>
+              </div>
+
+              <div class="problem-row">
+                <div class="problem-title">
+                  <span>&times;</span> Downloading Takes Forever
+                </div>
+                <div class="problem-desc">
+                  To check if a project works or has the API you need, you have to download hundreds of megabytes and manually dig through code files.
+                </div>
+              </div>
+
+              <div class="problem-row">
+                <div class="problem-title">
+                  <span>&times;</span> Juggling Too Many Apps
+                </div>
+                <div class="problem-desc">
+                  Pair programming and sprint reviews happen in external Zoom or Meet calls, forcing developers to constantly jump between screens.
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- --------------------------------------------------
+               COLUMN 2: THE PIPELINE (FLOWING VERTICALLY)
+               -------------------------------------------------- -->
+          <section class="story-card" style="border-color: #c7d2fe;">
+            <div class="card-heading-row">
+              <h2 class="card-heading heading-flow">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                How It Works (The Pipeline)
+              </h2>
+              <span class="card-tag tag-indigo">5 Easy Steps</span>
+            </div>
+
+            <div class="pipeline-steps-box">
+              <!-- Step 1 -->
+              <div class="pipeline-step-item">
+                <div class="step-circle">1</div>
+                <div class="step-info">
+                  <span class="step-header">Describe What You Need</span>
+                  <span class="step-summary">Type in plain English: e.g., <em>"beginner friendly python chat app with rooms"</em></span>
+                </div>
+              </div>
+
+              <div class="step-arrow-down">&darr;</div>
+
+              <!-- Step 2 -->
+              <div class="pipeline-step-item">
+                <div class="step-circle">2</div>
+                <div class="step-info">
+                  <span class="step-header">AI Creates an "Idea Fingerprint"</span>
+                  <span class="step-summary">Sentence-Transformers turn your request into a smart concept vector</span>
+                </div>
+              </div>
+
+              <div class="step-arrow-down">&darr;</div>
+
+              <!-- Step 3 -->
+              <div class="pipeline-step-item">
+                <div class="step-circle">3</div>
+                <div class="step-info">
+                  <span class="step-header">Semantic Vector Matching</span>
+                  <span class="step-summary">ChromaDB ranks projects by meaning and community popularity</span>
+                </div>
+              </div>
+
+              <div class="step-arrow-down">&darr;</div>
+
+              <!-- Step 4 -->
+              <div class="pipeline-step-item">
+                <div class="step-circle">4</div>
+                <div class="step-info">
+                  <span class="step-header">Instant Zero-Clone Cloud Scan</span>
+                  <span class="step-summary">Reads file structure, REST endpoints, and env variables without downloading</span>
+                </div>
+              </div>
+
+              <div class="step-arrow-down">&darr;</div>
+
+              <!-- Step 5 -->
+              <div class="pipeline-step-item">
+                <div class="step-circle">5</div>
+                <div class="step-info">
+                  <span class="step-header">AI Architecture Breakdown</span>
+                  <span class="step-summary">Local Llama 3 synthesizes an 18-second explanation &amp; file guide</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- --------------------------------------------------
+               COLUMN 3: THE SOLUTION (BENEFITS)
+               -------------------------------------------------- -->
+          <section class="story-card">
+            <div class="card-heading-row">
+              <h2 class="card-heading heading-solution">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                The Solution
+              </h2>
+              <span class="card-tag tag-teal">What You Get</span>
+            </div>
+
+            <div class="solution-items-box">
+              <div class="solution-row">
+                <div class="solution-title">
+                  <span>&bull;</span> Search by Meaning
+                </div>
+                <div class="solution-desc">
+                  Find the exact software you need using natural descriptions, even when you don't know the author's exact keywords.
+                </div>
+              </div>
+
+              <div class="solution-row">
+                <div class="solution-title">
+                  <span>&bull;</span> Understand in 18 Seconds
+                </div>
+                <div class="solution-desc">
+                  Get a complete breakdown of what the codebase does, which files matter, and what APIs it provides without cloning.
+                </div>
+              </div>
+
+              <div class="solution-row">
+                <div class="solution-title">
+                  <span>&bull;</span> Safe Code Sandbox
+                </div>
+                <div class="solution-desc">
+                  Run unfamiliar code snippets safely in an isolated 5-second environment and get instant AI bug fix patches.
+                </div>
+              </div>
+
+              <div class="solution-row">
+                <div class="solution-title">
+                  <span>&bull;</span> Video Call Right Next to Code
+                </div>
+                <div class="solution-desc">
+                  Hop into an in-app Zoom call with your teammates right beside the repository, with simple remote git push.
+                </div>
+              </div>
+            </div>
+          </section>
+
+        </main>
+
+        <!-- ====================================================
+             BOTTOM ROW: STRUCTURE & KEY STATS
+             ==================================================== -->
+        <section class="bottom-section">
+
+          <!-- System Structure / Architecture -->
+          <div class="arch-card">
+            <h3 class="arch-title">
+              <svg width="18" height="18" fill="none" stroke="#6366f1" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+              The System Structure (How It All Connects)
+            </h3>
+            
+            <div class="arch-three-columns">
+              <!-- Block 1 -->
+              <div class="arch-block">
+                <div class="arch-block-head">1. The Interface</div>
+                <div class="arch-point">React 18 Web App</div>
+                <div class="arch-subtext">Clean search UI, embedded Zoom video viewport, and live AI code editing studio.</div>
+              </div>
+
+              <!-- Block 2 -->
+              <div class="arch-block">
+                <div class="arch-block-head">2. Central Engine</div>
+                <div class="arch-point">FastAPI Python Server</div>
+                <div class="arch-subtext">Handles lightning-fast requests, extracts code routes, and manages dynamic Git pushes.</div>
+              </div>
+
+              <!-- Block 3 -->
+              <div class="arch-block">
+                <div class="arch-block-head">3. AI &amp; Privacy</div>
+                <div class="arch-point">Local Llama 3 + ChromaDB</div>
+                <div class="arch-subtext">Runs privately on your computer via Ollama. 100% free with zero cloud API token fees.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Highlight Numbers -->
+          <div class="metrics-card">
+            <div class="metrics-title">Proven Project Results</div>
+            <div class="metrics-row">
+              <div class="metric-item">
+                <span class="metric-num">+105%</span>
+                <span class="metric-caption">Better Search Accuracy over Keyword Search</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-num">18 Sec</span>
+                <span class="metric-caption">Average Codebase Triage (74% Time Saved)</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-num">0 MB</span>
+                <span class="metric-caption">Disk Space Used to Inspect Any Repository</span>
+              </div>
+              <div class="metric-item">
+                <span class="metric-num">$0.00</span>
+                <span class="metric-caption">Total API Cost (Runs Locally &amp; Privately)</span>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ====================================================
+             FOOTER
+             ==================================================== -->
+        <footer class="footer">
+          <div class="footer-pills">
+            <span class="f-pill">Open Source: github.com/ssarveshr/RepoSense</span>
+            <span class="f-pill">Built with: React 18 &bull; FastAPI &bull; ChromaDB &bull; Llama 3 (8B) &bull; Zoom Web SDK</span>
+          </div>
+          <div>
+            <span>Department of Computer Science &amp; Engineering &bull; RNSIT Bengaluru &bull; 2026</span>
+          </div>
+        </footer>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Script for Zoom & Print -->
+  <script>
+    let zoomScale = 0.75;
+    const poster = document.getElementById('posterPage');
+    const zoomVal = document.getElementById('zoomVal');
+
+    function applyZoom() {
+      poster.style.transform = `scale(${zoomScale})`;
+      zoomVal.textContent = `${Math.round(zoomScale * 100)}%`;
+    }
+
+    function adjustZoom(amount) {
+      zoomScale = Math.min(Math.max(zoomScale + amount, 0.35), 1.6);
+      applyZoom();
+    }
+
+    function fitZoom() {
+      const availWidth = window.innerWidth - 60;
+      const posterWidthPx = 420 * 3.7795;
+      zoomScale = Math.min(availWidth / posterWidthPx, 0.95);
+      applyZoom();
+    }
+
+    window.addEventListener('load', fitZoom);
+    window.addEventListener('resize', fitZoom);
+  </script>
+</body>
+</html>

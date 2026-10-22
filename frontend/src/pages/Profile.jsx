@@ -10,12 +10,27 @@ import { useGitHubConnection } from '../hooks/useGitHubConnection';
 import { useProfileAuth } from '../providers/profileAuthContext.js';
 
 function ProfileSignOutButton() {
-  const { signOut } = useClerk();
+  const auth = useProfileAuth();
+  let clerkSignOut = null;
+  try {
+    const clerk = useClerk();
+    clerkSignOut = clerk?.signOut;
+  } catch {
+    // Outside ClerkProvider, fallback to useProfileAuth
+  }
+
+  const handleSignOut = () => {
+    if (typeof clerkSignOut === 'function') {
+      clerkSignOut({ redirectUrl: '/' });
+    } else if (typeof auth?.signOut === 'function') {
+      auth.signOut({ redirectUrl: '/' });
+    }
+  };
 
   return (
     <button
       type="button"
-      onClick={() => signOut({ redirectUrl: '/' })}
+      onClick={handleSignOut}
       className="cursor-pointer w-full px-4 py-1.5 text-sm font-semibold rounded-md text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
     >
       Sign out

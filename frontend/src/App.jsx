@@ -54,14 +54,14 @@ function MainAppShell() {
             <Route path="/sign-up/*" element={<SignUpPage />} />
 
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/meetings" element={<ProtectedRoute><MeetingsHub /></ProtectedRoute>} />
-            <Route path="/collaboration" element={<ProtectedRoute><CollaborationStudio /></ProtectedRoute>} />
-            <Route path="/github-summarizer" element={<ProtectedRoute><GitHubSummarizer /></ProtectedRoute>} />
-            <Route path="/ai-agent" element={<ProtectedRoute><AIAgentStudio /></ProtectedRoute>} />
-            <Route path="/repo/:id" element={<ProtectedRoute><RepositoryDetails /></ProtectedRoute>} />
-            <Route path="/zoom-meeting" element={<ProtectedRoute><ZoomRoom /></ProtectedRoute>} />
-            <Route path="/zoom-meeting/:meetingId" element={<ProtectedRoute><ZoomRoom /></ProtectedRoute>} />
-            <Route path="/meeting-lobby-preview" element={<ProtectedRoute><MeetingLobby /></ProtectedRoute>} />
+            <Route path="/meetings" element={<MeetingsHub />} />
+            <Route path="/collaboration" element={<CollaborationStudio />} />
+            <Route path="/github-summarizer" element={<GitHubSummarizer />} />
+            <Route path="/ai-agent" element={<AIAgentStudio />} />
+            <Route path="/repo/:id" element={<RepositoryDetails />} />
+            <Route path="/zoom-meeting" element={<ZoomRoom />} />
+            <Route path="/zoom-meeting/:meetingId" element={<ZoomRoom />} />
+            <Route path="/meeting-lobby-preview" element={<MeetingLobby />} />
           </Routes>
         </main>
       </div>
